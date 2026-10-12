@@ -3,6 +3,6 @@
 {% block content %}
 <h1>شهرها</h1>
 <ul class="list">{% for c in cities %}
-    <li><a href="{% url 'city' c.pk %}">{{ c.name }}</a> <span class="pill">{{ c.book_count }} کتاب موجود</span></li>
+    <li><a href="{% url 'city' c.pk %}">{{ c.name }}</a> <span class="pill">{{ c.book_count|fa }} کتاب موجود</span></li>
 {% empty %}<li class="muted">هنوز کتابی ثبت نشده.</li>{% endfor %}</ul>
 {% endblock %}

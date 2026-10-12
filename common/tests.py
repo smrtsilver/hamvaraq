@@ -476,3 +476,218 @@ class MeetingAndCardTests(Base):
         lines = wrap("کلمه " * 80, _font(True, 72), 900, 2)
         self.assertEqual(len(lines), 2)
         self.assertTrue(lines[-1].endswith("…"))
+
+
+class PersianTextTests(Base):
+    def test_normalize(self):
+        from common.text import normalize, work_key
+        self.assertEqual(normalize("كتاب  ‌خوانيِ ۱۲۳"), "کتاب خوانی 123")
+        self.assertEqual(normalize("بُوفِ‌ کور"), "بوف کور")
+        self.assertEqual(work_key("بوف کور", "هدایت"), work_key("بوفِ‌کور", "هدايت"))
+
+    def test_search_ignores_arabic_letters_digits_zwnj(self):
+        Book.objects.create(owner=self.giver, title="کتاب‌خانه‌ی ۱۴۰۰", author="علی", city=self.isfahan)
+        for q in ("كتابخانه", "کتاب خانه 1400".replace(" 1400", ""), "کتابخانهی ۱۴۰۰", "علي"):
+            r = self.client.get(reverse("books:list"), {"q": q})
+            self.assertEqual(len(r.context["page"]), 1, q)
+        self.assertEqual(len(self.client.get(reverse("books:list"), {"q": "ناموجود"}).context["page"]), 0)
+
+    def test_search_text_updates_on_edit(self):
+        b = self.book(title="الف")
+        b.title = "كتاب نو"
+        b.save()
+        b.refresh_from_db()
+        self.assertIn("کتاب نو", b.search_text)
+
+    def test_same_work_and_wishlist_use_normalization(self):
+        from books.services import same_work
+        a = Book.objects.create(owner=self.giver, title="بوف کور", author="هدايت", city=self.isfahan)
+        b = Book.objects.create(owner=self.taker, title="بوفِ‌کور", author="هدایت", city=self.tehran)
+        self.assertIn(b, same_work(a))
+        Wishlist.objects.create(user=self.taker, text="هدايت")
+        self.client.login(username="giver", password="x12345678")
+        self.client.post(reverse("books:create"), {"title": "سه قطره خون", "author": "هدایت", "condition": "used", "city": self.isfahan.pk})
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="سه قطره").exists())
+
+
+class ThrottleTests(Base):
+    def test_login_throttled_by_ip(self):
+        from django.core.cache import cache
+        cache.clear()
+        for _ in range(20):
+            self.client.post(reverse("accounts:login"), {"username": "giver", "password": "wrong"})
+        r = self.client.post(reverse("accounts:login"), {"username": "giver", "password": "x12345678"})
+        self.assertEqual(r.status_code, 429)
+        self.assertIn("Retry-After", r)
+        self.assertEqual(self.client.get(reverse("accounts:login")).status_code, 200)  # GET آزاده
+
+    def test_chat_and_isbn_limits_json(self):
+        from django.core.cache import cache
+        cache.clear()
+        ex = services.request_book(self.book().pk, self.taker)
+        self.client.login(username="taker", password="x12345678")
+        for _ in range(30):
+            self.client.post(reverse("exchanges:message", args=[ex.pk]), {"text": "x"})
+        r = self.client.post(reverse("exchanges:message", args=[ex.pk]), {"text": "x"}, headers={"x-requested-with": "XMLHttpRequest"})
+        self.assertEqual((r.status_code, r.json()["error"]), (429, "rate_limited"))
+        # شمارنده‌ها مستقل از هم‌ان
+        self.assertEqual(self.client.get(reverse("books:isbn"), {"isbn": "12"}).status_code, 404)
+
+    def test_throttle_disabled_and_proxy_ip(self):
+        from django.core.cache import cache
+        from django.test import RequestFactory, override_settings
+        from common.throttle import client_ip, hit
+        cache.clear()
+        rf = RequestFactory().get("/", HTTP_X_REAL_IP="5.6.7.8", REMOTE_ADDR="10.0.0.1")
+        self.assertEqual(client_ip(rf), "10.0.0.1")  # بدون اعتماد به پروکسی، هدر نادیده‌ست
+        with override_settings(TRUST_PROXY_HEADERS=True):
+            self.assertEqual(client_ip(rf), "5.6.7.8")
+        with override_settings(THROTTLE_ENABLED=False):
+            self.assertTrue(all(hit("x", "y", 1, 60) for _ in range(5)))
+
+    def test_signup_honeypot(self):
+        from django.core.cache import cache
+        cache.clear()
+        data = {"username": "bot", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "website": "http://spam"}
+        self.client.post(reverse("accounts:signup"), data)
+        self.assertFalse(User.objects.filter(username="bot").exists())
+
+
+class ChatTests(Base):
+    def setUp(self):
+        self.ex = services.request_book(self.book().pk, self.taker)
+        services.accept(self.ex.pk, self.giver)
+
+    def say(self, who, text):
+        self.client.login(username=who, password="x12345678")
+        return self.client.post(reverse("exchanges:message", args=[self.ex.pk]), {"text": text},
+                                headers={"x-requested-with": "XMLHttpRequest"})
+
+    def test_unread_counts_and_mark_read(self):
+        from exchanges.chat import total_unread
+        self.say("taker", "سلام"); self.say("taker", "هستی؟")
+        self.assertEqual(total_unread(self.giver), 2)
+        self.assertEqual(total_unread(self.taker), 0)  # پیام خودش خوانده‌نشده نیست
+        self.client.login(username="giver", password="x12345678")
+        page = self.client.get(reverse("exchanges:list"))
+        self.assertEqual(page.context["exchanges"][0].unread, 2)
+        self.assertContains(page, "پیام جدید")
+        self.client.get(reverse("exchanges:detail", args=[self.ex.pk]))  # باز کردن چت = خوانده شد
+        self.assertEqual(total_unread(self.giver), 0)
+        self.say("taker", "سوم")
+        self.assertEqual(total_unread(self.giver), 1)
+
+    def test_poll_returns_only_new_and_marks_read(self):
+        from exchanges.chat import total_unread
+        self.say("taker", "یک"); self.say("taker", "دو")
+        first = self.ex.messages.first().pk
+        self.client.login(username="giver", password="x12345678")
+        data = self.client.get(reverse("exchanges:poll", args=[self.ex.pk]), {"after": first}).json()
+        self.assertEqual([m["text"] for m in data["messages"]], ["دو"])
+        self.assertFalse(data["messages"][0]["mine"])
+        self.assertTrue(data["messages"][0]["report_url"])
+        self.assertEqual(total_unread(self.giver), 0)
+
+    def test_poll_forbidden_for_strangers_and_bad_after(self):
+        User.objects.create_user("st", password="x12345678")
+        self.client.login(username="st", password="x12345678")
+        self.assertEqual(self.client.get(reverse("exchanges:poll", args=[self.ex.pk])).status_code, 403)
+        self.client.login(username="giver", password="x12345678")
+        self.assertEqual(self.client.get(reverse("exchanges:poll", args=[self.ex.pk]), {"after": "abc"}).status_code, 200)
+
+    def test_notification_not_duplicated_per_message(self):
+        self.say("taker", "۱"); self.say("taker", "۲"); self.say("taker", "۳")
+        self.assertEqual(Notification.objects.filter(user=self.giver, text__startswith="پیام تازه").count(), 1)
+
+    def test_ajax_send_returns_json_and_blank_ignored(self):
+        self.assertEqual(self.say("taker", "سلام").json(), {"ok": True})
+        self.assertEqual(self.say("taker", "   ").json(), {"ok": False})
+        self.assertEqual(self.ex.messages.count(), 1)
+
+
+class JalaliTests(TestCase):
+    def test_dates_and_digits(self):
+        import datetime
+        from common import jalali
+        self.assertEqual(jalali.jdate(datetime.date(2026, 3, 21)), "۱۴۰۵/۰۱/۰۱")
+        self.assertEqual(jalali.jdate(datetime.date(2026, 10, 12), long=True), "۲۰ مهر ۱۴۰۵")
+        self.assertEqual(jalali.fa_digits("a1b2"), "a۱b۲")
+        now = timezone.now()
+        self.assertEqual(jalali.ago(now - timedelta(hours=3), now), "۳ ساعت پیش")
+        self.assertEqual(jalali.ago(now - timedelta(seconds=5), now), "همین الان")
+        self.assertRegex(jalali.ago(now - timedelta(days=30), now), r"^۱۴\d\d/")
+        self.assertEqual(jalali.jtime(timezone.make_aware(datetime.datetime(2026, 1, 1, 9, 5), datetime.timezone.utc)), "۱۲:۳۵")  # تهران +۳:۳۰
+
+    def test_template_filters_load_globally(self):
+        from django.template import Template, Context
+        out = Template("{{ n|fa }} {{ d|jdate }}").render(Context({"n": 12, "d": timezone.now()}))
+        self.assertIn("۱۲", out)
+        self.assertNotRegex(out, "[0-9]")
+
+
+class DashboardAndSeoTests(Base):
+    def test_dashboard_staff_only_and_suspicious(self):
+        for i in range(3):  # سه مبادله‌ی بین یه جفت
+            self.taker.refresh_from_db(); self.taker.points = 1; self.taker.save()
+            self.complete(self.book(title=f"c{i}"))
+        r = self.client.get(reverse("staff_dashboard"))
+        self.assertEqual(r.status_code, 302)  # لاگین نیست
+        self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.get(reverse("staff_dashboard")).status_code, 302)  # staff نیست
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.get(reverse("staff_dashboard"))
+        self.assertEqual(r.status_code, 200)
+        names = {u.username for u, _ in r.context["d"]["suspicious"]}
+        self.assertEqual(names, {"giver", "taker"})
+        self.assertEqual(r.context["d"]["exchanges"]["completed7"], 3)
+        self.assertEqual(len(r.context["d"]["daily"]["completed"]), 14)
+        self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_stale_and_reports_counts(self):
+        from common.stats import collect
+        ex = services.request_book(self.book().pk, self.taker)
+        Exchange.objects.filter(pk=ex.pk).update(updated_at=timezone.now() - timedelta(days=10))
+        Report.objects.create(reporter=self.taker, target_user=self.giver, reason="other")
+        s = collect()
+        self.assertEqual(s["exchanges"]["stale_requested"], 1)
+        self.assertEqual((s["reports"]["open"], s["reports"]["oldest_days"]), (1, 0))
+
+    def test_daily_report_command(self):
+        from io import StringIO
+        from django.core import mail
+        from django.core.management import call_command
+        from django.test import override_settings
+        out = StringIO()
+        call_command("daily_report", stdout=out)
+        self.assertIn("کاربر: 2", out.getvalue())
+        with override_settings(ADMIN_EMAILS=["a@b.c"]):
+            call_command("daily_report", "--email", stdout=StringIO())
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_seo_endpoints(self):
+        b = self.book(title="سئو")
+        self.book(title="رزرو", status=Book.Status.RESERVED)
+        sm = self.client.get("/sitemap.xml").content.decode()
+        self.assertIn(f"/books/{b.pk}/", sm)
+        self.assertIn("/cities/", sm)
+        self.assertNotIn("/exchanges/", sm)
+        robots = self.client.get("/robots.txt").content.decode()
+        self.assertIn("Disallow: /exchanges/", robots)
+        self.assertIn("Sitemap: http", robots)
+        sw = self.client.get("/sw.js")
+        self.assertEqual(sw["Service-Worker-Allowed"], "/")
+        self.assertEqual(self.client.get("/offline/").status_code, 200)
+
+    def test_book_page_meta_and_noindex_headers(self):
+        b = self.book(title='عنوان </script> خطرناک')
+        r = self.client.get(reverse("books:detail", args=[b.pk]))
+        html = r.content.decode()
+        self.assertIn('property="og:title"', html)
+        self.assertIn('application/ld+json', html)
+        ld = html.split('application/ld+json">')[1].split("</script>")[0]
+        self.assertNotIn("<", ld)  # نمی‌تونه از تگ script بیرون بزنه
+        self.assertIn("/books/%d/card.png" % b.pk, html)
+        self.assertNotIn("noindex", r.get("X-Robots-Tag", ""))
+        self.assertIn("noindex", self.client.get("/accounts/login/")["X-Robots-Tag"])
+        self.assertIn("noindex", self.client.get("/accounts/u/giver/")["X-Robots-Tag"])

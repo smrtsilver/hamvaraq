@@ -5,10 +5,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from books.models import Book
 
+from common.throttle import throttle
+
 from .forms import ProfileForm, SignupForm
 from .models import User
 
 
+@throttle("signup", 10, 3600, by="ip")
 def signup(request):
     if request.user.is_authenticated:
         return redirect("home")

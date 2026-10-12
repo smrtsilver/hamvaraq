@@ -4,6 +4,6 @@
 <ul class="list">{% for e in exchanges %}
     <li><a href="{% url 'exchanges:detail' e.pk %}">{{ e.book.title }}</a>
         — {% if e.owner == user %}به {{ e.requester.username }}{% else %}از {{ e.owner.username }}{% endif %}
-        <span class="pill">{{ e.get_status_display }}</span></li>
+        <span class="pill">{{ e.get_status_display }}</span>{% if e.unread %} <span class="pill pill-green">{{ e.unread|fa }} پیام جدید</span>{% endif %}</li>
 {% empty %}<li class="muted">هنوز مبادله‌ای نداری.</li>{% endfor %}</ul>
 {% endblock %}

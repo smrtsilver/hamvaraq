@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% load trust_tags %}
 {% block title %}{{ book.title }} | هم‌ورق{% endblock %}
+{% block description %}{{ book.title }} از {{ book.author }} — {{ book.get_condition_display }}، {{ book.city }}. رایگان با امتیاز هم‌ورق مبادله کن.{% endblock %}
+{% block og_type %}book{% endblock %}
+{% block og_title %}{{ book.title }} | هم‌ورق{% endblock %}
+{% block og_description %}{{ book.author }} · {{ book.city }} · {{ book.get_condition_display }}{% endblock %}
+{% block og_image %}<meta property="og:image" content="{% if book.cover %}{{ request.scheme }}://{{ request.get_host }}{{ book.cover.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'books:card' book.pk %}{% endif %}">{% endblock %}
+{% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
 {% block content %}
 <div class="detail">
     <div>{% if book.cover %}<img class="cover" src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<div class="nocover big">📖</div>{% endif %}</div>
@@ -31,7 +37,7 @@
     </div>
 </div>
 
-<h2>نقد و ستاره{% if rating.n %} <span class="pill pill-green">{{ rating.avg|floatformat:1 }} از ۵ · {{ rating.n }} نقد</span>{% endif %}</h2>
+<h2>نقد و ستاره{% if rating.n %} <span class="pill pill-green">{{ rating.avg|floatformat:1|fa }} از ۵ · {{ rating.n|fa }} نقد</span>{% endif %}</h2>
 {% for r in reviews %}<div class="card"><span class="stars" aria-label="{{ r.stars }} ستاره">{% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
     <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a>{% if r.text %}<p>{{ r.text|linebreaksbr }}</p>{% endif %}</div>
 {% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}

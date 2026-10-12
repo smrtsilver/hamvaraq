@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load trust_tags %}
 {% block content %}
 <h1>{{ ex.book.title }} <span class="pill">{{ ex.get_status_display }}</span></h1>
@@ -55,13 +56,17 @@
 
 {% if chat_open %}
 <section class="chat card"><h3>چت</h3>
+    <div id="chat-box" data-poll-url="{% url 'exchanges:poll' ex.pk %}" data-send-url="{% url 'exchanges:message' ex.pk %}" data-last-id="{{ last_message_id }}">
     {% for m in chat %}
-    <div class="msg {% if m.sender == user %}mine{% endif %}"><b>{{ m.sender.username }}</b> {{ m.text|linebreaksbr }}
-        <small class="muted">{{ m.created_at|date:"H:i Y/m/d" }}</small>
+    <div class="msg {% if m.sender == user %}mine{% endif %}"><b>{{ m.sender.username }}</b> <span class="msg-text">{{ m.text|linebreaksbr }}</span>
+        <small class="muted">{{ m.created_at|jtime }}</small>
         {% if m.sender != user %}<a class="muted" href="{% url 'trust:report' 'message' m.pk %}">گزارش</a>{% endif %}</div>
-    {% empty %}<p class="muted">هنوز پیامی نیست.</p>{% endfor %}
-    <form method="post" action="{% url 'exchanges:message' ex.pk %}" class="inline-form">{% csrf_token %}
-        <input name="text" maxlength="1000" required placeholder="پیام…"><button class="btn btn-sm">ارسال</button></form>
+    {% endfor %}
+    </div>
+    <p id="chat-empty" class="muted"{% if chat %} hidden{% endif %}>هنوز پیامی نیست.</p>
+    <form id="chat-form" method="post" action="{% url 'exchanges:message' ex.pk %}" class="inline-form">{% csrf_token %}
+        <input name="text" maxlength="1000" required autocomplete="off" placeholder="پیام…"><button class="btn btn-sm">ارسال</button></form>
 </section>
+<script src="{% static 'js/chat.js' %}" defer></script>
 {% endif %}
 {% endblock %}

@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+python manage.py createcachetable
 python manage.py migrate --noinput
 python manage.py seed_basics
 python manage.py collectstatic --noinput

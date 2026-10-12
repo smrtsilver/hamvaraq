@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from common.text import normalize, work_key
+
 
 class Category(models.Model):
     name = models.CharField(max_length=60, unique=True, verbose_name="نام دسته")
@@ -35,6 +37,9 @@ class Book(models.Model):
     description = models.TextField(blank=True, verbose_name="توضیحات")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
     created_at = models.DateTimeField(auto_now_add=True)
+    # فیلدهای کمکی جستجو؛ خودکار از عنوان/نویسنده/شابک ساخته می‌شن
+    search_text = models.TextField(blank=True, editable=False)
+    work_key = models.CharField(max_length=400, blank=True, db_index=True, editable=False)
 
     class Meta:
         ordering = ["-created_at"]
@@ -43,6 +48,19 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("books:detail", args=[self.pk])
+
+    def save(self, *args, **kwargs):
+        self.search_text = normalize(f"{self.title} {self.author} {self.isbn}")
+        self.work_key = work_key(self.title, self.author)
+        fields = kwargs.get("update_fields")
+        if fields is not None and ({"title", "author", "isbn"} & set(fields)):
+            kwargs["update_fields"] = {*fields, "search_text", "work_key"}
+        super().save(*args, **kwargs)
 
 
 class Wishlist(models.Model):

@@ -7,9 +7,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.db.models import Avg, Count
-from django.db.models import Q
 
 from accounts.badges import check_badges
+from common.throttle import throttle
+from common.text import words
 from exchanges.models import Exchange
 
 from . import card as book_card
@@ -25,7 +26,9 @@ def book_list(request):
     if form.is_valid():
         d = form.cleaned_data
         if d["q"]:
-            qs = qs.filter(Q(title__icontains=d["q"]) | Q(author__icontains=d["q"]) | Q(isbn__icontains=d["q"]))
+            # هر کلمه‌ی جستجو باید جایی تو عنوان/نویسنده/شابک باشه (متن نرمال‌شده)
+            for word in words(d["q"]):
+                qs = qs.filter(search_text__contains=word)
         if d["city"]:
             qs = qs.filter(city=d["city"])
         if d["category"]:
@@ -48,6 +51,7 @@ def book_detail(request, pk):
     my_review = book.reviews.filter(user=user).first() if user.is_authenticated else None
     ctx = {
         "book": book,
+        "ld_json": _book_ld(book, request),
         "reviews": book.reviews.select_related("user"),
         "rating": book.reviews.aggregate(avg=Avg("stars"), n=Count("id")),
         "review_form": ReviewForm(instance=my_review) if can_review else None,
@@ -64,6 +68,7 @@ def book_detail(request, pk):
 
 
 @login_required
+@throttle("bookcreate", 40, 3600, by="user")
 def book_create(request):
     initial = {"city": request.user.city_id}
     form = BookForm(request.POST or None, request.FILES or None, initial=initial)
@@ -145,6 +150,7 @@ BULK_ROWS = 8
 
 
 @login_required
+@throttle("bookbulk", 10, 3600, by="user")
 def book_bulk_create(request):
     """چند کتاب پشت هم؛ ردیف‌های کاملاً خالی نادیده گرفته می‌شن."""
     RowSet = formset_factory(BulkRowForm, extra=BULK_ROWS, max_num=BULK_ROWS, validate_max=True)
@@ -169,6 +175,7 @@ def book_bulk_create(request):
 
 
 @login_required
+@throttle("isbn", 30, 60, by="user", methods=("GET",), json=True)
 def isbn_view(request):
     result = isbn_lookup.lookup(request.GET.get("isbn", ""))
     if not result:
@@ -206,3 +213,19 @@ def book_card_png(request, pk):
         resp["Content-Disposition"] = f'attachment; filename="hamvaraq-book-{book.pk}.png"'
     resp["Cache-Control"] = "public, max-age=300"
     return resp
+
+
+def _book_ld(book, request):
+    """داده‌ی ساخت‌یافته‌ی schema.org برای موتورهای جستجو (< ها escape می‌شن تا از تگ script خارج نشه)."""
+    import json
+
+    data = {
+        "@context": "https://schema.org", "@type": "Book", "name": book.title,
+        "author": {"@type": "Person", "name": book.author},
+        "url": request.build_absolute_uri(),
+    }
+    if book.isbn:
+        data["isbn"] = book.isbn
+    if book.cover:
+        data["image"] = request.build_absolute_uri(book.cover.url)
+    return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")

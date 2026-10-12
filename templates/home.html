@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}هم‌ورق | کتاب بده، کتاب بگیر؛ مبادله‌ی رایگان کتاب{% endblock %}
 {% block content %}
 <section class="hero">
     <h1>کتاب بده، کتاب بگیر</h1>
@@ -6,7 +7,7 @@
     <a class="btn" href="{% url 'books:list' %}">دیدن کتاب‌ها</a>
     <a class="btn btn-outline" href="{% url 'books:create' %}">کتاب می‌دم</a>
     <a class="btn btn-outline" href="{% url 'cities' %}">شهرها</a>
-    <p class="muted">{{ stats.books }} کتاب ثبت شده · {{ stats.exchanges }} مبادله‌ی موفق</p>
+    <p class="muted">{{ stats.books|fa }} کتاب ثبت شده · {{ stats.exchanges|fa }} مبادله‌ی موفق</p>
 </section>
 <h2>تازه‌رسیده‌ها</h2>
 {% include "books/_grid.html" with books=latest %}

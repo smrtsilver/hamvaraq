@@ -8,6 +8,8 @@ from accounts.models import User
 from books.models import Book
 from exchanges.models import Exchange, Message
 
+from common.throttle import throttle
+
 from .forms import ReportForm, VoteForm
 from .models import Report, Vote
 from .services import can_edit_vote
@@ -38,6 +40,7 @@ def vote(request, exchange_id):
 
 
 @login_required
+@throttle("report", 10, 86400, by="user")
 def report(request, kind, pk):
     """kind: user | book | message"""
     if kind == "user":

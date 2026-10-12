@@ -1,3 +1,4 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
@@ -47,3 +48,14 @@ def city_detail(request, pk):
         "city": city, "stats": stats, "top_categories": top_categories,
         "latest": available.select_related("city", "category")[:12],
     })
+
+
+@staff_member_required
+def staff_dashboard(request):
+    from .stats import collect
+
+    data = collect()
+    peak = max([n for series in data["daily"].values() for _, n in series] + [1])
+    # هر سری رو برای رسم میله‌ای با درصد ارتفاع آماده می‌کنیم
+    data["daily"] = {k: [(d, n, round(100 * n / peak)) for d, n in v] for k, v in data["daily"].items()}
+    return render(request, "common/staff_dashboard.html", {"d": data})

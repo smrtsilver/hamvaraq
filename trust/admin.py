@@ -49,3 +49,11 @@ class ReportAdmin(admin.ModelAdmin):
 class VoteAdmin(admin.ModelAdmin):
     list_display = ("exchange", "voter", "target", "like", "reason", "created_at")
     list_filter = ("like", "reason")
+
+
+@admin.action(description="علامت‌گذاری «در بررسی»")
+def mark_reviewing(modeladmin, request, queryset):
+    queryset.filter(status=Report.Status.OPEN).update(status=Report.Status.REVIEWING)
+
+
+ReportAdmin.actions = [mark_reviewing]

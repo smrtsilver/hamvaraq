@@ -55,3 +55,9 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .progress{height:10px;background:var(--bd);border-radius:999px;overflow:hidden}.progress>i{display:block;height:100%;background:var(--g)}
 @font-face{font-family:Vazirmatn;font-weight:400;font-display:swap;src:url("../fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2")}
 @font-face{font-family:Vazirmatn;font-weight:700;font-display:swap;src:url("../fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2")}
+/* تله‌ی ربات ثبت‌نام */
+#signup-form div:has(> input[name=website]){position:absolute;inset-inline-start:-9999px;height:0;overflow:hidden}
+.bars{display:flex;gap:4px;align-items:flex-end;height:90px;margin:8px 0 20px}
+.bar-col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.bar-col i{display:block;width:100%;min-height:2px;background:var(--g);border-radius:3px 3px 0 0}
+.bar-col small{font-size:.65rem;color:var(--mu)}

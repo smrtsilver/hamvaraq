@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",
     "common",
     "accounts",
     "books",
@@ -67,6 +68,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "common.seo.RobotsHeaderMiddleware",
 ]
 
 ROOT_URLCONF = "HamVaraqDjangoServer.urls"
@@ -77,11 +79,14 @@ TEMPLATES = [
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
+            # فیلترهای فارسی (fa, jdate, jtime, ago…) تو همه‌ی قالب‌ها بدون load در دسترسن
+            "builtins": ["common.templatetags.persian"],
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "notifications.context_processors.notifications",
+                "exchanges.context_processors.unread_chat",
             ],
         },
     },
@@ -113,6 +118,18 @@ if IS_TEST:
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="hamvaraq <noreply@hamvaraq.ir>")
 
+# کش مشترک بین worker ها (شمارنده‌ی محدودیت نرخ + کش شابک). جدولش: manage.py createcachetable
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "hv_cache",
+    }
+}
+
+# محدودیت نرخ. پشت nginx (X-Real-IP) باید TRUST_PROXY_HEADERS=True باشه
+THROTTLE_ENABLED = env.bool("THROTTLE_ENABLED", default=True)
+TRUST_PROXY_HEADERS = env.bool("TRUST_PROXY_HEADERS", default=False)
+
 LANGUAGE_CODE = "fa-ir"
 TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
@@ -140,6 +157,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # آدرسی که روی کارت اشتراک‌گذاری چاپ می‌شه
 SITE_URL = env("SITE_URL", default="hamvaraq.ir")
 
+# گزارش روزانه (manage.py daily_report --email) به این ایمیل‌ها می‌ره
+ADMIN_EMAILS = env.list("ADMIN_EMAILS", default=[])
+
 # ---- قوانین دامنه‌ی هم‌ورق ----
 VOTE_EDIT_HOURS = 24            # رأی تا این مدت قابل ویرایشه
 LOW_REPUTATION_PERCENT = 60     # زیر این درصد (با حداقل رأی) هشدار «اعتبار پایین»
@@ -149,3 +169,5 @@ NO_SHOW_REPORTS_FOR_RESTRICTION = 3
 RESTRICTION_DAYS = 14
 BADGE_COURIER_EXCHANGES = 10
 BADGE_NEIGHBORHOOD_BOOKS = 5
+STALE_REQUEST_DAYS = 3      # درخواست بی‌پاسخ بعد از این مدت تو داشبورد «گیرکرده» حساب می‌شه
+STALE_ACCEPTED_DAYS = 7     # مبادله‌ی تأییدشده‌ی تموم‌نشده

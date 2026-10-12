@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -9,7 +10,9 @@ from trust.forms import VoteForm
 from trust.models import Vote
 from trust.services import can_edit_vote
 
-from . import services
+from common.throttle import throttle
+
+from . import chat, services
 from .models import Exchange, Message
 
 
@@ -24,6 +27,7 @@ def _run(request, action, *args):
 
 
 @login_required
+@throttle("request", 20, 86400, by="user")
 @require_POST
 def request_book(request, book_id):
     ex = _run(request, services.request_book, book_id, request.user)
@@ -63,8 +67,14 @@ agree_meeting = _action(services.agree_meeting, "نقطه‌ی تحویل تأی
 
 @login_required
 def exchange_list(request):
-    qs = Exchange.objects.filter(Q(owner=request.user) | Q(requester=request.user)).select_related("book", "owner", "requester")
-    return render(request, "exchanges/list.html", {"exchanges": qs})
+    qs = chat.with_unread(
+        Exchange.objects.filter(Q(owner=request.user) | Q(requester=request.user)).select_related("book", "owner", "requester"),
+        request.user,
+    )
+    rows = list(qs)
+    for e in rows:
+        e.unread = chat.unread_of(e)
+    return render(request, "exchanges/list.html", {"exchanges": rows})
 
 
 @login_required
@@ -73,11 +83,14 @@ def exchange_detail(request, pk):
     if not ex.is_party(request.user):
         return render(request, "404.html", status=404)
     my_vote = Vote.objects.filter(exchange=ex, voter=request.user).first()
+    chat_messages = list(ex.messages.select_related("sender"))
+    chat.mark_read(ex, request.user)
     ctx = {
+        "last_message_id": chat_messages[-1].pk if chat_messages else 0,
         "ex": ex,
         "other": ex.other_party(request.user),
         "is_owner": ex.owner_id == request.user.pk,
-        "chat": ex.messages.select_related("sender"),
+        "chat": chat_messages,
         "chat_open": ex.status in (*Exchange.ACTIVE, Exchange.Status.COMPLETED),
         "my_vote": my_vote,
         "meeting_options": services.meeting_options(ex) if ex.status == Exchange.Status.ACCEPTED else [],
@@ -87,19 +100,58 @@ def exchange_detail(request, pk):
     return render(request, "exchanges/detail.html", ctx)
 
 
+def _message_json(m, user):
+    from django.urls import reverse
+
+    from common.jalali import jtime
+
+    return {
+        "id": m.pk, "sender": m.sender.username, "mine": m.sender_id == user.pk, "text": m.text,
+        "time": jtime(m.created_at),
+        "report_url": "" if m.sender_id == user.pk else reverse("trust:report", args=["message", m.pk]),
+    }
+
+
 @login_required
+@throttle("chat", 30, 600, by="user", json=True)
 @require_POST
 def send_message(request, pk):
     ex = get_object_or_404(Exchange, pk=pk)
     text = request.POST.get("text", "").strip()[:1000]
+    ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     if not ex.is_party(request.user):
         return redirect("home")
     if text and ex.status in (*Exchange.ACTIVE, Exchange.Status.COMPLETED):
+        from notifications.models import Notification
         from notifications.services import notify
 
         Message.objects.create(exchange=ex, sender=request.user, text=text)
-        notify(ex.other_party(request.user), f"پیام تازه از {request.user.username}", f"/exchanges/{ex.pk}/")
+        other, url = ex.other_party(request.user), f"/exchanges/{ex.pk}/"
+        # پشت‌سرهم پیام دادن اعلان تکراری نمی‌سازه؛ شمارنده‌ی خوانده‌نشده‌ی چت کافیه
+        if not Notification.objects.filter(user=other, url=url, is_read=False, text__startswith="پیام تازه").exists():
+            notify(other, f"پیام تازه از {request.user.username}", url)
+    if ajax:
+        return JsonResponse({"ok": bool(text)})
     return redirect("exchanges:detail", pk)
+
+
+@login_required
+def poll_messages(request, pk):
+    """پیام‌های تازه‌تر از `after` (شناسه). جاوااسکریپت چت هر چند ثانیه صداش می‌زنه."""
+    ex = get_object_or_404(Exchange, pk=pk)
+    if not ex.is_party(request.user):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    try:
+        after = int(request.GET.get("after", 0))
+    except ValueError:
+        after = 0
+    new = list(ex.messages.filter(pk__gt=after).select_related("sender")[:100])
+    if new:
+        chat.mark_read(ex, request.user)
+    return JsonResponse({
+        "messages": [_message_json(m, request.user) for m in new],
+        "status": ex.status,
+    })
 
 
 @login_required

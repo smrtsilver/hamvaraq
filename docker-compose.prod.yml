@@ -26,6 +26,7 @@ services:
       - ./staticfiles:/app/staticfiles
     environment:
       DEBUG: "False"
+      TRUST_PROXY_HEADERS: "True"
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-hamvaraq}
     env_file:
       - .env

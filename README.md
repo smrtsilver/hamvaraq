@@ -8,6 +8,7 @@
 python -m venv .venv && source .venv/bin/activate   # ویندوز: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
+python manage.py createcachetable   # کش مشترک (محدودیت نرخ)
 python manage.py migrate
 python manage.py seed_basics        # شهرها و دسته‌ها
 python manage.py createsuperuser
@@ -53,6 +54,16 @@ nginx روی سرور با `deploy/hamvaraq.nginx.conf.example` جلوی پور�
 - گزارش روی کاربر/کتاب/پیام؛ هر کاربر یک‌بار برای هر مورد. ادمین در `/admin/` تصمیم و دلیل را ثبت می‌کند
   (رد، اخطار، محدودیت، مسدودسازی). ۳ گزارش تأییدشده‌ی بدقولی ← محدودیت خودکار.
 - تنظیمات عددی در `HamVaraqDjangoServer/settings.py` (بخش «قوانین دامنه»).
+
+## پخته‌سازی
+- **جستجوی فارسی:** `common/text.py` (ک/ی عربی، ارقام، نیم‌فاصله) روی جستجو، لیست آرزو و هم‌سلیقه‌ها.
+- **محدودیت نرخ:** `common/throttle.py`؛ پشت nginx حتماً `TRUST_PROXY_HEADERS=True` (در compose پروداکشن ست شده). برای خاموش‌کردن در توسعه: `THROTTLE_ENABLED=False`.
+- **چت:** خوانده‌نشده + polling هر ۵ ثانیه (`static/js/chat.js`).
+- **تاریخ جلالی:** فیلترهای `fa`, `jdate`, `jlong`, `jtime`, `ago` در همه‌ی قالب‌ها.
+- **مدیریت:** `/staff/` (فقط staff) داشبورد؛ `python manage.py daily_report [--email]` برای cron، گیرنده‌ها از `ADMIN_EMAILS`.
+- **سئو/PWA:** `/sitemap.xml`، `/robots.txt`، OpenGraph، JSON-LD، `/sw.js`، `/offline/`.
+
+وضعیت کامل و کارهای باقی‌مانده: `CHECKLIST.md`.
 
 ## نسخه‌ی ۲ (انجام‌شده)
 - صفحه‌ی شهر با آمار (`/cities/`) و تازه‌رسیده‌ها.

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}کتاب‌های {{ city.name }} | هم‌ورق{% endblock %}
+{% block description %}{{ stats.exchanged|fa }} کتاب در {{ city.name }} دست‌به‌دست شده و {{ stats.available|fa }} کتاب برای مبادله موجوده.{% endblock %}
 {% block content %}
 <h1>{{ city.name }}</h1>
 <div class="stats">
-    <div class="card"><strong>{{ stats.exchanged }}</strong><span class="muted">کتاب دست‌به‌دست شده</span></div>
-    <div class="card"><strong>{{ stats.available }}</strong><span class="muted">کتاب موجود</span></div>
-    <div class="card"><strong>{{ stats.users }}</strong><span class="muted">عضو</span></div>
+    <div class="card"><strong>{{ stats.exchanged|fa }}</strong><span class="muted">کتاب دست‌به‌دست شده</span></div>
+    <div class="card"><strong>{{ stats.available|fa }}</strong><span class="muted">کتاب موجود</span></div>
+    <div class="card"><strong>{{ stats.users|fa }}</strong><span class="muted">عضو</span></div>
 </div>
-{% if top_categories %}<p>محبوب‌ترین دسته‌ها: {% for c in top_categories %}<span class="pill">{{ c.category__name }} ({{ c.n }})</span> {% endfor %}</p>{% endif %}
+{% if top_categories %}<p>محبوب‌ترین دسته‌ها: {% for c in top_categories %}<span class="pill">{{ c.category__name }} ({{ c.n|fa }})</span> {% endfor %}</p>{% endif %}
 <h2>تازه‌رسیده‌ها</h2>
 {% include "books/_grid.html" with books=latest %}
 <p><a href="{% url 'books:list' %}?city={{ city.pk }}">همه‌ی کتاب‌های {{ city.name }}</a></p>

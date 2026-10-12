@@ -1,2 +1,2 @@
 {% if rep.newcomer %}<span class="pill">تازه‌وارد</span>
-{% else %}<span class="pill {% if rep.low %}pill-red{% else %}pill-green{% endif %}" title="درصد لایک از کل رأی‌ها">{{ rep.percent }}٪ از {{ rep.total }} مبادله</span>{% if rep.low %} <span class="pill pill-red">اعتبار پایین</span>{% endif %}{% endif %}
+{% else %}<span class="pill {% if rep.low %}pill-red{% else %}pill-green{% endif %}" title="درصد لایک از کل رأی‌ها">{{ rep.percent|fa }}٪ از {{ rep.total|fa }} مبادله</span>{% if rep.low %} <span class="pill pill-red">اعتبار پایین</span>{% endif %}{% endif %}

@@ -8,7 +8,7 @@
     {{ rows.non_form_errors }}
     {% for f in rows %}
     <fieldset class="bulk-row" data-isbn-scope>
-        <legend>کتاب {{ forloop.counter }}</legend>
+        <legend>کتاب {{ forloop.counter|fa }}</legend>
         {{ f.non_field_errors }}
         {{ f.as_div }}
     </fieldset>
