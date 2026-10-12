@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import F, Q
+from django.db.models import Q
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,6 +19,8 @@ from common.throttle import throttle
 
 from . import ics, services
 from .forms import AnnouncementForm
+from analytics.tracking import track
+
 from .models import Announcement, AnnouncementBookmark
 
 
@@ -91,10 +93,7 @@ def announcement_detail(request, pk, slug=None):
     if item.status != Announcement.Status.PUBLISHED and not mine:
         raise Http404
     if item.status == Announcement.Status.PUBLISHED:
-        seen = request.session.get("viewed_announcements", [])
-        if item.pk not in seen:
-            Announcement.objects.filter(pk=item.pk).update(view_count=F("view_count") + 1)
-            request.session["viewed_announcements"] = [*seen[-49:], item.pk]
+        track(request, "event", item, item.submitted_by_id)
     return render(request, "announcements/detail.html", {
         "item": item, "mine": mine, "ld_json": _event_ld(item, request),
         "bookmarked": request.user.is_authenticated and item.bookmarks.filter(user=request.user).exists(),

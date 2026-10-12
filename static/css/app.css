@@ -675,3 +675,5 @@ p a:not(.btn),.hint a,.prose a,.auth-links a,.alert a,.small a:not(.btn),.footer
 }
 
 @media (max-width:1320px){.menu-points{display:none}}
+.pc-views{display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)}.pc-views .i{width:15px;height:15px}
+.event-meta .i,.pill .i{width:15px;height:15px}

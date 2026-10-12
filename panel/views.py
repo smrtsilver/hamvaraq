@@ -52,6 +52,15 @@ def index(request):
     return page(request, "panel/index.html", {"d": data, "logs": AuditLog.objects.select_related("actor")[:8]}, "index")
 
 
+# ---------------------------------------------------------------- آمار
+@staff_required
+def stats(request):
+    from analytics.services import admin_stats
+
+    days = int(request.GET.get("days", 30)) if request.GET.get("days") in ("7", "30", "90") else 30
+    return page(request, "panel/stats.html", {"s": admin_stats(days), "days": days, "ranges": (7, 30, 90), "status_labels": Exchange.Status.choices}, "stats")
+
+
 # ---------------------------------------------------------------- گزارش‌ها
 @staff_required
 def reports(request):

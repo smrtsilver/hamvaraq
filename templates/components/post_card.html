@@ -4,6 +4,6 @@
         <div class="cluster" style="gap:6px">{% if p.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}{% if p.rating %}<span class="stars" aria-label="{{ p.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= p.rating %}★{% else %}☆{% endif %}{% endfor %}</span>{% endif %}</div>
         <h3>{{ p.title }}</h3>
         <p>{{ p.excerpt }}</p>
-        <div class="pc-meta">{% include "components/avatar.html" with u=p.author size="sm" %}<span>{{ p.author.username }}</span><span>·</span><span>{{ p.display_book_title|truncatechars:26 }}</span><span style="margin-inline-start:auto">{{ p.reading_minutes|fa }} دقیقه</span></div>
+        <div class="pc-meta">{% include "components/avatar.html" with u=p.author size="sm" %}<span>{{ p.author.username }}</span><span>·</span><span>{{ p.display_book_title|truncatechars:26 }}</span>{% if p.view_count %}<span class="pc-views">{% include "components/icon.html" with name="eye" %} {{ p.view_count|fa }}</span>{% endif %}<span style="margin-inline-start:auto">{{ p.reading_minutes|fa }} دقیقه</span></div>
     </div>
 </a>

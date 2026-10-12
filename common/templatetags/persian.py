@@ -42,3 +42,8 @@ def jday(value):
 def jmonth(value):
     j = jalali._to_j(value)
     return jalali.MONTHS[j.month - 1] if j else ""
+
+
+@register.filter
+def get_item(mapping, key):
+    return (mapping or {}).get(key)

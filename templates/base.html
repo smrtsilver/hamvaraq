@@ -7,6 +7,7 @@
     <title>{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب{% endblock %}</title>
     <meta name="description" content="{% block description %}هم‌ورق؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها. بخوان، بسپار، دوباره بخوان؛ بدون پول، فقط با امتیاز.{% endblock %}">
     {% block robots %}{% endblock %}
+    {% if view_token %}<meta name="hv-view" content="{{ view_token }}" data-url="{% url 'analytics:hit' %}">{% endif %}
     <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}">
     <meta property="og:site_name" content="هم‌ورق">
     <meta property="og:locale" content="fa_IR">
@@ -66,6 +67,7 @@
                         <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} کتاب‌های من</a>
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>
+                        <a href="{% url 'accounts:stats' %}">{% include "components/icon.html" with name="chart" %} آمار من</a>
                         <a href="{% url 'support:mine' %}">{% include "components/icon.html" with name="flag" %} گزارش‌های من</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
                         <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
@@ -148,6 +150,7 @@
 <script src="{% static 'js/combobox.js' %}" defer></script>
 <script src="{% static 'js/suggest.js' %}" defer></script>
 <script src="{% static 'js/search.js' %}" defer></script>
+<script src="{% static 'js/views.js' %}" defer></script>
 <script src="{% static 'js/pwa.js' %}" defer></script>
 {% block scripts %}{% endblock %}
 </body>

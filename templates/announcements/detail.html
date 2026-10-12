@@ -11,7 +11,7 @@
 <article class="post-hero">
     {% if item.status != 'published' %}<div class="alert alert-warning"><p>این اطلاعیه هنوز منتشر نشده ({{ item.get_status_display }}){% if item.reject_reason %}: {{ item.reject_reason }}{% endif %}؛ فقط ثبت‌کننده و مدیریت می‌بینن.</p></div>{% endif %}
     <p class="small"><a href="{% url 'announcements:list' %}">اطلاعیه‌ها</a></p>
-    <div class="cluster" style="margin-bottom:8px"><span class="pill pill-green">{{ item.get_kind_display }}</span>{% if item.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if item.is_past and not item.is_news %}<span class="pill">برگزار شد</span>{% endif %}{% if item.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}</div>
+    <div class="cluster" style="margin-bottom:8px"><span class="pill pill-green">{{ item.get_kind_display }}</span>{% if item.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if item.is_past and not item.is_news %}<span class="pill">برگزار شد</span>{% endif %}{% if item.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}{% if item.status == 'published' %}<span class="pill">{% include "components/icon.html" with name="eye" %} {{ item.view_count|fa }} بازدید</span>{% endif %}</div>
     <h1 style="font-size:var(--fs-3xl)">{{ item.title }}</h1>
     <p class="muted" style="font-size:var(--fs-lg)">{{ item.summary }}</p>
     {% if item.cover %}<div class="cover-wide"><img src="{{ item.cover.url }}" alt="{{ item.title }}" fetchpriority="high"></div>{% endif %}

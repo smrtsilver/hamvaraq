@@ -44,6 +44,7 @@
 
         <div class="cta-bar">
         {% if is_owner %}
+            <p class="small muted" style="width:100%;margin:0 0 8px">{% include "components/icon.html" with name="eye" %} {{ book.view_count|fa }} بازدید یکتا · <a href="{% url 'accounts:stats' %}">آمار من</a></p>
             {% if book.status == 'exchanged' %}<a class="btn" href="{% url 'books:relist' book.pk %}">{% include "components/icon.html" with name="swap" %} دوباره برای مبادله بذار</a>{% endif %}
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
             <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" onsubmit="return confirm('این کتاب حذف بشه؟')">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}

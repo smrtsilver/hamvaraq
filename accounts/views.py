@@ -57,3 +57,10 @@ def settings_view(request):
         messages.success(request, "تنظیمات ذخیره شد.")
         return redirect("accounts:settings")
     return render(request, "accounts/settings.html", {"form": form})
+
+
+@login_required
+def my_stats(request):
+    from analytics.services import user_stats
+
+    return render(request, "accounts/stats.html", {"s": user_stats(request.user)})

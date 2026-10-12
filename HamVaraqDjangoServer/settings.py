@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "posts",
     "announcements",
     "support",
+    "analytics",
     "panel",
 ]
 
@@ -92,6 +93,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.site",
+                "analytics.context_processors.beacon",
                 "notifications.context_processors.notifications",
                 "exchanges.context_processors.unread_chat",
             ],

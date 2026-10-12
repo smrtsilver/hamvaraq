@@ -17,6 +17,8 @@ from common.text import words
 from exchanges.models import Exchange
 
 from . import card as book_card
+from analytics.tracking import track
+
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
@@ -49,6 +51,7 @@ def book_list(request):
 def book_detail(request, pk):
     book = get_object_or_404(Book.objects.select_related("owner", "city", "category"), pk=pk)
     user = request.user
+    track(request, "book", book, book.owner_id)
     my_request = None
     if user.is_authenticated:
         my_request = Exchange.objects.filter(book=book, requester=user, status__in=Exchange.ACTIVE).first()

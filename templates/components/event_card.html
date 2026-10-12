@@ -5,6 +5,6 @@
         <div class="cluster" style="gap:6px">{% if a.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}<span class="pill pill-green">{{ a.get_kind_display }}</span>{% if a.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if not a.is_free %}<span class="pill">پولی</span>{% endif %}</div>
         <h3>{{ a.title }}</h3>
         <p>{{ a.summary }}</p>
-        <div class="event-meta">{% if a.starts_at and not a.is_news %}<span>{% include "components/icon.html" with name="calendar" %} {{ a.starts_at|jtime }}</span>{% endif %}{% if a.place_label %}<span>{% include "components/icon.html" with name="pin" %} {{ a.place_label }}</span>{% endif %}</div>
+        <div class="event-meta">{% if a.starts_at and not a.is_news %}<span>{% include "components/icon.html" with name="calendar" %} {{ a.starts_at|jtime }}</span>{% endif %}{% if a.place_label %}<span>{% include "components/icon.html" with name="pin" %} {{ a.place_label }}</span>{% endif %}{% if a.view_count %}<span>{% include "components/icon.html" with name="eye" %} {{ a.view_count|fa }}</span>{% endif %}</div>
     </div>
 </a>

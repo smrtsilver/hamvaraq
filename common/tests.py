@@ -1437,11 +1437,11 @@ class NoEnglishAuditTests(TestCase):
         t = Ticket.objects.create(user=self.a, subject="مشکل", message="پیام کافی برای تست", reply="پاسخ")
         r = Report.objects.create(reporter=self.a, target_user=self.b, reason="abuse", description="توهین")
         self.client.login(username="سارا", password="x12345678")
-        self.check(["/support/", "/support/?type=bug&from=/books/", "/support/mine/", t.get_absolute_url()], "عضو پشتیبانی")
+        self.check(["/support/", "/support/?type=bug&from=/books/", "/support/mine/", t.get_absolute_url(), "/accounts/stats/"], "عضو پشتیبانی")
         self.client.login(username="مدیر", password="x12345678")
         self.check(["/panel/", "/panel/reports/", f"/panel/reports/{r.pk}/", "/panel/tickets/", f"/panel/tickets/{t.pk}/", "/panel/exchanges/",
                     "/panel/users/", f"/panel/users/{self.b.pk}/", "/panel/books/", "/panel/posts/", "/panel/announcements/", "/panel/challenges/",
-                    "/panel/challenges/new/", "/panel/settings/", "/panel/audit/", "/admin/support/ticket/", "/admin/common/auditlog/"], "پنل")
+                    "/panel/challenges/new/", "/panel/settings/", "/panel/audit/", "/panel/stats/", "/panel/stats/?days=7", "/admin/support/ticket/", "/admin/common/auditlog/"], "پنل")
 
     def test_posts_and_announcements_pages(self):
         from posts.models import Post
@@ -1931,8 +1931,8 @@ class PostTests(Base):
         self.assertEqual(get(sort="popular")[0], "سووشون")
         a.set_tags_from_text("تاریخی")
         self.assertEqual(get(tag=a.tags.first().pk), ["جنگ و صلح"])
-        self.client.get(a.get_absolute_url()); self.client.get(a.get_absolute_url())
-        a.refresh_from_db(); self.assertEqual(a.view_count, 1)                           # یک بازدید برای هر نشست
+        self.client.get(a.get_absolute_url())
+        a.refresh_from_db(); self.assertEqual(a.view_count, 0)                           # شمارش فقط با بیکن جاوااسکریپت (analytics)
         self.assertEqual(b.get_absolute_url(), reverse("posts:detail", args=[b.slug]))
 
     def test_detail_seo_jsonld_and_review_type(self):
@@ -2389,3 +2389,130 @@ class PanelTests(Base):
         r = self.client.post(reverse("panel:report_reviewing", args=[1]), {"next": "https://evil.example/"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r["Location"], reverse("panel:reports"))
+
+
+BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+
+
+class AnalyticsTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.b = self.book(title="بوف کور")
+        self.hit_url = reverse("analytics:hit")
+
+    def token(self, url, client=None, ua=BROWSER, ip="1.2.3.4"):
+        import re
+        r = (client or self.client).get(url, HTTP_USER_AGENT=ua, REMOTE_ADDR=ip)
+        m = re.search(r'name="hv-view" content="([^"]+)"', r.content.decode())
+        return m.group(1) if m else ""
+
+    def hit(self, token, client=None, ua=BROWSER, ip="1.2.3.4", wait=10):
+        import time
+        from unittest import mock
+        with mock.patch("analytics.tracking.time.time", return_value=time.time() + wait):
+            return (client or self.client).post(self.hit_url, {"t": token}, HTTP_USER_AGENT=ua, REMOTE_ADDR=ip)
+
+    def test_unique_view_counts_once_per_visitor_even_with_repeats(self):
+        from analytics.models import DailyVisitor, ViewLog
+        t = self.token(self.b.get_absolute_url())
+        self.assertEqual(self.hit(t).status_code, 204)
+        self.hit(self.token(self.b.get_absolute_url())); self.hit(t)
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 1)
+        self.assertEqual((ViewLog.objects.count(), DailyVisitor.objects.count()), (1, 1))
+        # بازدیدکننده‌ی دیگه (آی‌پی دیگه) جداگانه شمرده می‌شه
+        from django.test import Client
+        self.hit(self.token(self.b.get_absolute_url(), Client(), ip="9.9.9.9"), Client(), ip="9.9.9.9")
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 2)
+
+    def test_cookie_reset_does_not_create_new_unique(self):
+        from django.test import Client
+        self.hit(self.token(self.b.get_absolute_url()))
+        fresh = Client()                                    # بدون کوکی ولی همون آی‌پی و مرورگر
+        self.hit(self.token(self.b.get_absolute_url(), fresh), fresh)
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 1)
+
+    def test_bots_staff_owner_and_fast_or_forged_hits_are_ignored(self):
+        url = self.b.get_absolute_url()
+        self.assertEqual(self.token(url, ua="Googlebot/2.1 (+http://www.google.com/bot.html)"), "")
+        self.assertEqual(self.token(url, ua="curl/8.0"), "")
+        self.assertEqual(self.token(url, ua=""), "")
+        t = self.token(url)
+        self.hit(t, wait=1)                                  # خیلی زود برگشته
+        self.hit("forged.token")
+        self.hit(t, ua="python-requests/2.0")
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 0)
+        self.client.login(username="giver", password="x12345678")    # صاحب کتاب: فقط حضور در سایت
+        owner_t = self.token(url)
+        self.hit(owner_t)
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 0)
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.assertEqual(self.token(url), "")
+        self.assertEqual(self.token("/panel/"), "")
+
+    def test_member_view_counts_and_old_token_expires(self):
+        import time
+        from unittest import mock
+        self.client.login(username="taker", password="x12345678")
+        t = self.token(self.b.get_absolute_url())
+        with mock.patch("analytics.tracking.time.time", return_value=time.time() + 7200):
+            self.client.post(self.hit_url, {"t": t}, HTTP_USER_AGENT=BROWSER)
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 0)               # توکن بیش از یک ساعت قدیمیه
+        self.hit(t)
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 1)
+        from analytics.models import ViewLog
+        self.assertTrue(ViewLog.objects.get().is_member)
+
+    def test_posts_events_and_site_visits(self):
+        from announcements.models import Announcement
+        from posts.models import Post
+        post = Post.objects.create(author=self.giver, title="معرفی", body="متن " * 60, status="published", published_at=timezone.now())
+        ev = Announcement.objects.create(title="رویداد", kind="other", summary="خ", status="published", submitted_by=self.giver, published_at=timezone.now())
+        self.hit(self.token(post.get_absolute_url())); self.hit(self.token(ev.get_absolute_url()))
+        self.hit(self.token("/"), ip="5.5.5.5")
+        post.refresh_from_db(); ev.refresh_from_db()
+        self.assertEqual((post.view_count, ev.view_count), (1, 1))
+        from analytics.models import DailyVisitor
+        self.assertEqual(DailyVisitor.objects.count(), 2)    # ۲ بازدیدکننده‌ی متفاوت (آی‌پی ۱.۲.۳.۴ و ۵.۵.۵.۵)
+
+    def test_unknown_object_and_get_not_allowed(self):
+        import time
+        from unittest import mock
+        from django.core import signing
+        bad = signing.dumps({"k": "book", "i": 99999, "o": 0, "t": int(time.time())}, salt="hv-view")
+        self.hit(bad)
+        from analytics.models import ViewLog
+        self.assertEqual(ViewLog.objects.count(), 0)
+        self.assertEqual(self.client.get(self.hit_url).status_code, 405)
+        with mock.patch("analytics.tracking.hit", return_value=False):
+            self.hit(self.token(self.b.get_absolute_url()))
+        self.b.refresh_from_db()
+        self.assertEqual(self.b.view_count, 0)               # سقف نرخ
+
+    def test_panel_stats_and_my_stats_pages(self):
+        from analytics.services import admin_stats, user_stats
+        services.request_book(self.b.pk, self.taker)
+        self.hit(self.token(self.b.get_absolute_url()))
+        s = admin_stats(30)
+        self.assertEqual((s["views"]["by_kind"].get("book"), s["requests"]["total"], s["site"]["unique"]), (1, 1, 1))
+        self.assertEqual(s["views"]["top_books"][0][0], self.b)
+        self.assertEqual(s["requests"]["conversion"], 100)
+        u = user_stats(self.giver)["tiles"]
+        self.assertEqual((u["book_views"], u["requests"]), (1, 1))
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        for days in ("7", "30", "90", "x"):
+            self.assertEqual(self.client.get("/panel/stats/", {"days": days}).status_code, 200)
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get(reverse("accounts:stats"))
+        self.assertContains(r, "بوف کور")
+        self.assertContains(self.client.get(self.b.get_absolute_url()), "بازدید یکتا")
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("accounts:stats")).status_code, 302)

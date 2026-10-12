@@ -32,6 +32,7 @@ urlpatterns = [
     path("announcements/", include("announcements.urls")),
     path("notifications/", include("notifications.urls")),
     path("support/", include("support.urls")),
+    path("analytics/", include("analytics.urls")),
     path("panel/", include("panel.urls")),
 ]
 

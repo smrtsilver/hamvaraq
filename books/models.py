@@ -33,6 +33,7 @@ class Book(models.Model):
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="books", verbose_name="دسته")
     condition = models.CharField(max_length=8, choices=Condition.choices, default=Condition.USED, verbose_name="وضعیت فیزیکی")
     city = models.ForeignKey("common.City", on_delete=models.PROTECT, related_name="books", verbose_name="شهر")
+    view_count = models.PositiveIntegerField(default=0, editable=False, verbose_name="بازدید یکتا")
     cover = models.ImageField(upload_to="books/%Y/%m/", blank=True, verbose_name="عکس")
     cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False, verbose_name="بند‌انگشتی")
     description = models.TextField(blank=True, verbose_name="توضیحات")

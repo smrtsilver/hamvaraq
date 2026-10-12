@@ -13,6 +13,7 @@ NAV = [
     ("index", "نمای کلی", "sparkle"),
     ("reports", "گزارش‌ها", "flag"),
     ("tickets", "مشکلات کاربران", "chat"),
+    ("stats", "آمار", "chart"),
     ("exchanges", "مبادله‌ها", "swap"),
     ("users", "کاربران", "user"),
     ("books", "کتاب‌ها", "book"),
