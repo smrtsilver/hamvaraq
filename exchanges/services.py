@@ -8,9 +8,14 @@ from django.utils import timezone
 from accounts.badges import check_badges
 from accounts.models import User
 from books.models import Book, BookJourney
-from notifications.services import notify
+from notifications.models import Notification
+from notifications.services import notify as _notify
 
 from .models import Exchange
+
+
+def notify(user, text, url=""):
+    return _notify(user, text, url, kind=Notification.Kind.EXCHANGE)
 
 
 class ExchangeError(Exception):

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -214,3 +215,10 @@ CONFIRM_DISPUTE_DAYS = 7            # بعدش خودکار اختلاف باز 
 WELCOME_POINTS = env.int("WELCOME_POINTS", default=1)          # هدیه‌ی ثبت‌نام (۰ = خاموش)
 WELCOME_MAX_PER_IP = env.int("WELCOME_MAX_PER_IP", default=5)  # هر شبکه تو بازه‌ی زیر فقط به این تعداد حساب هدیه می‌ده
 WELCOME_WINDOW_DAYS = 30
+
+# ---- اعلان بیرون از سایت (Web Push) ----
+# بدون این کلیدها فقط اعلان داخل سایت کار می‌کنه. ساختن: python manage.py generate_vapid_keys
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+VAPID_SUBJECT = env("VAPID_SUBJECT", default="mailto:admin@hamvaraq.ir")
+PUSH_SYNC = IS_TEST  # تو تست ارسال همون لحظه و بدون ترد انجام می‌شه

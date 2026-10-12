@@ -42,7 +42,7 @@ def check_badges(user):
         badge = _award(user, code)
         if badge:
             new.append(badge)
-            notify(user, f"نشان «{badge.name}» رو گرفتی!", f"/accounts/u/{user.username}/")
+            notify(user, f"نشان «{badge.name}» رو گرفتی!", f"/accounts/u/{user.username}/", kind="badge")
     new += _challenge_badges(user)
     return new
 
@@ -63,7 +63,7 @@ def _challenge_badges(user):
             _, created = UserBadge.objects.get_or_create(user=user, badge=badge)
             if created:
                 new.append(badge)
-                notify(user, f"چالش «{c.title}» رو کامل کردی و نشانش رو گرفتی!", "/challenges/")
+                notify(user, f"چالش «{c.title}» رو کامل کردی و نشانش رو گرفتی!", "/challenges/", kind="badge")
     return new
 
 

@@ -3,7 +3,7 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="medium">
-    <div class="page-head"><div><h1>اعلان‌ها</h1><p>آخرین اتفاق‌هایی که به حسابت مربوطه.</p></div></div>
+    <div class="page-head"><div><h1>اعلان‌ها</h1><p>آخرین اتفاق‌هایی که به حسابت مربوطه.</p></div><a class="btn btn-secondary btn-sm" href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات اعلان</a></div>
     {% if items %}<ul class="list-clean card">{% for n in items %}<li class="note-item"><span>{% include "components/icon.html" with name="bell" %}
         {% if n.url %}<a href="{{ n.url }}">{{ n.text }}</a>{% else %}{{ n.text }}{% endif %}</span><small class="muted nowrap">{{ n.created_at|ago }}</small></li>{% endfor %}</ul>
     {% else %}{% include "components/empty.html" with ill="bell" title="اعلانی نداری" text="وقتی کسی کتابت رو بخواد یا پیامی برات بیاد، همین‌جا می‌بینی." %}{% endif %}

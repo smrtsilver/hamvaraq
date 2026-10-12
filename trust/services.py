@@ -49,17 +49,17 @@ def apply_decision(report, admin_user):
     accused = report.accused
     if decision == D.WARN:
         accused.warnings += 1
-        notify(accused, f"اخطار از مدیریت: {report.decision_note}")
+        notify(accused, f"اخطار از مدیریت: {report.decision_note}", kind="report")
     elif decision == D.RESTRICT:
         _restrict(accused)
-        notify(accused, f"حساب تو موقتاً محدود شد (فقط کتاب می‌تونی بدی): {report.decision_note}")
+        notify(accused, f"حساب تو موقتاً محدود شد (فقط کتاب می‌تونی بدی): {report.decision_note}", kind="report")
     elif decision == D.BAN:
         accused.status = User.Status.BANNED
         accused.is_active = False
     elif decision == D.REJECT_WARN_REPORTER:
         report.reporter.warnings += 1
         report.reporter.save(update_fields=["warnings"])
-        notify(report.reporter, f"گزارشت رد شد و اخطار گرفتی: {report.decision_note}")
+        notify(report.reporter, f"گزارشت رد شد و اخطار گرفتی: {report.decision_note}", kind="report")
 
     if decision in (D.WARN, D.RESTRICT, D.BAN):
         accused.save()
@@ -73,9 +73,9 @@ def apply_decision(report, admin_user):
             if confirmed >= settings.NO_SHOW_REPORTS_FOR_RESTRICTION:
                 _restrict(accused)
                 accused.save()
-                notify(accused, "به‌خاطر بدقولی‌های تکراری، حسابت موقتاً محدود شد.")
+                notify(accused, "به‌خاطر بدقولی‌های تکراری، حسابت موقتاً محدود شد.", kind="report")
 
-    notify(report.reporter, f"گزارشت درباره‌ی {report.target_label} بررسی و بسته شد.")
+    notify(report.reporter, f"گزارشت درباره‌ی {report.target_label} بررسی و بسته شد.", kind="report")
 
 
 def _restrict(user):

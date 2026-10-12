@@ -9,6 +9,7 @@ jdatetime==6.1.1
 pillow==12.3.0
 psycopg2-binary==2.9.13
 python-bidi==0.6.11
+pywebpush==2.5.0
 sentry-sdk==2.72.0
 sqlparse==0.6.0
 urllib3==2.8.0

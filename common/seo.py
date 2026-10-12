@@ -71,12 +71,25 @@ def offline(request):
     return render(request, "offline.html")
 
 
+def _asset_version():
+    """نسخه‌ی کش سرویس‌ورکر: آخرین زمان تغییر فایل‌های استاتیک اصلی (با هر دیپلوی تازه می‌شه)."""
+    from pathlib import Path
+
+    from django.conf import settings
+
+    files = [*Path(settings.BASE_DIR, "static", "css").glob("*.css"), *Path(settings.BASE_DIR, "static", "js").glob("*.js"),
+             Path(settings.BASE_DIR, "static", "sw.js")]
+    newest = max((f.stat().st_mtime for f in files if f.exists()), default=0)
+    return format(int(newest), "x")
+
+
 def service_worker(request):
     """باید از ریشه سرو بشه تا scope کل سایت باشه."""
     from django.contrib.staticfiles import finders
 
     with open(finders.find("sw.js"), encoding="utf-8") as f:
-        resp = HttpResponse(f.read(), content_type="application/javascript")
+        body = f.read().replace("__VERSION__", _asset_version())
+    resp = HttpResponse(body, content_type="application/javascript")
     resp["Service-Worker-Allowed"] = "/"
     resp["Cache-Control"] = "no-cache"
     return resp

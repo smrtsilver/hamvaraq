@@ -144,7 +144,7 @@ def send_message(request, pk):
         other, url = ex.other_party(request.user), f"/exchanges/{ex.pk}/"
         # پشت‌سرهم پیام دادن اعلان تکراری نمی‌سازه؛ شمارنده‌ی خوانده‌نشده‌ی چت کافیه
         if not Notification.objects.filter(user=other, url=url, is_read=False, text__startswith="پیام تازه").exists():
-            notify(other, f"پیام تازه از {request.user.username}", url)
+            notify(other, f"پیام تازه از {request.user.username}", url, kind="chat")
     if ajax:
         return JsonResponse({"ok": bool(text)})
     return redirect("exchanges:detail", pk)

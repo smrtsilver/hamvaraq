@@ -816,6 +816,7 @@ class LifecycleTests(Base):
         self.assertEqual(self.client.get("/staff/").status_code, 200)
 
 
+import json
 import shutil
 import tempfile
 
@@ -1477,3 +1478,188 @@ class LandingAndHomeTests(Base):
         self.assertFalse(r.context["local_is_city"])
         self.assertEqual([b.title for b in r.context["local"]], ["دیگران"])
         self.assertContains(r, "شهرت رو انتخاب کن")
+
+
+from unittest import mock
+
+from django.test import override_settings
+from notifications.models import NotificationPreference, PushSubscription
+from notifications import push as push_mod
+from notifications.services import notify
+
+VAPID = {"VAPID_PUBLIC_KEY": "BPub", "VAPID_PRIVATE_KEY": "priv", "VAPID_SUBJECT": "mailto:a@b.c"}
+SUB = {"endpoint": "https://push.example/abc", "keys": {"p256dh": "k" * 20, "auth": "a" * 8}}
+
+
+class WebPushTests(Base):
+    def subscribe(self, user, endpoint="https://push.example/abc"):
+        return PushSubscription.objects.create(user=user, endpoint=endpoint, p256dh="k" * 20, auth="a" * 8)
+
+    def test_subscribe_api_validation_and_limits(self):
+        url = reverse("notifications:push_subscribe")
+        post = lambda body: self.client.post(url, data=json.dumps(body), content_type="application/json")
+        self.assertEqual(post(SUB).status_code, 302)                          # لاگین لازمه
+        self.client.login(username="giver", password="x12345678")
+        with override_settings(VAPID_PUBLIC_KEY="", VAPID_PRIVATE_KEY=""):
+            self.assertEqual(post(SUB).status_code, 503)                     # بدون کلید
+        with override_settings(**VAPID):
+            self.assertEqual(post({"endpoint": "http://insecure", "keys": SUB["keys"]}).status_code, 400)   # فقط https
+            self.assertEqual(post({"endpoint": SUB["endpoint"], "keys": {}}).status_code, 400)
+            self.assertEqual(self.client.post(url, data="not json", content_type="application/json").status_code, 400)
+            r = post(SUB)
+            self.assertEqual((r.status_code, r.json()["devices"]), (200, 1))
+            post(SUB)                                                         # تکراری: رکورد دوم نمی‌سازه
+            self.assertEqual(PushSubscription.objects.count(), 1)
+            for i in range(12):
+                post({"endpoint": f"https://push.example/{i}", "keys": SUB["keys"]})
+            self.assertEqual(self.giver.push_subscriptions.count(), 10)      # سقف ۱۰ دستگاه
+
+    def test_endpoint_moves_to_new_user_on_same_device(self):
+        with override_settings(**VAPID):
+            self.client.login(username="giver", password="x12345678")
+            self.client.post(reverse("notifications:push_subscribe"), data=json.dumps(SUB), content_type="application/json")
+            self.client.login(username="taker", password="x12345678")
+            self.client.post(reverse("notifications:push_subscribe"), data=json.dumps(SUB), content_type="application/json")
+        self.assertEqual(PushSubscription.objects.get().user, self.taker)
+
+    def test_unsubscribe_only_own(self):
+        self.subscribe(self.giver)
+        self.client.login(username="taker", password="x12345678")
+        self.client.post(reverse("notifications:push_unsubscribe"), data=json.dumps({"endpoint": SUB["endpoint"]}), content_type="application/json")
+        self.assertEqual(PushSubscription.objects.count(), 1)                # مال کس دیگه‌ست
+        self.client.login(username="giver", password="x12345678")
+        self.client.post(reverse("notifications:push_unsubscribe"), data=json.dumps({"endpoint": SUB["endpoint"]}), content_type="application/json")
+        self.assertEqual(PushSubscription.objects.count(), 0)
+
+    @override_settings(**VAPID)
+    def test_notify_sends_push_after_commit_and_payload(self):
+        self.subscribe(self.giver)
+        with mock.patch("pywebpush.webpush") as wp, self.captureOnCommitCallbacks(execute=True):
+            notify(self.giver, "کسی کتابت رو خواست", "/exchanges/5/", kind="exchange")
+        self.assertEqual(wp.call_count, 1)
+        kw = wp.call_args.kwargs
+        body = json.loads(kw["data"])
+        self.assertEqual((body["title"], body["body"], body["url"]), ("مبادله‌ی کتاب", "کسی کتابت رو خواست", "/exchanges/5/"))
+        self.assertEqual(kw["vapid_claims"], {"sub": "mailto:a@b.c"})
+        self.assertEqual(kw["subscription_info"]["endpoint"], SUB["endpoint"])
+        self.assertIsNotNone(PushSubscription.objects.get().last_used_at)
+
+    @override_settings(**VAPID)
+    def test_push_respects_preferences_and_users_without_subscription(self):
+        self.subscribe(self.giver)
+        NotificationPreference.objects.create(user=self.giver, push_chat=False)
+        with mock.patch("pywebpush.webpush") as wp, self.captureOnCommitCallbacks(execute=True):
+            notify(self.giver, "پیام", "/x/", kind="chat")                  # خاموش
+            notify(self.taker, "بدون اشتراک", "/x/", kind="exchange")       # اشتراک نداره
+            notify(self.giver, "نشان", "/x/", kind="badge")                 # push_other روشنه
+        self.assertEqual(wp.call_count, 1)
+        self.assertEqual(Notification.objects.filter(user=self.giver).count(), 2)  # اعلان داخلی همیشه ساخته می‌شه
+
+    def test_not_configured_is_noop_but_in_site_notification_exists(self):
+        self.subscribe(self.giver)
+        with mock.patch("pywebpush.webpush") as wp, self.captureOnCommitCallbacks(execute=True):
+            notify(self.giver, "سلام", "/", kind="exchange")
+        wp.assert_not_called()
+        self.assertEqual(Notification.objects.count(), 1)
+
+    @override_settings(**VAPID)
+    def test_dead_subscription_deleted_and_failures_counted(self):
+        from pywebpush import WebPushException
+        gone = self.subscribe(self.giver, "https://push.example/gone")
+        flaky = self.subscribe(self.giver, "https://push.example/flaky")
+        def fake(subscription_info, **kw):
+            code = 410 if subscription_info["endpoint"].endswith("gone") else 500
+            raise WebPushException("x", response=mock.Mock(status_code=code))
+        with mock.patch("pywebpush.webpush", side_effect=fake):
+            self.assertEqual(push_mod.send_payload(self.giver.pk, {"title": "t"}), 0)
+        self.assertFalse(PushSubscription.objects.filter(pk=gone.pk).exists())
+        flaky.refresh_from_db(); self.assertEqual(flaky.failures, 1)
+        with mock.patch("pywebpush.webpush", side_effect=fake):
+            for _ in range(4):
+                push_mod.send_payload(self.giver.pk, {"title": "t"})
+        self.assertFalse(PushSubscription.objects.filter(pk=flaky.pk).exists())  # بعد از ۵ خطای پیاپی
+
+    @override_settings(**VAPID)
+    def test_network_error_does_not_break_request(self):
+        self.subscribe(self.giver)
+        with mock.patch("pywebpush.webpush", side_effect=OSError("down")):
+            self.assertEqual(push_mod.send_payload(self.giver.pk, {"title": "t"}), 0)
+        self.assertEqual(PushSubscription.objects.count(), 1)
+
+    @override_settings(**VAPID)
+    def test_exchange_events_create_exchange_kind_and_chat_kind_notifications(self):
+        self.subscribe(self.giver)
+        with mock.patch("pywebpush.webpush") as wp, self.captureOnCommitCallbacks(execute=True):
+            ex = services.request_book(self.book().pk, self.taker)
+        self.assertEqual(Notification.objects.get(user=self.giver).kind, "exchange")
+        self.assertEqual(wp.call_count, 1)
+        services.accept(ex.pk, self.giver)
+        self.client.login(username="taker", password="x12345678")
+        self.client.post(reverse("exchanges:message", args=[ex.pk]), {"text": "سلام"})
+        self.assertEqual(Notification.objects.filter(user=self.giver, kind="chat").count(), 1)
+
+    def test_settings_page_prefs_and_test_endpoint(self):
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get(reverse("notifications:settings"))
+        self.assertContains(r, "اعلان بیرون از سایت هنوز روی این سرور فعال نشده")
+        with override_settings(**VAPID):
+            r = self.client.get(reverse("notifications:settings"))
+            self.assertContains(r, "data-push-root")
+            self.assertContains(r, 'data-key="BPub"')
+            self.client.post(reverse("notifications:settings"), {"push_exchange": "on"})
+            prefs = NotificationPreference.objects.get(user=self.giver)
+            self.assertEqual((prefs.push_exchange, prefs.push_chat, prefs.push_other), (True, False, False))
+            self.subscribe(self.giver)
+            with mock.patch("pywebpush.webpush") as wp:
+                r = self.client.post(reverse("notifications:push_test"))
+            self.assertEqual((r.json()["sent"], wp.call_count), (1, 1))
+
+    def test_generate_vapid_keys_command(self):
+        import base64
+        from io import StringIO
+        from django.core.management import call_command
+        out = StringIO(); call_command("generate_vapid_keys", stdout=out)
+        lines = dict(l.split("=", 1) for l in out.getvalue().strip().splitlines())
+        pad = lambda s: s + "=" * (-len(s) % 4)
+        self.assertEqual(len(base64.urlsafe_b64decode(pad(lines["VAPID_PUBLIC_KEY"]))), 65)   # نقطه‌ی فشرده‌نشده‌ی P-256
+        self.assertEqual(len(base64.urlsafe_b64decode(pad(lines["VAPID_PRIVATE_KEY"]))), 32)
+        # کلید ساخته‌شده واقعاً با pywebpush سازگاره
+        from py_vapid import Vapid
+        Vapid.from_raw(lines["VAPID_PRIVATE_KEY"].encode())
+
+
+class PwaAssetTests(TestCase):
+    def test_manifest_complete_and_files_exist_with_right_sizes(self):
+        import json
+        from pathlib import Path
+        from PIL import Image
+        root = Path(__file__).resolve().parent.parent
+        m = json.loads((root / "static" / "manifest.json").read_text(encoding="utf-8"))
+        for key in ("id", "name", "short_name", "start_url", "scope", "display", "icons", "shortcuts", "screenshots", "theme_color", "lang", "dir"):
+            self.assertIn(key, m, key)
+        self.assertEqual((m["lang"], m["dir"], m["display"]), ("fa", "rtl", "standalone"))
+        self.assertTrue(any(i.get("purpose") == "maskable" for i in m["icons"]))
+        for item in [*m["icons"], *m["screenshots"]]:
+            path = root / item["src"].lstrip("/")
+            self.assertTrue(path.exists(), item["src"])
+            w, h = (int(x) for x in item["sizes"].split("x"))
+            self.assertEqual(Image.open(path).size, (w, h), item["src"])
+        self.assertGreaterEqual(len([s for s in m["screenshots"] if s["form_factor"] == "wide"]), 1)
+        self.assertGreaterEqual(len([s for s in m["screenshots"] if s["form_factor"] == "narrow"]), 1)
+        for sc in m["shortcuts"]:
+            self.assertTrue(sc["url"].startswith("/"))
+
+    def test_service_worker_versioned_and_has_push_handlers(self):
+        r = self.client.get("/sw.js")
+        body = r.content.decode()
+        self.assertNotIn("__VERSION__", body)
+        self.assertRegex(body, r'const VERSION = "[0-9a-f]+"')
+        for needle in ("addEventListener(\"push\"", "notificationclick", "SKIP_WAITING", "/offline/"):
+            self.assertIn(needle, body)
+        self.assertEqual(r["Service-Worker-Allowed"], "/")
+        self.assertIn("no-cache", r["Cache-Control"])
+
+    def test_pages_link_manifest_icons_and_theme_colors(self):
+        html = self.client.get("/").content.decode()
+        for needle in ('rel="manifest"', "apple-touch-icon", 'name="theme-color"', "pwa.js", "viewport-fit=cover"):
+            self.assertIn(needle, html)

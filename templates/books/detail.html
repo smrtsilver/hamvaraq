@@ -10,7 +10,7 @@
 <nav class="small muted" aria-label="مسیر" style="margin-bottom:18px"><a href="{% url 'books:list' %}">کتاب‌ها</a> / <a href="{% url 'city' book.city.pk %}">{{ book.city.name }}</a> / {{ book.title|truncatechars:40 }}</nav>
 <div class="book-hero">
     <div class="gallery" data-gallery>
-        <div class="cover">{% if book.cover %}<img src="{{ book.cover.url }}" alt="جلد کتاب «{{ book.title }}»" data-gallery-main width="680" height="900">{% else %}<span class="cover-fallback">{{ book.title }}</span>{% endif %}</div>
+        <div class="cover">{% if book.cover %}<img src="{{ book.cover.url }}" alt="جلد کتاب «{{ book.title }}»" data-gallery-main width="680" height="900" fetchpriority="high">{% else %}<span class="cover-fallback">{{ book.title }}</span>{% endif %}</div>
         {% if photos %}<div class="thumbs">
             <button type="button" data-gallery-thumb data-src="{{ book.cover.url }}" aria-current="true" aria-label="عکس اصلی"><img src="{{ book.thumb_url }}" alt=""></button>
             {% for p in photos %}<button type="button" data-gallery-thumb data-src="{{ p.image.url }}" aria-label="عکس {{ forloop.counter|add:1|fa }}"><img src="{{ p.image.url }}" alt="" loading="lazy"></button>{% endfor %}
@@ -26,7 +26,7 @@
         <p class="muted" style="font-size:var(--fs-lg)">{{ book.author }}</p>
 
         <div class="owner-card">
-            <a href="{% url 'accounts:profile' book.owner.username %}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
+            <a href="{% url 'accounts:profile' book.owner.username %}" aria-label="پروفایل {{ book.owner.username }}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
             <div class="grow">
                 <strong><a href="{% url 'accounts:profile' book.owner.username %}" style="color:inherit">{{ book.owner.username }}</a></strong>
                 <div>{% load trust_tags %}{% reputation_badge book.owner %}</div>

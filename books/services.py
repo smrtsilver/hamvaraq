@@ -1,7 +1,11 @@
 from common.text import normalize, work_key
-from notifications.services import notify
+from notifications.services import notify as _notify
 
 from .models import Book, Wishlist
+
+
+def notify(user, text, url=""):
+    return _notify(user, text, url, kind="wishlist")
 
 
 def notify_wishlists(book):

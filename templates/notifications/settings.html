@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}تنظیمات اعلان | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="medium">
+    <div class="page-head"><div><h1>تنظیمات اعلان</h1><p>اعلان‌های داخل سایت همیشه فعالن. اینجا اعلان روی خود دستگاهت رو (حتی وقتی سایت بسته‌ست) کنترل می‌کنی.</p></div>
+        <a class="btn btn-ghost btn-sm" href="{% url 'notifications:list' %}">{% include "components/icon.html" with name="bell" %} اعلان‌ها</a></div>
+
+    <section class="card" data-push-root data-key="{{ vapid_key }}" data-enabled="{{ push_enabled|yesno:'1,0' }}"
+             data-subscribe-url="{% url 'notifications:push_subscribe' %}" data-unsubscribe-url="{% url 'notifications:push_unsubscribe' %}" data-test-url="{% url 'notifications:push_test' %}">
+        <h3>{% include "components/icon.html" with name="bell" %} اعلان روی این دستگاه</h3>
+        {% if push_enabled %}
+        <p class="muted" data-push-status>در حال بررسی…</p>
+        <div class="cluster">
+            <button type="button" class="btn" data-push-enable hidden>فعال‌سازی اعلان</button>
+            <button type="button" class="btn btn-secondary" data-push-disable hidden>غیرفعال‌سازی روی این دستگاه</button>
+            <button type="button" class="btn btn-ghost" data-push-test hidden>ارسال اعلان آزمایشی</button>
+        </div>
+        <p class="hint">{{ devices|fa }} دستگاه به حسابت وصله. روی آیفون، اول هم‌ورق رو به صفحه‌ی اصلی اضافه کن (دکمه‌ی اشتراک‌گذاری ← «افزودن به صفحه‌ی اصلی»).</p>
+        {% else %}<div class="alert"><p>اعلان بیرون از سایت هنوز روی این سرور فعال نشده؛ فعلاً فقط اعلان‌های داخل سایت کار می‌کنن.</p></div>{% endif %}
+    </section>
+
+    <form method="post" class="card" style="margin-top:16px" novalidate>{% csrf_token %}
+        <h3>چه اعلان‌هایی برام بیاد؟</h3>
+        {% include "components/form.html" %}
+        <button class="btn">ذخیره</button>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/push.js' %}" defer></script>{% endblock %}

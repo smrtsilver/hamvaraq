@@ -66,6 +66,7 @@
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
                         <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
+                        <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %} تنظیمات اعلان</a>
                         {% if user.is_staff %}<hr><a href="{% url 'staff_dashboard' %}">{% include "components/icon.html" with name="sparkle" %} داشبورد مدیریت</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
                         <hr>
                         <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>{% include "components/icon.html" with name="logout" %} خروج</button></form>
@@ -97,13 +98,13 @@
                     {% if site.contact_email %}<a href="mailto:{{ site.contact_email }}" aria-label="ایمیل">{% include "components/icon.html" with name="link" %}</a>{% endif %}
                 </div>
             </div>
-            <div><h4>کاوش</h4><ul>
+            <div><p class="footer-title">کاوش</p><ul>
                 <li><a href="{% url 'books:list' %}">کتاب‌ها</a></li><li><a href="{% url 'cities' %}">شهرها و استان‌ها</a></li>
                 <li><a href="{% url 'challenges:list' %}">چالش‌ها</a></li></ul></div>
-            <div><h4>راهنما</h4><ul>
+            <div><p class="footer-title">راهنما</p><ul>
                 <li><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></li><li><a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></li>
                 <li><a href="{% url 'rules' %}">قوانین</a></li></ul></div>
-            <div><h4>حساب</h4><ul>
+            <div><p class="footer-title">حساب</p><ul>
                 {% if user.is_authenticated %}<li><a href="{% url 'accounts:profile' user.username %}">پروفایل من</a></li><li><a href="{% url 'books:create' %}">ثبت کتاب</a></li>
                 {% else %}<li><a href="{% url 'accounts:signup' %}">هم‌ورق شو</a></li><li><a href="{% url 'accounts:login' %}">ورود</a></li>{% endif %}</ul></div>
         </div>
@@ -114,7 +115,7 @@
 <nav class="bottom-nav" aria-label="ناوبری سریع">
     <a href="{% url 'home' %}"{% if name == 'home' %} aria-current="page"{% endif %}>{% include "components/icon.html" with name="home" %}خانه</a>
     <a href="{% url 'books:list' %}"{% if ns == 'books' and name == 'list' or ns == 'books' and name == 'detail' %} aria-current="page"{% endif %}>{% include "components/icon.html" with name="book" %}کتاب‌ها</a>
-    <a class="fab" href="{% if user.is_authenticated %}{% url 'books:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}" aria-label="{% if user.is_authenticated %}ثبت کتاب{% else %}هم‌ورق شو{% endif %}"><span class="fab-c">{% include "components/icon.html" with name="plus" %}</span><em>{% if user.is_authenticated %}ثبت{% else %}شروع{% endif %}</em></a>
+    <a class="fab" href="{% if user.is_authenticated %}{% url 'books:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}" aria-label="{% if user.is_authenticated %}ثبت کتاب{% else %}ثبت‌نام{% endif %}"><span class="fab-c">{% include "components/icon.html" with name="plus" %}</span><em>{% if user.is_authenticated %}ثبت کتاب{% else %}ثبت‌نام{% endif %}</em></a>
     {% if user.is_authenticated %}
     <a href="{% url 'exchanges:list' %}"{% if ns == 'exchanges' %} aria-current="page"{% endif %}>{% include "components/icon.html" with name="swap" %}مبادله‌ها{% if unread_messages %}<span class="dot">{{ unread_messages|fa }}</span>{% endif %}</a>
     <a href="{% url 'accounts:profile' user.username %}"{% if ns == 'accounts' and name == 'profile' %} aria-current="page"{% endif %}>{% include "components/icon.html" with name="user" %}من</a>
