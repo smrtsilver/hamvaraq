@@ -275,6 +275,30 @@ class IsbnAndBulkTests(Base):
         self.assertEqual(r, {"isbn": "9780140328721", "title": "Fantastic Mr Fox", "author": "Roald Dahl"})
         self.assertEqual(m.call_count, 1)
 
+    def test_lookup_uses_local_books_first(self):
+        from unittest import mock
+        from books import isbn
+        Book.objects.create(owner=self.giver, title="بوف کور", author="صادق هدایت", isbn="9789643051092", city=self.tehran)
+        with mock.patch("urllib.request.urlopen") as m:
+            r = isbn.lookup("۹۷۸-۹۶۴-۳۰۵۱-۰۹۲")
+        self.assertEqual(r, {"isbn": "9789643051092", "title": "بوف کور", "author": "صادق هدایت"})
+        m.assert_not_called()
+
+    def test_lookup_falls_back_to_google(self):
+        import io, json, urllib.error
+        from unittest import mock
+        from django.core.cache import cache
+        from books import isbn
+        cache.clear()
+        g = json.dumps({"items": [{"volumeInfo": {"title": "کلیدر", "authors": ["دولت‌آبادی"]}}]})
+        with mock.patch("urllib.request.urlopen", side_effect=[io.BytesIO(b"{}"), io.BytesIO(g.encode())]):
+            r = isbn.lookup("9789643051092")
+        self.assertEqual(r["title"], "کلیدر")
+        with mock.patch("urllib.request.urlopen", side_effect=[urllib.error.URLError("x"), io.BytesIO(b"{}")]):
+            cache.clear()
+            self.assertIsNone(isbn.lookup("9789643051099"))
+            self.assertIsNone(cache.get("isbn:9789643051099"))  # با خطای شبکه نتیجه‌ی منفی کش نمی‌شه
+
     def test_lookup_network_error_is_none(self):
         import urllib.error
         from unittest import mock
