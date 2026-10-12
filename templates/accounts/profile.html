@@ -9,6 +9,11 @@
     <p>{% for ub in badges %}<span class="pill pill-green" title="{{ ub.badge.description }}">{{ ub.badge.name }}</span> {% endfor %}</p>
     {% if user.is_authenticated and user != owner %}<a class="muted" href="{% url 'trust:report' 'user' owner.pk %}">گزارش کاربر</a>{% endif %}
 </div>
-<h2>قفسه</h2>
-{% include "books/_grid.html" %}
+<h2>قفسه‌ی {{ owner.username }}</h2>
+{% if books %}<div class="shelf">{% for b in books %}
+    <a class="spine spine-{{ b.pk|add:0 }}" href="{% url 'books:detail' b.pk %}" title="{{ b.title }} — {{ b.author }}">
+        {% if b.cover %}<img src="{{ b.cover.url }}" alt="{{ b.title }}" loading="lazy">{% else %}<span class="spine-title">{{ b.title|truncatechars:28 }}</span>{% endif %}
+        {% if b.status == 'exchanged' %}<small class="spine-tag">در دست</small>{% endif %}
+    </a>{% endfor %}
+</div>{% else %}<p class="muted">قفسه خالیه.</p>{% endif %}
 {% endblock %}

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Book, BookJourney, BookNote, Category, Wishlist
+from .models import Book, BookJourney, BookNote, Category, Review, Wishlist
 
 
 @admin.register(Book)
@@ -14,3 +14,4 @@ admin.site.register(Category)
 admin.site.register(Wishlist)
 admin.site.register(BookNote)
 admin.site.register(BookJourney)
+admin.site.register(Review)

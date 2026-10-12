@@ -15,6 +15,7 @@ urlpatterns = [
     path("books/", include("books.urls")),
     path("exchanges/", include("exchanges.urls")),
     path("trust/", include("trust.urls")),
+    path("challenges/", include("challenges.urls")),
     path("notifications/", include("notifications.urls")),
 ]
 

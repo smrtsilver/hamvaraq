@@ -334,3 +334,62 @@ class CityPageTests(Base):
         r = self.client.get(reverse("cities"))
         self.assertEqual([c.name for c in r.context["cities"]], ["اصفهان"])
         self.assertEqual(self.client.get(reverse("city", args=[9999])).status_code, 404)
+
+
+class ReviewShelfChallengeTests(Base):
+    def test_only_receiver_can_review_and_edit(self):
+        ex = self.complete()
+        url = reverse("books:review", args=[ex.book.pk])
+        self.client.login(username="giver", password="x12345678")  # دهنده نمی‌تونه
+        self.client.post(url, {"stars": 5})
+        self.assertEqual(ex.book.reviews.count(), 0)
+        self.client.login(username="taker", password="x12345678")
+        self.client.post(url, {"stars": 4, "text": "عالی"})
+        self.client.post(url, {"stars": 2, "text": "نه"})  # ویرایش، نه رکورد دوم
+        r = ex.book.reviews.get()
+        self.assertEqual((r.stars, r.text), (2, "نه"))
+        self.client.post(url, {"stars": 9})
+        self.assertEqual(ex.book.reviews.get().stars, 2)
+        page = self.client.get(reverse("books:detail", args=[ex.book.pk]))
+        self.assertEqual(page.context["rating"], {"avg": 2.0, "n": 1})
+
+    def test_shelf_shows_owned_hides_reserved(self):
+        self.book(title="موجود")
+        self.book(title="رزرو", status=Book.Status.RESERVED)
+        r = self.client.get(reverse("accounts:profile", args=["giver"]))
+        self.assertEqual([b.title for b in r.context["books"]], ["موجود"])
+        ex = self.complete(self.book(title="رفت"))
+        r = self.client.get(reverse("accounts:profile", args=["taker"]))
+        self.assertEqual([b.title for b in r.context["books"]], ["رفت"])  # گرفته و هنوز نذاشته
+
+    def _challenge(self, **kw):
+        from challenges.models import Challenge
+        now = timezone.now()
+        d = dict(title="سه کتاب", kind="give", target=2, starts_at=now - timedelta(days=1), ends_at=now + timedelta(days=30))
+        d.update(kw)
+        return Challenge.objects.create(**d)
+
+    def test_challenge_progress_and_badge(self):
+        c = self._challenge()
+        self.complete(self.book(title="1"))
+        self.assertEqual(c.progress(self.giver), 1)
+        self.assertFalse(self.giver.user_badges.filter(badge__code=c.badge_code).exists())
+        self.taker.refresh_from_db(); self.taker.points = 1; self.taker.save()
+        self.complete(self.book(title="2"))
+        self.assertTrue(self.giver.user_badges.filter(badge__code=c.badge_code).exists())
+        self.assertEqual(c.progress(self.taker), 0)  # نوع «دادن»
+
+    def test_challenge_kinds_and_window(self):
+        recv = self._challenge(kind="receive", target=1)
+        old = self._challenge(title="قدیمی", starts_at=timezone.now() - timedelta(days=60), ends_at=timezone.now() - timedelta(days=30))
+        self.complete()
+        self.assertEqual(recv.progress(self.taker), 1)
+        self.assertEqual(old.progress(self.giver), 0)
+        self.assertFalse(self.giver.user_badges.filter(badge__code=old.badge_code).exists())
+
+    def test_challenge_page(self):
+        self._challenge()
+        self.assertEqual(self.client.get(reverse("challenges:list")).status_code, 200)
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get(reverse("challenges:list"))
+        self.assertEqual(r.context["items"][0]["percent"], 0)

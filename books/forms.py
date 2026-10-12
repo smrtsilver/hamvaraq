@@ -1,7 +1,7 @@
 from django import forms
 
 from .isbn import normalize as isbn_normalize
-from .models import Book, Category
+from .models import Book, Category, Review
 from common.models import City
 
 
@@ -79,3 +79,10 @@ class BulkRowForm(forms.Form):
         if filled and not (data.get("title") and data.get("author")):
             raise forms.ValidationError("برای هر ردیف، عنوان و نویسنده لازمه.")
         return data
+
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ["stars", "text"]
+        widgets = {"text": forms.Textarea(attrs={"rows": 3})}

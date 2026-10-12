@@ -90,3 +90,23 @@ class BookJourney(models.Model):
         ordering = ["date"]
         verbose_name = "مسیر کتاب"
         verbose_name_plural = "مسیر کتاب‌ها"
+
+
+class Review(models.Model):
+    """نقد و ستاره؛ فقط کسی که کتاب رو از طریق یه مبادله‌ی کامل‌شده گرفته می‌تونه بنویسه."""
+
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews")
+    stars = models.PositiveSmallIntegerField(choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="ستاره")
+    text = models.TextField(blank=True, max_length=1500, verbose_name="نقد")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["book", "user"], name="one_review_per_user_book"),
+            models.CheckConstraint(condition=models.Q(stars__gte=1, stars__lte=5), name="review_stars_1_5"),
+        ]
+        ordering = ["-created_at"]
+        verbose_name = "نقد"
+        verbose_name_plural = "نقدها"

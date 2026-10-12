@@ -23,10 +23,10 @@ def signup(request):
 
 def profile(request, username):
     owner = get_object_or_404(User, username=username)
-    books = owner.books.filter(status=Book.Status.AVAILABLE).select_related("city")
+    shelf = owner.books.exclude(status=Book.Status.RESERVED).select_related("city").order_by("-created_at")
     return render(request, "accounts/profile.html", {
         "owner": owner,
-        "books": books,
+        "books": shelf,
         "badges": owner.user_badges.select_related("badge"),
     })
 

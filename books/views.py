@@ -6,14 +6,15 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.db.models import Avg, Count
 from django.db.models import Q
 
 from accounts.badges import check_badges
 from exchanges.models import Exchange
 
 from . import isbn as isbn_lookup
-from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm
-from .models import Book, Wishlist
+from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, ReviewForm
+from .models import Book, Review, Wishlist
 from .services import notify_wishlists
 
 
@@ -42,8 +43,14 @@ def book_detail(request, pk):
     my_request = None
     if user.is_authenticated:
         my_request = Exchange.objects.filter(book=book, requester=user, status__in=Exchange.ACTIVE).first()
+    can_review = user.is_authenticated and _can_review(book, user)
+    my_review = book.reviews.filter(user=user).first() if user.is_authenticated else None
     ctx = {
         "book": book,
+        "reviews": book.reviews.select_related("user"),
+        "rating": book.reviews.aggregate(avg=Avg("stars"), n=Count("id")),
+        "review_form": ReviewForm(instance=my_review) if can_review else None,
+        "my_review": my_review,
         "notes": book.notes.select_related("author"),
         "journey": book.journey.select_related("from_city", "to_city"),
         "is_owner": user.is_authenticated and book.owner_id == user.pk,
@@ -165,3 +172,26 @@ def isbn_view(request):
     if not result:
         return JsonResponse({"error": "not_found"}, status=404)
     return JsonResponse(result)
+
+
+def _can_review(book, user):
+    """فقط گیرنده‌ی کتاب در یه مبادله‌ی کامل‌شده (نه صاحب اولیه) نقد می‌نویسه."""
+    return Exchange.objects.filter(book=book, requester=user, status=Exchange.Status.COMPLETED).exists()
+
+
+@login_required
+@require_POST
+def review_save(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    if not _can_review(book, request.user):
+        messages.error(request, "فقط کسی که این کتاب رو از طریق هم‌ورق گرفته می‌تونه نقد بنویسه.")
+        return redirect("books:detail", pk)
+    form = ReviewForm(request.POST, instance=Review.objects.filter(book=book, user=request.user).first())
+    if form.is_valid():
+        review = form.save(commit=False)
+        review.book, review.user = book, request.user
+        review.save()
+        messages.success(request, "نقدت ثبت شد.")
+    else:
+        messages.error(request, "ستاره‌ی ۱ تا ۵ رو انتخاب کن.")
+    return redirect("books:detail", pk)

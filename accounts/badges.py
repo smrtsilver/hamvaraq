@@ -43,4 +43,25 @@ def check_badges(user):
         if badge:
             new.append(badge)
             notify(user, f"نشان «{badge.name}» رو گرفتی!", f"/accounts/u/{user.username}/")
+    new += _challenge_badges(user)
+    return new
+
+
+def _challenge_badges(user):
+    """چالشی که کاربر تو بازه‌اش به هدف رسیده نشان مخصوص خودش رو می‌گیره."""
+    from django.utils import timezone
+
+    from challenges.models import Challenge
+    from notifications.services import notify
+
+    now = timezone.now()
+    new = []
+    for c in Challenge.objects.filter(is_active=True, starts_at__lte=now, ends_at__gte=now):
+        if c.target and c.progress(user) >= c.target:
+            badge, _ = Badge.objects.get_or_create(
+                code=c.badge_code, defaults={"name": f"چالش: {c.title}", "description": c.description or c.title})
+            _, created = UserBadge.objects.get_or_create(user=user, badge=badge)
+            if created:
+                new.append(badge)
+                notify(user, f"چالش «{c.title}» رو کامل کردی و نشانش رو گرفتی!", "/challenges/")
     return new

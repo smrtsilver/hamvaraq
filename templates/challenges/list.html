@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}چالش‌ها | هم‌ورق{% endblock %}
+{% block content %}
+<h1>چالش‌های فصلی</h1>
+{% for i in items %}
+<div class="card">
+    <h3>{{ i.c.title }} {% if i.complete %}<span class="pill pill-green">انجام شد ✓</span>{% elif i.upcoming %}<span class="pill">به‌زودی</span>{% endif %}</h3>
+    <p class="muted">{{ i.c.description }} · {{ i.c.get_kind_display }} · تا {{ i.c.ends_at|date:"Y/m/d" }}</p>
+    {% if user.is_authenticated %}<div class="progress"><i style="width:{{ i.percent }}%"></i></div>
+    <p class="muted">{{ i.done }} از {{ i.c.target }}</p>{% else %}<p class="muted">هدف: {{ i.c.target }} مبادله — <a href="{% url 'accounts:login' %}">وارد شو</a></p>{% endif %}
+</div>
+{% empty %}<p class="muted">الان چالش فعالی نیست.</p>{% endfor %}
+{% endblock %}

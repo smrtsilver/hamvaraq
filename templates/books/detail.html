@@ -30,6 +30,12 @@
     </div>
 </div>
 
+<h2>نقد و ستاره{% if rating.n %} <span class="pill pill-green">{{ rating.avg|floatformat:1 }} از ۵ · {{ rating.n }} نقد</span>{% endif %}</h2>
+{% for r in reviews %}<div class="card"><span class="stars" aria-label="{{ r.stars }} ستاره">{% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
+    <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a>{% if r.text %}<p>{{ r.text|linebreaksbr }}</p>{% endif %}</div>
+{% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}
+{% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card form"><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{{ review_form.as_div }}<button class="btn btn-sm">ثبت</button></form>{% endif %}
+
 {% if notes %}<h2>یادداشت صاحبان قبلی</h2>
 {% for n in notes %}<blockquote>«{{ n.text }}» <span class="muted">— {{ n.author.username }}</span></blockquote>{% endfor %}{% endif %}
 
