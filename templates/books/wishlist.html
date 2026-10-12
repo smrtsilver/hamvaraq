@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>لیست آرزو</h1>
+<form method="post" class="inline-form">{% csrf_token %}
+    <input name="text" maxlength="200" placeholder="عنوان، نویسنده یا شابک" required><button class="btn btn-sm">افزودن</button></form>
+<ul class="list">{% for w in wishes %}
+    <li>{{ w.text }}
+        <form method="post" action="{% url 'books:wishlist_delete' w.pk %}" class="inline">{% csrf_token %}<button class="link">حذف</button></form></li>
+{% empty %}<li class="muted">چیزی تو لیست نیست. وقتی کتابی که می‌خوای ثبت بشه خبرت می‌کنیم.</li>{% endfor %}</ul>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>اعلان‌ها</h1>
+<ul class="list">{% for n in items %}
+    <li>{% if n.url %}<a href="{{ n.url }}">{{ n.text }}</a>{% else %}{{ n.text }}{% endif %} <small class="muted">{{ n.created_at|timesince }} پیش</small></li>
+{% empty %}<li class="muted">اعلانی نداری.</li>{% endfor %}</ul>
+{% endblock %}

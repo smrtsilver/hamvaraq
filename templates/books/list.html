@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>کتاب‌ها</h1>
+<form method="get" class="filters">{{ form.as_div }}<button class="btn btn-sm">فیلتر</button></form>
+{% include "books/_grid.html" with books=page %}
+<div class="pager">
+    {% if page.has_previous %}<a href="?{{ qs }}&page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+    <span>صفحه {{ page.number }} از {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?{{ qs }}&page={{ page.next_page_number }}">بعدی</a>{% endif %}
+</div>
+{% endblock %}

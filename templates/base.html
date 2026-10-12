@@ -1,0 +1,39 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب{% endblock %}</title>
+    <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+<header class="site-header">
+    <div class="container bar">
+        <a class="logo" href="{% url 'home' %}">
+            <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 52C8 22 26 8 54 8c0 28-14 46-46 44z" fill="#2f855a"/><path d="M56 12C56 40 38 56 10 56" fill="none" stroke="#fff" stroke-width="3"/></svg>
+            هم‌ورق
+        </a>
+        <nav>
+            <a href="{% url 'books:list' %}">کتاب‌ها</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'books:create' %}">ثبت کتاب</a>
+                <a href="{% url 'exchanges:list' %}">مبادله‌ها</a>
+                <a href="{% url 'books:wishlist' %}">آرزوها</a>
+                <a href="{% url 'notifications:list' %}">اعلان‌ها{% if unread_notifications %} <span class="pill">{{ unread_notifications }}</span>{% endif %}</a>
+                <a href="{% url 'accounts:profile' user.username %}">{{ user.username }} <span class="pill pill-green">{{ user.points }} امتیاز</span></a>
+                <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}<button class="link">خروج</button></form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">ورود</a>
+                <a class="btn btn-sm" href="{% url 'accounts:signup' %}">ثبت‌نام</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+<main class="container">
+    {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+</main>
+<footer class="container foot">هم‌ورق — کتاب بده، کتاب بگیر؛ بدون پول.</footer>
+</body>
+</html>

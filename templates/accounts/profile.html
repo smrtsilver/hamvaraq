@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load trust_tags %}
+{% block title %}{{ owner.username }} | هم‌ورق{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>{{ owner.username }} {% reputation_badge owner %}</h1>
+    <p class="muted">{% if owner.city %}{{ owner.city }} · {% endif %}عضو از {{ owner.date_joined|date:"Y/m/d" }}</p>
+    {% if owner.is_restricted %}<p class="alert alert-warning">این کاربر موقتاً فقط می‌تونه کتاب بده.</p>{% endif %}
+    <p>{% for ub in badges %}<span class="pill pill-green" title="{{ ub.badge.description }}">{{ ub.badge.name }}</span> {% endfor %}</p>
+    {% if user.is_authenticated and user != owner %}<a class="muted" href="{% url 'trust:report' 'user' owner.pk %}">گزارش کاربر</a>{% endif %}
+</div>
+<h2>قفسه</h2>
+{% include "books/_grid.html" %}
+{% endblock %}

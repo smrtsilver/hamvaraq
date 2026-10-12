@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>کتاب‌های من</h1>
+<p><a class="btn btn-sm" href="{% url 'books:create' %}">ثبت کتاب</a></p>
+{% include "books/_grid.html" with books=books %}
+{% endblock %}

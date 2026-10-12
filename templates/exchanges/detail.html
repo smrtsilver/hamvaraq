@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load trust_tags %}
+{% block content %}
+<h1>{{ ex.book.title }} <span class="pill">{{ ex.get_status_display }}</span></h1>
+<p>{% if is_owner %}درخواست‌دهنده{% else %}صاحب کتاب{% endif %}:
+    <a href="{% url 'accounts:profile' other.username %}">{{ other.username }}</a> {% reputation_badge other %}
+    · <a class="muted" href="{% url 'trust:report' 'user' other.pk %}">گزارش</a></p>
+
+<div class="actions">
+{% if ex.status == 'requested' %}
+    {% if is_owner %}
+        <form method="post" action="{% url 'exchanges:accept' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">تأیید</button></form>
+        <form method="post" action="{% url 'exchanges:reject' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-outline">رد</button></form>
+    {% else %}<p class="muted">منتظر تأیید صاحب کتاب…</p>
+        <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-outline">لغو درخواست</button></form>{% endif %}
+{% elif ex.status == 'accepted' %}
+    <p>درباره‌ی نحوه‌ی تحویل (حضوری یا پست) تو چت زیر هماهنگ کنید و بعد از تحویل هر دو نفر تأیید کنید.</p>
+    {% if is_owner and ex.owner_confirmed or not is_owner and ex.requester_confirmed %}<p class="muted">تأییدت ثبت شده؛ منتظر طرف مقابل.</p>
+    {% else %}<form method="post" action="{% url 'exchanges:confirm' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">تحویل انجام شد</button></form>{% endif %}
+    <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline" onsubmit="return confirm('لغو بشه؟')">{% csrf_token %}<button class="btn btn-outline">لغو مبادله</button></form>
+{% endif %}
+</div>
+
+{% if ex.status == 'completed' %}
+    <section class="card">
+        <h3>رأی به {{ other.username }}</h3>
+        {% if my_vote %}<p>رأی فعلی: {% if my_vote.like %}👍 لایک{% else %}👎 دیسلایک — {{ my_vote.get_reason_display }}{% endif %}</p>{% endif %}
+        {% if vote_form %}
+        <form method="post" action="{% url 'trust:vote' ex.pk %}" class="form">{% csrf_token %}{{ vote_form.as_div }}<button class="btn btn-sm">ثبت رأی</button></form>
+        <p class="muted">تا ۲۴ ساعت بعد از ثبت می‌تونی ویرایشش کنی.</p>
+        {% else %}<p class="muted">مهلت ویرایش رأی تموم شده.</p>{% endif %}
+    </section>
+    {% if can_note %}
+    <section class="card"><h3>یادداشت برای خواننده‌ی بعدی</h3>
+        <form method="post" action="{% url 'exchanges:note' ex.pk %}" class="form">{% csrf_token %}
+            <input name="text" maxlength="500" placeholder="یه جمله تو کتاب بنویس…" required><button class="btn btn-sm">ثبت</button></form></section>
+    {% endif %}
+{% endif %}
+
+{% if chat_open %}
+<section class="chat card"><h3>چت</h3>
+    {% for m in chat %}
+    <div class="msg {% if m.sender == user %}mine{% endif %}"><b>{{ m.sender.username }}</b> {{ m.text|linebreaksbr }}
+        <small class="muted">{{ m.created_at|date:"H:i Y/m/d" }}</small>
+        {% if m.sender != user %}<a class="muted" href="{% url 'trust:report' 'message' m.pk %}">گزارش</a>{% endif %}</div>
+    {% empty %}<p class="muted">هنوز پیامی نیست.</p>{% endfor %}
+    <form method="post" action="{% url 'exchanges:message' ex.pk %}" class="inline-form">{% csrf_token %}
+        <input name="text" maxlength="1000" required placeholder="پیام…"><button class="btn btn-sm">ارسال</button></form>
+</section>
+{% endif %}
+{% endblock %}
