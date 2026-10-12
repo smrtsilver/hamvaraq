@@ -13,6 +13,7 @@ from trust.services import can_edit_vote
 from common.throttle import throttle
 
 from . import chat, services
+from .forms import DisputeForm
 from .models import Exchange, Message
 
 
@@ -66,6 +67,19 @@ agree_meeting = _action(services.agree_meeting, "نقطه‌ی تحویل تأی
 
 
 @login_required
+@throttle("dispute", 5, 86400, by="user")
+@require_POST
+def dispute(request, pk):
+    form = DisputeForm(request.POST)
+    if form.is_valid() and _run(request, services.open_dispute, pk, request.user,
+                                form.cleaned_data["reason"], form.cleaned_data["description"]):
+        messages.success(request, "اختلاف ثبت شد؛ مدیریت بررسی می‌کنه.")
+    elif not form.is_valid():
+        messages.error(request, "دلیل مشکل رو انتخاب کن.")
+    return redirect("exchanges:detail", pk)
+
+
+@login_required
 def exchange_list(request):
     qs = chat.with_unread(
         Exchange.objects.filter(Q(owner=request.user) | Q(requester=request.user)).select_related("book", "owner", "requester"),
@@ -93,6 +107,7 @@ def exchange_detail(request, pk):
         "chat": chat_messages,
         "chat_open": ex.status in (*Exchange.ACTIVE, Exchange.Status.COMPLETED),
         "my_vote": my_vote,
+        "dispute_form": DisputeForm() if ex.status == Exchange.Status.ACCEPTED and not ex.disputed_at else None,
         "meeting_options": services.meeting_options(ex) if ex.status == Exchange.Status.ACCEPTED else [],
         "vote_form": VoteForm(instance=my_vote) if ex.status == Exchange.Status.COMPLETED and (not my_vote or can_edit_vote(my_vote)) else None,
         "can_note": ex.status == Exchange.Status.COMPLETED and ex.owner_id == request.user.pk and not hasattr(ex, "note"),

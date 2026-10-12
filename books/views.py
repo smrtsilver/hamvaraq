@@ -16,7 +16,7 @@ from exchanges.models import Exchange
 from . import card as book_card
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, ReviewForm
-from .models import Book, Review, Wishlist
+from .models import Book, BookPhoto, Review, Wishlist
 from .services import notify_wishlists, similar_books
 
 
@@ -52,6 +52,7 @@ def book_detail(request, pk):
     ctx = {
         "book": book,
         "ld_json": _book_ld(book, request),
+        "photos": book.photos.all(),
         "reviews": book.reviews.select_related("user"),
         "rating": book.reviews.aggregate(avg=Avg("stars"), n=Count("id")),
         "review_form": ReviewForm(instance=my_review) if can_review else None,
@@ -76,6 +77,7 @@ def book_create(request):
         book = form.save(commit=False)
         book.owner = request.user
         book.save()
+        form.save_extra_photos(book)
         notify_wishlists(book)
         check_badges(request.user)
         messages.success(request, "کتاب ثبت شد.")
@@ -229,3 +231,14 @@ def _book_ld(book, request):
     if book.cover:
         data["image"] = request.build_absolute_uri(book.cover.url)
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
+
+
+@login_required
+@require_POST
+def photo_delete(request, pk):
+    photo = get_object_or_404(BookPhoto.objects.select_related("book"), pk=pk, book__owner=request.user)
+    book_pk = photo.book_id
+    photo.image.delete(save=False)
+    photo.delete()
+    messages.success(request, "عکس حذف شد.")
+    return redirect("books:edit", book_pk)

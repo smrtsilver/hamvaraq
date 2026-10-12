@@ -1,7 +1,7 @@
 <div class="grid">
 {% for b in books %}
     <a class="book" href="{% url 'books:detail' b.pk %}">
-        {% if b.cover %}<img src="{{ b.cover.url }}" alt="" loading="lazy">{% else %}<div class="nocover">📖</div>{% endif %}
+        {% if b.cover %}<img src="{{ b.thumb_url }}" alt="" loading="lazy">{% else %}<div class="nocover">📖</div>{% endif %}
         <strong>{{ b.title }}</strong>
         <span class="muted">{{ b.author }}</span>
         <span class="muted">{{ b.city }} · {{ b.get_condition_display }}</span>

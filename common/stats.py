@@ -92,6 +92,7 @@ def collect(now=None):
             "completed7": ex.filter(status=Exchange.Status.COMPLETED, completed_at__gte=d7).count(),
             "completed30": ex.filter(status=Exchange.Status.COMPLETED, completed_at__gte=d30).count(),
             "stale_requested": stale_requested.count(), "stale_accepted": stale_accepted.count(),
+            "disputed": ex.filter(status=Exchange.Status.ACCEPTED, disputed_at__isnull=False).count(),
         },
         "reports": {
             "open": open_reports.filter(status=Report.Status.OPEN).count(),

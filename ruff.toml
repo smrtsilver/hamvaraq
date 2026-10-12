@@ -1,0 +1,6 @@
+# فقط خطاهای واقعی (pyflakes + سینتکس)؛ سبک کدنویسی رو دعوا نمی‌کنیم
+line-length = 140
+extend-exclude = ["migrations"]
+
+[lint]
+select = ["E9", "F"]

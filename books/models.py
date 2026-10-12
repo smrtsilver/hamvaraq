@@ -34,6 +34,7 @@ class Book(models.Model):
     condition = models.CharField(max_length=8, choices=Condition.choices, default=Condition.USED, verbose_name="وضعیت فیزیکی")
     city = models.ForeignKey("common.City", on_delete=models.PROTECT, related_name="books", verbose_name="شهر")
     cover = models.ImageField(upload_to="books/%Y/%m/", blank=True, verbose_name="عکس")
+    cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False)
     description = models.TextField(blank=True, verbose_name="توضیحات")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -49,18 +50,48 @@ class Book(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def thumb_url(self):
+        """بند‌انگشتی برای گرید؛ اگه نداشت (کتاب قدیمی) خود عکس."""
+        if self.cover_thumb:
+            return self.cover_thumb.url
+        return self.cover.url if self.cover else ""
+
     def get_absolute_url(self):
         from django.urls import reverse
 
         return reverse("books:detail", args=[self.pk])
 
     def save(self, *args, **kwargs):
+        if self.cover and not self.cover._committed:
+            # عکس تازه آپلود شده: بند‌انگشتی بسازیم (کاور قبلاً تو فرم پردازش شده)
+            from common.images import make_thumb
+
+            self.cover_thumb = make_thumb(self.cover.file)
+            self.cover.file.seek(0)
+        elif not self.cover:
+            self.cover_thumb = ""
         self.search_text = normalize(f"{self.title} {self.author} {self.isbn}")
         self.work_key = work_key(self.title, self.author)
         fields = kwargs.get("update_fields")
         if fields is not None and ({"title", "author", "isbn"} & set(fields)):
             kwargs["update_fields"] = {*fields, "search_text", "work_key"}
         super().save(*args, **kwargs)
+
+
+class BookPhoto(models.Model):
+    """عکس‌های اضافه‌ی کتاب (به‌جز عکس اصلی)."""
+
+    MAX_EXTRA = 4
+
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="photos")
+    image = models.ImageField(upload_to="books/%Y/%m/")
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "pk"]
+        verbose_name = "عکس کتاب"
+        verbose_name_plural = "عکس‌های کتاب"
 
 
 class Wishlist(models.Model):

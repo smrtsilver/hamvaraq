@@ -160,6 +160,32 @@ SITE_URL = env("SITE_URL", default="hamvaraq.ir")
 # گزارش روزانه (manage.py daily_report --email) به این ایمیل‌ها می‌ره
 ADMIN_EMAILS = env.list("ADMIN_EMAILS", default=[])
 
+# بکاپ (manage.py backup_db)
+BACKUP_DIR = env("BACKUP_DIR", default=str(BASE_DIR / "backups"))
+BACKUP_KEEP = env.int("BACKUP_KEEP", default=14)
+
+# لاگ تو خروجی استاندارد (docker logs). خطاهای ۵۰۰ و هشدارها همین‌جا میان.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"std": {"format": "[{asctime}] {levelname} {name} — {message}", "style": "{"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std"}},
+    "root": {"handlers": ["console"], "level": env("LOG_LEVEL", default="INFO")},
+    "loggers": {"django.request": {"level": "WARNING"}},
+}
+
+# گزارش خطا به Sentry؛ فقط اگه SENTRY_DSN ست باشه و کتابخونه نصب باشه. اطلاعات شخصی (PII) نمی‌ره.
+SENTRY_DSN = env("SENTRY_DSN", default="")
+if SENTRY_DSN and not IS_TEST:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=env("SENTRY_ENVIRONMENT", default="production" if not DEBUG else "development"),
+        traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.0),
+        send_default_pii=False,
+    )
+
 # ---- قوانین دامنه‌ی هم‌ورق ----
 VOTE_EDIT_HOURS = 24            # رأی تا این مدت قابل ویرایشه
 LOW_REPUTATION_PERCENT = 60     # زیر این درصد (با حداقل رأی) هشدار «اعتبار پایین»
@@ -171,3 +197,12 @@ BADGE_COURIER_EXCHANGES = 10
 BADGE_NEIGHBORHOOD_BOOKS = 5
 STALE_REQUEST_DAYS = 3      # درخواست بی‌پاسخ بعد از این مدت تو داشبورد «گیرکرده» حساب می‌شه
 STALE_ACCEPTED_DAYS = 7     # مبادله‌ی تأییدشده‌ی تموم‌نشده
+
+# ---- چرخه‌ی عمر مبادله (python manage.py expire_exchanges؛ روزانه تو cron) ----
+# عددها «روز» هستن. یادآوری‌ها بعد از این روزها، به ترتیب، فرستاده می‌شن.
+REQUEST_REMIND_DAYS = [3]           # به صاحب کتابِ بی‌پاسخ
+REQUEST_EXPIRE_DAYS = 7             # درخواست بی‌پاسخ لغو و امتیاز برگردونده می‌شه
+ACCEPTED_REMIND_DAYS = [7, 14]      # به هر دو طرفِ مبادله‌ی تأییدشده‌ی بی‌حرکت
+ACCEPTED_EXPIRE_DAYS = 21           # هیچ‌کس تحویل رو تأیید نکرده ← لغو و برگشت امتیاز
+CONFIRM_REMIND_DAYS = [3]           # یه نفر تحویل رو تأیید کرده، نفر دوم نه
+CONFIRM_DISPUTE_DAYS = 7            # بعدش خودکار اختلاف باز می‌شه و ادمین تصمیم می‌گیره

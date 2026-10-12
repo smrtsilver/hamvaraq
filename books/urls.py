@@ -12,6 +12,7 @@ urlpatterns = [
     path("mine/", views.my_books, name="mine"),
     path("wishlist/", views.wishlist, name="wishlist"),
     path("wishlist/<int:pk>/delete/", views.wishlist_delete, name="wishlist_delete"),
+    path("photo/<int:pk>/delete/", views.photo_delete, name="photo_delete"),
     path("<int:pk>/", views.book_detail, name="detail"),
     path("<int:pk>/edit/", views.book_edit, name="edit"),
     path("<int:pk>/delete/", views.book_delete, name="delete"),

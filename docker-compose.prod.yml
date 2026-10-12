@@ -24,6 +24,7 @@ services:
     volumes:
       - ./media:/app/media     # nginx مستقیم از این پوشه عکس کتاب‌ها رو سرو می‌کنه
       - ./staticfiles:/app/staticfiles
+      - ./backups:/app/backups   # خروجی backup_db؛ حتماً بیرون از سرور هم کپی کن
     environment:
       DEBUG: "False"
       TRUST_PROXY_HEADERS: "True"

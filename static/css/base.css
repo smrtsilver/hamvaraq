@@ -61,3 +61,6 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .bar-col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
 .bar-col i{display:block;width:100%;min-height:2px;background:var(--g);border-radius:3px 3px 0 0}
 .bar-col small{font-size:.65rem;color:var(--mu)}
+.photo-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.photo-strip img{width:72px;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
+.photo-strip form{display:flex;flex-direction:column;align-items:center}

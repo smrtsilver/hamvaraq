@@ -8,7 +8,7 @@ import time
 
 from django.conf import settings
 from django.core.cache import cache
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 
 

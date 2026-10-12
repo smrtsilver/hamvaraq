@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>{{ title }}</h1>
+{% if form.instance.pk and form.instance.photos.all %}<div class="card"><strong>عکس‌های فعلی</strong>
+    <div class="photo-strip">{% for p in form.instance.photos.all %}<form method="post" action="{% url 'books:photo_delete' p.pk %}">{% csrf_token %}<img src="{{ p.image.url }}" alt=""><button class="link">حذف</button></form>{% endfor %}</div></div>{% endif %}
 <form method="post" enctype="multipart/form-data" class="card form">{% csrf_token %}{{ form.as_div }}<button class="btn">ذخیره</button></form>
 {% endblock %}

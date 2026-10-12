@@ -358,7 +358,7 @@ class ReviewShelfChallengeTests(Base):
         self.book(title="رزرو", status=Book.Status.RESERVED)
         r = self.client.get(reverse("accounts:profile", args=["giver"]))
         self.assertEqual([b.title for b in r.context["books"]], ["موجود"])
-        ex = self.complete(self.book(title="رفت"))
+        self.complete(self.book(title="رفت"))
         r = self.client.get(reverse("accounts:profile", args=["taker"]))
         self.assertEqual([b.title for b in r.context["books"]], ["رفت"])  # گرفته و هنوز نذاشته
 
@@ -415,7 +415,7 @@ class SimilarTests(Base):
     def test_exchange_participants_count_and_isbn_match(self):
         from books.services import similar_books
         a = self.book(isbn="9780140328721")
-        ex = self.complete(a)                  # taker گرفته (a الان مال taker)
+        self.complete(a)                  # taker گرفته (a الان مال taker)
         mine = Book.objects.create(owner=self.giver, title="آخرین", author="ن", city=self.isfahan)
         c = Book.objects.create(owner=self.taker, title="x", author="y", city=self.tehran, isbn="9780140328721")
         got = similar_books(c)
@@ -691,3 +691,273 @@ class DashboardAndSeoTests(Base):
         self.assertNotIn("noindex", r.get("X-Robots-Tag", ""))
         self.assertIn("noindex", self.client.get("/accounts/login/")["X-Robots-Tag"])
         self.assertIn("noindex", self.client.get("/accounts/u/giver/")["X-Robots-Tag"])
+
+
+class LifecycleTests(Base):
+    def age(self, ex, days, **fields):
+        t = timezone.now() - timedelta(days=days)
+        Exchange.objects.filter(pk=ex.pk).update(created_at=t, **{k: (t if v is True else v) for k, v in fields.items()})
+
+    def run_cycle(self):
+        from exchanges.services import process_lifecycle
+        return process_lifecycle()
+
+    def test_request_remind_once_then_expire_and_refund(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0})
+        self.age(ex, 3)
+        self.assertEqual(self.run_cycle()["reminded"], 1)
+        self.assertEqual(self.run_cycle()["reminded"], 0)  # دوباره اجرا اعلان تکراری نمی‌سازه
+        self.assertEqual(Notification.objects.filter(user=self.giver, text__contains="منتظر جواب").count(), 1)
+        self.age(ex, 8)
+        self.assertEqual(self.run_cycle()["cancelled"], 1)
+        ex.refresh_from_db(); self.taker.refresh_from_db()
+        self.assertEqual((ex.status, self.taker.points), (Exchange.Status.CANCELLED, 1))
+
+    def test_accepted_reminders_then_expire_frees_book(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        Exchange.objects.filter(pk=ex.pk).update(accepted_at=timezone.now() - timedelta(days=8))
+        self.assertEqual(self.run_cycle()["reminded"], 1)
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="هنوز تحویل نشده").exists())
+        Exchange.objects.filter(pk=ex.pk).update(accepted_at=timezone.now() - timedelta(days=15))
+        self.assertEqual(self.run_cycle()["reminded"], 1)  # یادآوری دوم
+        Exchange.objects.filter(pk=ex.pk).update(accepted_at=timezone.now() - timedelta(days=22))
+        self.assertEqual(self.run_cycle()["cancelled"], 1)
+        ex.refresh_from_db(); ex.book.refresh_from_db(); self.taker.refresh_from_db()
+        self.assertEqual((ex.status, ex.book.status, self.taker.points), (Exchange.Status.CANCELLED, Book.Status.AVAILABLE, 1))
+
+    def test_one_sided_confirm_remind_then_auto_dispute(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        services.confirm(ex.pk, self.giver)  # فقط دهنده تأیید کرد
+        ex.refresh_from_db(); self.assertIsNotNone(ex.first_confirmed_at)
+        Exchange.objects.filter(pk=ex.pk).update(first_confirmed_at=timezone.now() - timedelta(days=4))
+        self.assertEqual(self.run_cycle()["reminded"], 1)
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="تأیید کرده").exists())
+        Exchange.objects.filter(pk=ex.pk).update(first_confirmed_at=timezone.now() - timedelta(days=8))
+        self.assertEqual(self.run_cycle()["disputed"], 1)
+        ex.refresh_from_db()
+        self.assertIsNotNone(ex.disputed_at)
+        rep = Report.objects.get()
+        self.assertEqual((rep.reporter, rep.target_user), (self.giver, self.taker))  # تأییدکننده شاکیه
+        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0})  # از انقضا خارجه
+        Exchange.objects.filter(pk=ex.pk).update(accepted_at=timezone.now() - timedelta(days=99))
+        self.assertEqual(self.run_cycle()["cancelled"], 0)
+
+    def test_dry_run_changes_nothing(self):
+        from exchanges.services import process_lifecycle
+        ex = services.request_book(self.book().pk, self.taker)
+        self.age(ex, 30)
+        self.assertEqual(process_lifecycle(dry_run=True)["cancelled"], 1)
+        ex.refresh_from_db()
+        self.assertEqual(ex.status, Exchange.Status.REQUESTED)
+
+    def test_command_runs(self):
+        from io import StringIO
+        from django.core.management import call_command
+        out = StringIO()
+        call_command("expire_exchanges", "--dry-run", stdout=out)
+        self.assertIn("آزمایشی", out.getvalue())
+
+    def test_user_dispute_and_admin_resolutions(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        with self.assertRaises(services.ExchangeError):
+            services.open_dispute(ex.pk, self.taker, "other")  # هنوز تأیید نشده
+        services.accept(ex.pk, self.giver)
+        self.client.login(username="taker", password="x12345678")
+        r = self.client.post(reverse("exchanges:dispute", args=[ex.pk]), {"reason": "no_show", "description": "نیومد"})
+        self.assertEqual(r.status_code, 302)
+        ex.refresh_from_db(); self.assertIsNotNone(ex.disputed_at)
+        self.assertIn("اختلاف", Report.objects.get().description)
+        with self.assertRaises(services.ExchangeError):
+            services.open_dispute(ex.pk, self.giver, "other")  # دوباره نه
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        services.resolve_dispute(ex.pk, boss, "complete")
+        ex.refresh_from_db(); self.giver.refresh_from_db()
+        self.assertEqual((ex.status, self.giver.points, ex.resolution_note), (Exchange.Status.COMPLETED, 1, "تکمیل توسط boss"))
+        with self.assertRaises(services.ExchangeError):
+            services.resolve_dispute(ex.pk, boss, "cancel")  # دیگه بازی نیست
+
+    def test_admin_cancel_resolution_refunds(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        services.open_dispute(ex.pk, self.giver, "no_show", "")
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        services.resolve_dispute(ex.pk, boss, "cancel")
+        ex.refresh_from_db(); ex.book.refresh_from_db(); self.taker.refresh_from_db()
+        self.assertEqual((ex.status, ex.book.status, self.taker.points), (Exchange.Status.CANCELLED, Book.Status.AVAILABLE, 1))
+        self.assertEqual(ex.resolution_note, "لغو توسط boss")
+
+    def test_third_party_cannot_dispute_and_admin_actions_render(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        st = User.objects.create_user("st", password="x12345678")
+        with self.assertRaises(services.ExchangeError):
+            services.open_dispute(ex.pk, st, "other")
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.post("/admin/exchanges/exchange/", {"action": "force_cancel", "_selected_action": [ex.pk]}, follow=True)
+        self.assertContains(r, "اختلاف بازی نداره")  # اختلافی ثبت نشده بود
+        self.assertEqual(self.client.get("/admin/exchanges/exchange/?disputed_at__isempty=0").status_code, 200)
+        self.assertEqual(self.client.get("/staff/").status_code, 200)
+
+
+import shutil
+import tempfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
+
+_MEDIA = tempfile.mkdtemp(prefix="hv-media-")
+
+
+def _jpeg(w=3000, h=2000, exif=True, fmt="JPEG", mode="RGB"):
+    import io
+    from PIL import Image
+    img = Image.new(mode, (w, h), (200, 30, 30) if mode == "RGB" else (200, 30, 30, 0))
+    buf = io.BytesIO()
+    kwargs = {}
+    if exif:
+        ex = Image.Exif()
+        ex[0x0112] = 6                       # چرخش ۹۰ درجه
+        ex[0x010F] = "SecretCamera"          # سازنده‌ی دوربین
+        ex.get_ifd(0x8825)[1] = "N"          # GPS
+        kwargs["exif"] = ex
+    img.save(buf, fmt, **kwargs)
+    return SimpleUploadedFile("p." + fmt.lower(), buf.getvalue(), content_type=f"image/{fmt.lower()}")
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class PhotoTests(Base):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(_MEDIA, ignore_errors=True)
+
+    def post_book(self, **files):
+        self.client.login(username="giver", password="x12345678")
+        data = {"title": "عکسی", "author": "ن", "condition": "used", "city": self.isfahan.pk, **files}
+        return self.client.post(reverse("books:create"), data)
+
+    def test_cover_stripped_resized_rotated_with_thumb(self):
+        from PIL import Image
+        r = self.post_book(cover=_jpeg())
+        self.assertEqual(r.status_code, 302)
+        b = Book.objects.get(title="عکسی")
+        with Image.open(b.cover.path) as im:
+            self.assertEqual(len(im.getexif()), 0)               # EXIF (GPS و دوربین) پاک شده
+            self.assertEqual(im.format, "JPEG")
+            self.assertLessEqual(max(im.size), 1280)
+            self.assertGreater(im.height, im.width)              # چرخش اعمال شد (۳۰۰۰×۲۰۰۰ ← عمودی)
+        with Image.open(b.cover_thumb.path) as th:
+            self.assertLessEqual(max(th.size), 420)
+        self.assertTrue(b.thumb_url.endswith(".jpg"))
+        self.assertNotEqual(b.thumb_url, b.cover.url)
+
+    def test_extra_photos_limit_and_delete(self):
+        self.post_book(cover=_jpeg(800, 600), extra_photos=[_jpeg(500, 500), _jpeg(500, 500)])
+        b = Book.objects.get(title="عکسی")
+        self.assertEqual(b.photos.count(), 2)
+        self.assertContains(self.client.get(reverse("books:detail", args=[b.pk])), "photo-strip")
+        # سقف ۴ عکس اضافه (۲ تا هست، ۳ تا دیگه نمی‌شه)
+        r = self.client.post(reverse("books:edit", args=[b.pk]), {
+            "title": "عکسی", "author": "ن", "condition": "used", "city": self.isfahan.pk,
+            "extra_photos": [_jpeg(300, 300), _jpeg(300, 300), _jpeg(300, 300)]})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(b.photos.count(), 2)
+        photo = b.photos.first()
+        path = photo.image.path
+        self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.post(reverse("books:photo_delete", args=[photo.pk])).status_code, 404)  # مال کس دیگه‌ست
+        self.client.login(username="giver", password="x12345678")
+        self.client.post(reverse("books:photo_delete", args=[photo.pk]))
+        self.assertEqual(b.photos.count(), 1)
+        import os
+        self.assertFalse(os.path.exists(path))
+
+    def test_edit_keeps_cover_when_not_replaced(self):
+        self.post_book(cover=_jpeg(800, 600))
+        b = Book.objects.get(title="عکسی")
+        old = b.cover.name
+        self.client.post(reverse("books:edit", args=[b.pk]), {
+            "title": "عنوان نو", "author": "ن", "condition": "used", "city": self.isfahan.pk})
+        b.refresh_from_db()
+        self.assertEqual((b.title, b.cover.name), ("عنوان نو", old))
+
+    def test_bad_and_huge_files_rejected(self):
+        bad = SimpleUploadedFile("x.jpg", b"not an image", content_type="image/jpeg")
+        self.assertEqual(self.post_book(cover=bad).status_code, 200)
+        self.assertFalse(Book.objects.filter(title="عکسی").exists())
+        big = SimpleUploadedFile("big.jpg", b"\xff\xd8" + b"0" * (5 * 1024 * 1024 + 10), content_type="image/jpeg")
+        self.assertEqual(self.post_book(cover=big).status_code, 200)
+        self.assertFalse(Book.objects.filter(title="عکسی").exists())
+
+    def test_png_with_transparency_becomes_white_jpeg(self):
+        from PIL import Image
+        self.post_book(cover=_jpeg(400, 400, exif=False, fmt="PNG", mode="RGBA"))
+        b = Book.objects.get(title="عکسی")
+        with Image.open(b.cover.path) as im:
+            self.assertEqual(im.format, "JPEG")
+            r, g, bl = im.getpixel((5, 5))
+            self.assertGreater(min(r, g, bl), 240)  # شفاف ← سفید
+
+    def test_report_image_processed(self):
+        from PIL import Image
+        self.client.login(username="taker", password="x12345678")
+        b = self.book()
+        self.client.post(reverse("trust:report", args=["book", b.pk]), {"reason": "bad_book", "image": _jpeg(2000, 1500)})
+        rep = Report.objects.get()
+        with Image.open(rep.image.path) as im:
+            self.assertEqual(len(im.getexif()), 0)
+            self.assertLessEqual(max(im.size), 1280)
+
+
+class InfraTests(Base):
+    def test_backup_sqlite_copies_real_data(self):
+        import os, sqlite3
+        from common.management.commands.backup_db import backup_sqlite
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "live.sqlite3")
+            conn = sqlite3.connect(src)
+            conn.execute("create table t (v text)"); conn.execute("insert into t values ('سلام')"); conn.commit(); conn.close()
+            out = os.path.join(d, "backup.sqlite3")
+            backup_sqlite(src, out)
+            c = sqlite3.connect(out)
+            self.assertEqual(c.execute("select v from t").fetchone()[0], "سلام")
+            c.close()
+
+    def test_backup_command_prunes_old_and_archives_media(self):
+        import os, time
+        from io import StringIO
+        from unittest import mock
+        from django.core.management import call_command
+
+        def fake_backup(name, target):
+            open(target, "w").write("db")
+
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as media:
+            open(os.path.join(media, "a.txt"), "w").write("x")
+            with override_settings(BACKUP_KEEP=2, MEDIA_ROOT=media), \
+                    mock.patch("common.management.commands.backup_db.backup_sqlite", fake_backup):
+                for _ in range(3):
+                    out = StringIO()
+                    call_command("backup_db", "--media", "--dir", d, stdout=out)
+                    time.sleep(1.1)  # مهر زمانی نام فایل‌ها یکتا بشه
+            names = os.listdir(d)
+            self.assertEqual(len([n for n in names if n.startswith("db-")]), 2)     # قدیمی‌ترین حذف شد
+            self.assertEqual(len([n for n in names if n.startswith("media-")]), 2)
+            self.assertIn("حذف بکاپ قدیمی", out.getvalue())
+
+    def test_logging_configured_and_sentry_off_in_tests(self):
+        from django.conf import settings
+        self.assertIn("console", settings.LOGGING["root"]["handlers"])
+        import sentry_sdk
+        self.assertFalse(sentry_sdk.is_initialized())
+
+    def test_sentry_init_does_not_send_pii(self):
+        # ایمپورت کتابخونه سالمه و تنظیمات ما کلید حساسی نمی‌گیره
+        import inspect
+        from pathlib import Path
+        src = Path(inspect.getfile(self.__class__)).parent.parent / "HamVaraqDjangoServer" / "settings.py"
+        self.assertIn("send_default_pii=False", src.read_text(encoding="utf-8"))

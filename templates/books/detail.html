@@ -9,7 +9,8 @@
 {% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
 {% block content %}
 <div class="detail">
-    <div>{% if book.cover %}<img class="cover" src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<div class="nocover big">📖</div>{% endif %}</div>
+    <div>{% if book.cover %}<a href="{{ book.cover.url }}" target="_blank" rel="noopener"><img class="cover" src="{{ book.cover.url }}" alt="{{ book.title }}"></a>{% else %}<div class="nocover big">📖</div>{% endif %}
+        {% if photos %}<div class="photo-strip">{% for p in photos %}<a href="{{ p.image.url }}" target="_blank" rel="noopener"><img src="{{ p.image.url }}" alt="عکس {{ forloop.counter|fa }} {{ book.title }}" loading="lazy"></a>{% endfor %}</div>{% endif %}</div>
     <div>
         <h1>{{ book.title }}</h1>
         <p>{{ book.author }}{% if book.category %} · {{ book.category }}{% endif %}</p>

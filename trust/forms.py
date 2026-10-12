@@ -26,6 +26,18 @@ class VoteForm(forms.ModelForm):
 
 
 class ReportForm(forms.ModelForm):
+    def clean_image(self):
+        from django.core.files.uploadedfile import UploadedFile
+
+        from common.images import process_upload
+
+        image = self.cleaned_data.get("image")
+        if isinstance(image, UploadedFile):
+            if image.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("حجم عکس باید کمتر از ۵ مگابایت باشه.")
+            return process_upload(image)
+        return image
+
     class Meta:
         model = Report
         fields = ["reason", "description", "image"]

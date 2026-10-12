@@ -23,6 +23,10 @@
 </div>
 
 {% if ex.status == 'accepted' %}
+{% if ex.disputed_at %}<div class="alert alert-warning">برای این مبادله اختلاف ثبت شده و مدیریت در حال بررسیه. تا نتیجه، امتیاز نگه داشته می‌شه.</div>
+{% elif dispute_form %}<details class="card"><summary>مشکلی تو تحویل هست؟</summary>
+    <form method="post" action="{% url 'exchanges:dispute' ex.pk %}" class="form">{% csrf_token %}{{ dispute_form.as_div }}<button class="btn btn-sm btn-outline">ثبت اختلاف</button></form>
+    <p class="muted">اول تو چت هماهنگ کن. اگه حل نشد، مدیریت بین شما تصمیم می‌گیره.</p></details>{% endif %}
 <section class="card"><h3>📍 نقطه‌ی تحویل</h3>
     {% if ex.meeting_point %}
         <p><strong>{{ ex.meeting_point.name }}</strong> ({{ ex.meeting_point.get_kind_display }}، {{ ex.meeting_point.city }}){% if ex.meeting_point.address %}<br><span class="muted">{{ ex.meeting_point.address }}</span>{% endif %}</p>

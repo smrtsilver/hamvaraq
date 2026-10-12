@@ -61,7 +61,8 @@ def accept(exchange_id, user):
     if ex.book.status != Book.Status.AVAILABLE:
         raise ExchangeError("کتاب دیگه موجود نیست.")
     ex.status = Exchange.Status.ACCEPTED
-    ex.save(update_fields=["status", "updated_at"])
+    ex.accepted_at, ex.reminder_count = timezone.now(), 0
+    ex.save(update_fields=["status", "accepted_at", "reminder_count", "updated_at"])
     ex.book.status = Book.Status.RESERVED
     ex.book.save(update_fields=["status"])
     # بقیه‌ی درخواست‌ها رد می‌شن و امتیازشون برمی‌گرده
@@ -121,7 +122,9 @@ def confirm(exchange_id, user):
     if ex.owner_confirmed and ex.requester_confirmed:
         _complete(ex)
     else:
-        ex.save(update_fields=["owner_confirmed", "requester_confirmed", "updated_at"])
+        if ex.first_confirmed_at is None:
+            ex.first_confirmed_at, ex.reminder_count = timezone.now(), 0
+        ex.save(update_fields=["owner_confirmed", "requester_confirmed", "first_confirmed_at", "reminder_count", "updated_at"])
         notify(ex.other_party(user), f"{user.username} تحویل «{ex.book.title}» رو تأیید کرد؛ نوبت توئه.", _url(ex))
     return ex
 
@@ -154,7 +157,6 @@ def meeting_options(exchange):
 
 @transaction.atomic
 def propose_meeting(exchange_id, user, point_id):
-    from common.models import MeetingPoint
 
     from .models import Message
 
@@ -191,3 +193,127 @@ def agree_meeting(exchange_id, user):
     Message.objects.create(exchange=ex, sender=user, text=f"✅ نقطه‌ی تحویل تأیید شد: {ex.meeting_point.name}")
     notify(ex.other_party(user), f"{user.username} نقطه‌ی تحویل رو تأیید کرد: {ex.meeting_point.name}", _url(ex))
     return ex
+
+
+# ---------- انقضا، یادآوری و اختلاف ----------
+
+def auto_cancel(ex, reason):
+    """لغو توسط سیستم (بدون کاربر): امتیاز برمی‌گرده و کتاب دوباره موجود می‌شه."""
+    with transaction.atomic():
+        ex = _get_locked(ex.pk)
+        if ex.status not in Exchange.ACTIVE:
+            return ex
+        was_accepted = ex.status == Exchange.Status.ACCEPTED
+        ex.status = Exchange.Status.CANCELLED
+        ex.save(update_fields=["status", "updated_at"])
+        _refund(ex)
+        if was_accepted:
+            ex.book.status = Book.Status.AVAILABLE
+            ex.book.save(update_fields=["status"])
+        notify(ex.requester, f"مبادله‌ی «{ex.book.title}» {reason}؛ امتیازت برگشت.", _url(ex))
+        notify(ex.owner, f"مبادله‌ی «{ex.book.title}» {reason}.", _url(ex))
+    return ex
+
+
+def _open_dispute(ex, reporter, accused, reason, description):
+    """اختلاف رو به‌صورت گزارش برای ادمین ثبت می‌کنه و مبادله رو از انقضای خودکار خارج می‌کنه."""
+    from trust.models import Report
+
+    Report.objects.get_or_create(
+        reporter=reporter, target_user=accused,
+        defaults={"reason": reason, "description": f"[اختلاف در مبادله #{ex.pk} — «{ex.book.title}»] {description}".strip()},
+    )
+    ex.disputed_at = timezone.now()
+    ex.save(update_fields=["disputed_at", "updated_at"])
+    notify(accused, f"برای مبادله‌ی «{ex.book.title}» اختلاف ثبت شد؛ مدیریت بررسی می‌کنه.", _url(ex))
+    notify(reporter, f"اختلاف مبادله‌ی «{ex.book.title}» ثبت شد؛ مدیریت بررسی می‌کنه.", _url(ex))
+
+
+@transaction.atomic
+def open_dispute(exchange_id, user, reason, description=""):
+    ex = _get_locked(exchange_id)
+    if not ex.is_party(user):
+        raise ExchangeError("این مبادله مال تو نیست.")
+    if ex.status != Exchange.Status.ACCEPTED:
+        raise ExchangeError("اختلاف فقط برای مبادله‌ی تأییدشده‌ی تموم‌نشده ثبت می‌شه.")
+    if ex.disputed_at:
+        raise ExchangeError("برای این مبادله قبلاً اختلاف ثبت شده.")
+    _open_dispute(ex, user, ex.other_party(user), reason, description)
+    return ex
+
+
+@transaction.atomic
+def resolve_dispute(exchange_id, admin_user, outcome):
+    """تصمیم ادمین: «complete» (تحویل انجام شده) یا «cancel» (مبادله لغو و امتیاز برگردونده می‌شه)."""
+    ex = _get_locked(exchange_id)
+    if not ex.disputed_at or ex.status != Exchange.Status.ACCEPTED:
+        raise ExchangeError("این مبادله اختلاف بازی نداره.")
+    ex.resolution_note = f"{'تکمیل' if outcome == 'complete' else 'لغو'} توسط {admin_user.username}"
+    if outcome == "complete":
+        ex.owner_confirmed = ex.requester_confirmed = True
+        _complete(ex)
+    elif outcome == "cancel":
+        auto_cancel(ex, "به‌خاطر اختلاف توسط مدیریت لغو شد")
+        Exchange.objects.filter(pk=ex.pk).update(resolution_note=ex.resolution_note)
+    else:
+        raise ExchangeError("نتیجه‌ی نامعتبر.")
+    return ex
+
+
+def process_lifecycle(now=None, dry_run=False):
+    """
+    یک دور بررسی همه‌ی مبادله‌های فعال. شمارنده‌ی نتیجه رو برمی‌گردونه.
+    با اجرای دوباره در همون روز اعلان تکراری نمی‌سازه (reminder_count).
+    """
+    from datetime import timedelta
+
+    from django.conf import settings
+
+    now = now or timezone.now()
+    out = {"reminded": 0, "cancelled": 0, "disputed": 0}
+
+    def days(since):
+        return (now - since) / timedelta(days=1)
+
+    def remind(ex, schedule, since, targets, text):
+        if ex.reminder_count < len(schedule) and days(since) >= schedule[ex.reminder_count]:
+            out["reminded"] += 1
+            if not dry_run:
+                for user in targets:
+                    notify(user, text, _url(ex))
+                Exchange.objects.filter(pk=ex.pk).update(reminder_count=ex.reminder_count + 1)
+
+    base = Exchange.objects.select_related("book", "owner", "requester")
+    for ex in base.filter(status=Exchange.Status.REQUESTED):
+        age = days(ex.created_at)
+        if age >= settings.REQUEST_EXPIRE_DAYS:
+            out["cancelled"] += 1
+            if not dry_run:
+                auto_cancel(ex, "بی‌پاسخ موند و منقضی شد")
+        else:
+            remind(ex, settings.REQUEST_REMIND_DAYS, ex.created_at, [ex.owner],
+                   f"درخواست «{ex.book.title}» هنوز منتظر جواب توئه.")
+
+    for ex in base.filter(status=Exchange.Status.ACCEPTED, disputed_at__isnull=True):
+        if ex.first_confirmed_at:
+            if days(ex.first_confirmed_at) >= settings.CONFIRM_DISPUTE_DAYS:
+                out["disputed"] += 1
+                if not dry_run:
+                    confirmer_is_owner = ex.owner_confirmed
+                    reporter, accused = (ex.owner, ex.requester) if confirmer_is_owner else (ex.requester, ex.owner)
+                    _open_dispute(ex, reporter, accused, "other",
+                                  "یک طرف تحویل رو تأیید کرده و طرف مقابل در مهلت مقرر پاسخی نداده.")
+            else:
+                waiting = ex.requester if ex.owner_confirmed else ex.owner
+                remind(ex, settings.CONFIRM_REMIND_DAYS, ex.first_confirmed_at, [waiting],
+                       f"طرف مقابل تحویل «{ex.book.title}» رو تأیید کرده؛ اگه تحویل شده تأیید کن، وگرنه مشکلت رو ثبت کن.")
+        else:
+            since = ex.accepted_at or ex.created_at
+            if days(since) >= settings.ACCEPTED_EXPIRE_DAYS:
+                out["cancelled"] += 1
+                if not dry_run:
+                    auto_cancel(ex, "بدون تحویل موند و منقضی شد")
+            else:
+                remind(ex, settings.ACCEPTED_REMIND_DAYS, since, [ex.owner, ex.requester],
+                       f"مبادله‌ی «{ex.book.title}» تأیید شده ولی هنوز تحویل نشده؛ هماهنگ کنید یا لغوش کنید.")
+    return out

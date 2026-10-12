@@ -1,11 +1,45 @@
 from django import forms
 
-from .isbn import normalize as isbn_normalize
-from .models import Book, Category, Review
+from django.core.files.uploadedfile import UploadedFile
+
+from common.images import process_upload
 from common.models import City
+
+from .isbn import normalize as isbn_normalize
+from .models import Book, BookPhoto, Category, Review
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.ImageField):
+    """چند عکس با یک ورودی؛ هر کدوم جدا اعتبارسنجی می‌شه."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"accept": "image/*"}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single = super().clean
+        if not data:
+            return []
+        files = data if isinstance(data, (list, tuple)) else [data]
+        return [single(f, initial) for f in files]
+
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+
+def _check_size(f):
+    if f and hasattr(f, "size") and f.size > MAX_UPLOAD_BYTES:
+        raise forms.ValidationError("حجم هر عکس باید کمتر از ۵ مگابایت باشه.")
 
 
 class BookForm(forms.ModelForm):
+    extra_photos = MultipleImageField(required=False, label="عکس‌های بیشتر",
+                                      help_text=f"تا {BookPhoto.MAX_EXTRA} عکس دیگه (پشت جلد، وضعیت داخل کتاب…)")
+
     class Meta:
         model = Book
         fields = ["title", "author", "isbn", "category", "condition", "city", "cover", "description"]
@@ -14,15 +48,39 @@ class BookForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _isbn_widget(self.fields["isbn"], self.fields["title"], self.fields["author"])
+        # تعداد جای خالی با توجه به عکس‌های فعلی (تو ویرایش)
+        self.existing_extra = self.instance.photos.count() if self.instance.pk else 0
+        self.fields["cover"].help_text = "عکس اصلی؛ بدون اطلاعات مکانی و فشرده ذخیره می‌شه."
 
     def clean_isbn(self):
         return _clean_isbn(self.cleaned_data.get("isbn"))
 
     def clean_cover(self):
         cover = self.cleaned_data.get("cover")
-        if cover and hasattr(cover, "size") and cover.size > 5 * 1024 * 1024:
-            raise forms.ValidationError("حجم عکس باید کمتر از ۵ مگابایت باشه.")
+        if isinstance(cover, UploadedFile):  # آپلود تازه (نه عکس قبلی و نه «پاک کردن»)
+            _check_size(cover)
+            return process_upload(cover)
         return cover
+
+    def clean_extra_photos(self):
+        photos = self.cleaned_data.get("extra_photos") or []
+        room = BookPhoto.MAX_EXTRA - self.existing_extra
+        if len(photos) > room:
+            raise forms.ValidationError(f"حداکثر {BookPhoto.MAX_EXTRA} عکس اضافه (الان {self.existing_extra} تا داری).")
+        for p in photos:
+            _check_size(p)
+        return [process_upload(p) for p in photos]
+
+    def save(self, commit=True):
+        book = super().save(commit=commit)
+        if commit:
+            self.save_extra_photos(book)
+        return book
+
+    def save_extra_photos(self, book):
+        start = book.photos.count()
+        for i, image in enumerate(self.cleaned_data.get("extra_photos") or []):
+            BookPhoto.objects.create(book=book, image=image, position=start + i)
 
 
 class BookFilterForm(forms.Form):
