@@ -46,7 +46,10 @@ def apply_decision(report, admin_user):
     report.handled_by = admin_user
     report.save()
 
-    accused = report.accused
+    accused = report.accused          # ممکنه None باشه (اطلاعیه‌ی ثبت‌شده توسط ادمین)
+    if accused is None and decision in (D.WARN, D.RESTRICT, D.BAN):
+        decision = report.decision = D.REJECT   # کاربری برای اقدام نیست؛ فقط گزارش بسته می‌شه
+        report.save(update_fields=["decision"])
     if decision == D.WARN:
         accused.warnings += 1
         notify(accused, f"اخطار از مدیریت: {report.decision_note}", kind="report")
@@ -66,7 +69,7 @@ def apply_decision(report, admin_user):
         # چند گزارش تأییدشده‌ی بدقولی ← محدودیت خودکار
         if report.reason == Report.Reason.NO_SHOW and accused.status == User.Status.ACTIVE:
             confirmed = Report.objects.filter(
-                Q(target_user=accused) | Q(target_book__owner=accused) | Q(target_message__sender=accused),
+                Q(target_user=accused) | Q(target_book__owner=accused) | Q(target_message__sender=accused) | Q(target_post__author=accused),
                 reason=Report.Reason.NO_SHOW,
                 decision__in=[D.WARN, D.RESTRICT, D.BAN],
             ).count()

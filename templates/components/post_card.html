@@ -1,0 +1,9 @@
+<a class="post-card" href="{{ p.get_absolute_url }}">
+    <div class="pc-cover">{% if p.cover %}<img src="{{ p.cover.url }}" alt="" loading="lazy" width="640" height="360">{% elif p.book and p.book.cover %}<img src="{{ p.book.thumb_url }}" alt="" loading="lazy">{% else %}{% include "components/icon.html" with name="pen" %}{% endif %}</div>
+    <div class="pc-body">
+        <div class="cluster" style="gap:6px">{% if p.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}{% if p.rating %}<span class="stars" aria-label="{{ p.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= p.rating %}★{% else %}☆{% endif %}{% endfor %}</span>{% endif %}</div>
+        <h3>{{ p.title }}</h3>
+        <p>{{ p.excerpt }}</p>
+        <div class="pc-meta">{% include "components/avatar.html" with u=p.author size="sm" %}<span>{{ p.author.username }}</span><span>·</span><span>{{ p.display_book_title|truncatechars:26 }}</span><span style="margin-inline-start:auto">{{ p.reading_minutes|fa }} دقیقه</span></div>
+    </div>
+</a>

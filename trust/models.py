@@ -53,6 +53,8 @@ class Report(models.Model):
     target_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="reports_against", verbose_name="کاربر")
     target_book = models.ForeignKey("books.Book", null=True, blank=True, on_delete=models.CASCADE, related_name="reports", verbose_name="کتاب")
     target_message = models.ForeignKey("exchanges.Message", null=True, blank=True, on_delete=models.CASCADE, related_name="reports", verbose_name="پیام")
+    target_post = models.ForeignKey("posts.Post", null=True, blank=True, on_delete=models.CASCADE, related_name="reports", verbose_name="معرفی کتاب")
+    target_announcement = models.ForeignKey("announcements.Announcement", null=True, blank=True, on_delete=models.CASCADE, related_name="reports", verbose_name="اطلاعیه")
     reason = models.CharField(max_length=10, choices=Reason.choices, verbose_name="دلیل")
     description = models.TextField(blank=True, verbose_name="توضیح")
     image = models.ImageField(upload_to="reports/%Y/%m/", blank=True, verbose_name="عکس")
@@ -68,9 +70,11 @@ class Report(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    Q(target_user__isnull=False, target_book__isnull=True, target_message__isnull=True)
-                    | Q(target_user__isnull=True, target_book__isnull=False, target_message__isnull=True)
-                    | Q(target_user__isnull=True, target_book__isnull=True, target_message__isnull=False)
+                    Q(target_user__isnull=False, target_book__isnull=True, target_message__isnull=True, target_post__isnull=True, target_announcement__isnull=True)
+                    | Q(target_user__isnull=True, target_book__isnull=False, target_message__isnull=True, target_post__isnull=True, target_announcement__isnull=True)
+                    | Q(target_user__isnull=True, target_book__isnull=True, target_message__isnull=False, target_post__isnull=True, target_announcement__isnull=True)
+                    | Q(target_user__isnull=True, target_book__isnull=True, target_message__isnull=True, target_post__isnull=False, target_announcement__isnull=True)
+                    | Q(target_user__isnull=True, target_book__isnull=True, target_message__isnull=True, target_post__isnull=True, target_announcement__isnull=False)
                 ),
                 name="report_exactly_one_target",
             ),
@@ -78,6 +82,8 @@ class Report(models.Model):
             models.UniqueConstraint(fields=["reporter", "target_user"], condition=Q(target_user__isnull=False), name="uniq_report_user"),
             models.UniqueConstraint(fields=["reporter", "target_book"], condition=Q(target_book__isnull=False), name="uniq_report_book"),
             models.UniqueConstraint(fields=["reporter", "target_message"], condition=Q(target_message__isnull=False), name="uniq_report_message"),
+            models.UniqueConstraint(fields=["reporter", "target_post"], condition=Q(target_post__isnull=False), name="uniq_report_post"),
+            models.UniqueConstraint(fields=["reporter", "target_announcement"], condition=Q(target_announcement__isnull=False), name="uniq_report_announcement"),
         ]
         verbose_name = "گزارش"
         verbose_name_plural = "گزارش‌ها"
@@ -92,6 +98,10 @@ class Report(models.Model):
             return self.target_user
         if self.target_book_id:
             return self.target_book.owner
+        if self.target_post_id:
+            return self.target_post.author
+        if self.target_announcement_id:
+            return self.target_announcement.submitted_by
         return self.target_message.sender
 
     @property
@@ -100,4 +110,8 @@ class Report(models.Model):
             return f"کاربر {self.target_user}"
         if self.target_book_id:
             return f"کتاب «{self.target_book}»"
+        if self.target_post_id:
+            return f"معرفی «{self.target_post.title}»"
+        if self.target_announcement_id:
+            return f"اطلاعیه «{self.target_announcement.title}»"
         return f"پیام: {self.target_message.text[:40]}"

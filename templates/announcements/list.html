@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}اطلاعیه‌های فرهنگی | هم‌ورق{% endblock %}
+{% block description %}نمایشگاه کتاب، رونمایی، نشست نقد، کتاب‌خوانی جمعی و کارگاه‌ها؛ اتفاق‌های فرهنگی شهر تو و سراسر ایران.{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>اطلاعیه‌های فرهنگی</h1><p>نمایشگاه، رونمایی، نشست نقد، کتاب‌خوانی جمعی و کارگاه؛ هر چی تو دنیای کتابه.</p></div>
+    <a class="btn" href="{% if user.is_authenticated %}{% url 'announcements:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="plus" %} ثبت اطلاعیه</a></div>
+<nav class="tabs" aria-label="زمان"><a href="?{{ base_qs }}"{% if tab == 'upcoming' %} aria-current="page"{% endif %}>پیش‌رو</a><a href="?{% if base_qs %}{{ base_qs }}&{% endif %}tab=past"{% if tab == 'past' %} aria-current="page"{% endif %}>گذشته</a></nav>
+<form method="get" class="filters-bar" style="grid-template-columns:1fr 1fr 1fr auto auto" data-location-group role="search" aria-label="فیلتر اطلاعیه‌ها">
+    {% if tab == 'past' %}<input type="hidden" name="tab" value="past">{% endif %}
+    {% for field in form %}{% if field.name != 'online' %}{% include "components/field.html" %}{% endif %}{% endfor %}
+    <div class="field">{% include "components/field.html" with field=form.online %}</div>
+    <button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button>
+</form>
+{% if page %}<div class="event-list">{% for a in page %}{% include "components/event_card.html" %}{% endfor %}</div>{% include "components/pagination.html" %}
+{% else %}{% url 'announcements:create' as create_url %}{% include "components/empty.html" with ill="bell" title=empty_title|default:"اطلاعیه‌ای پیدا نشد" text="فیلترها رو کم کن، یا اگه از رویدادی خبر داری، خودت ثبتش کن." cta_url=create_url cta_label="ثبت اطلاعیه" %}{% endif %}
+{% endblock %}

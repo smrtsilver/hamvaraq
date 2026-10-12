@@ -9,6 +9,8 @@ from django.db import transaction
 from django.db.models import Avg, Count
 
 from accounts.badges import check_badges
+from django.utils import timezone
+from posts.forms import books_of
 from common.throttle import throttle
 from common.text import words
 from exchanges.models import Exchange
@@ -55,6 +57,8 @@ def book_detail(request, pk):
         "book": book,
         "ld_json": _book_ld(book, request),
         "photos": book.photos.all(),
+        "posts": book.posts.filter(status="published", published_at__lte=timezone.now()).select_related("author")[:3],
+        "can_write_post": user.is_authenticated and books_of(user).filter(pk=book.pk).exists(),
         "reviews": book.reviews.select_related("user"),
         "rating": book.reviews.aggregate(avg=Avg("stars"), n=Count("id")),
         "review_form": ReviewForm(instance=my_review) if can_review else None,

@@ -67,6 +67,7 @@ nginx روی سرور با `deploy/hamvaraq.nginx.conf.example` جلوی پور�
 
 - **چرخه‌ی عمر مبادله:** `python manage.py expire_exchanges [--dry-run]` (روزانه): یادآوری، لغو بی‌پاسخ‌ها با برگشت امتیاز و باز کردن اختلاف خودکار. اختلاف‌ها را ادمین از `/admin/` (اکشن‌های «اختلاف: …» روی مبادله) حل می‌کند.
 - **عکس‌ها:** `common/images.py` — EXIF حذف، حداکثر ۱۲۸۰ پیکسل، JPEG؛ بند‌انگشتی خودکار؛ تا ۴ عکس اضافه.
+- **معرفی کتاب و اطلاعیه‌ها:** `/posts/` (نوشته‌ی کاربران، مارک‌داون امن) و `/announcements/` (رویدادهای فرهنگی با تاریخ جلالی و `.ics`)؛ تأیید در `/admin/` یا `/staff/`. یادآوری رویداد: `python manage.py announcement_reminders` (روزانه).
 - **بکاپ:** `python manage.py backup_db --media` (خروجی `backups/`، نگه‌داشتن `BACKUP_KEEP` تا). بازیابی Postgres: `pg_restore -c -d <db> backups/db-….dump`.
 - **خطا و لاگ:** `SENTRY_DSN` اختیاری؛ لاگ‌ها در خروجی استاندارد.
 - **CI:** `.github/workflows/ci.yml` (ruff، check، مهاجرت‌ها، تست روی SQLite و Postgres، داکر). توسعه: `pip install -r requirements-dev.txt && ruff check .`

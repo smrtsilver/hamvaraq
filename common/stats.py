@@ -11,6 +11,8 @@ from django.utils import timezone
 from accounts.models import User
 from books.models import Book
 from exchanges.models import Exchange
+from announcements.models import Announcement
+from posts.models import Post
 from trust.models import Report
 
 
@@ -51,8 +53,9 @@ def suspicious_accounts(now=None):
 
     # ۳) چند گزارش علیه یه نفر
     against = Counter()
-    for r in Report.objects.exclude(decision=Report.Decision.REJECT).select_related("target_book", "target_message"):
-        against[r.accused.pk] += 1
+    for r in Report.objects.exclude(decision=Report.Decision.REJECT).select_related("target_book", "target_message", "target_post", "target_announcement"):
+        if r.accused is not None:
+            against[r.accused.pk] += 1
     accused = User.objects.in_bulk([uid for uid, n in against.items() if n >= 2])
     for uid, user in accused.items():
         flag(user, f"{against[uid]} گزارش علیه‌ش")
@@ -105,6 +108,10 @@ def collect(now=None):
             "open": open_reports.filter(status=Report.Status.OPEN).count(),
             "reviewing": open_reports.filter(status=Report.Status.REVIEWING).count(),
             "oldest_days": (now - oldest.created_at).days if oldest else None,
+        },
+        "queues": {
+            "posts": Post.objects.filter(status=Post.Status.PENDING).count(),
+            "announcements": Announcement.objects.filter(status=Announcement.Status.PENDING).count(),
         },
         "daily": {
             "users": _series(User.objects.all(), "date_joined", 14, now),

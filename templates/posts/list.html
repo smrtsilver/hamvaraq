@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}معرفی کتاب | هم‌ورق{% endblock %}
+{% block description %}معرفی و نقد کتاب به قلم کتاب‌خوان‌های هم‌ورق؛ کتاب بعدیت رو از تجربه‌ی بقیه پیدا کن.{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>معرفی کتاب</h1><p>کتاب‌خوان‌ها درباره‌ی کتاب‌هایی که خوندن می‌نویسن.</p></div>
+    <a class="btn" href="{% if user.is_authenticated %}{% url 'posts:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="pen" %} یه کتاب معرفی کن</a></div>
+<form method="get" class="filters-bar" style="grid-template-columns:2fr 1fr auto" role="search">
+    <div class="field"><label for="pq">جستجو</label><input id="pq" type="search" name="q" value="{{ q }}" placeholder="عنوان، کتاب یا نویسنده" autocomplete="off"></div>
+    <div class="field"><label for="ps">مرتب‌سازی</label><select id="ps" name="sort"><option value="new"{% if sort == 'new' %} selected{% endif %}>جدیدترین</option><option value="popular"{% if sort == 'popular' %} selected{% endif %}>پربازدیدترین</option></select></div>
+    <button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button>
+</form>
+{% if tags %}<p class="cluster">{% for t in tags %}<a class="chip" href="?tag={{ t.pk }}"{% if tag == t.pk|stringformat:"s" %} aria-current="true" style="border-color:var(--primary)"{% endif %}>{{ t.name }}</a>{% endfor %}{% if tag %}<a class="small" href="{% url 'posts:list' %}">همه</a>{% endif %}</p>{% endif %}
+{% if page %}<div class="post-grid">{% for p in page %}{% include "components/post_card.html" %}{% endfor %}</div>{% include "components/pagination.html" %}
+{% else %}{% url 'posts:create' as create_url %}{% include "components/empty.html" with ill="books" title="هنوز معرفی‌ای نیست" text="کتابی که دوست داشتی رو معرفی کن؛ اولین نفر باش." cta_url=create_url cta_label="نوشتن معرفی" %}{% endif %}
+{% endblock %}

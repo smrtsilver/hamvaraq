@@ -78,6 +78,10 @@
     {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card" style="margin-top:16px" novalidate><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{% include "components/form.html" with form=review_form %}<button class="btn btn-sm">ثبت نقد</button></form>{% endif %}
 </section>
 
+{% if posts or can_write_post %}<section class="section-sm"><div class="section-head"><div><h2>معرفی‌ها</h2><p>کتاب‌خوان‌ها درباره‌ی این کتاب نوشتن</p></div>
+    {% if can_write_post %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:create' %}?book={{ book.pk }}">{% include "components/icon.html" with name="pen" %} یه معرفی بنویس</a>{% endif %}</div>
+    {% if posts %}<div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
+
 {% if similar %}<section class="section-sm"><div class="section-head"><div><h2>هم‌سلیقه‌ها</h2><p>کسایی که این کتاب رو داشتن، اینا رو هم دارن</p></div></div>
     {% include "components/book_grid.html" with books=similar %}</section>{% endif %}
 {% endblock %}

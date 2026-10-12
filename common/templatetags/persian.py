@@ -23,3 +23,22 @@ def mod(value, arg):
         return int(value) % int(arg)
     except (TypeError, ValueError, ZeroDivisionError):
         return 0
+
+
+@register.filter
+def richtext(value):
+    from common import richtext as rt
+
+    return rt.render(value)
+
+
+@register.filter
+def jday(value):
+    j = jalali._to_j(value)
+    return jalali.fa_digits(j.day) if j else ""
+
+
+@register.filter
+def jmonth(value):
+    j = jalali._to_j(value)
+    return jalali.MONTHS[j.month - 1] if j else ""

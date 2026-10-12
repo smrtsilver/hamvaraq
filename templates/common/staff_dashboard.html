@@ -14,6 +14,8 @@
 <h2 style="margin-top:28px">نیازمند توجه</h2>
 <ul class="list-clean card">
     <li>درخواست‌های بی‌پاسخ (بیش از چند روز): <strong>{{ d.exchanges.stale_requested|fa }}</strong></li>
+    <li>معرفی‌های منتظر تأیید: <strong>{{ d.queues.posts|fa }}</strong>{% if d.queues.posts %} — <a href="{% url 'admin:posts_post_changelist' %}?status__exact=pending">بررسی</a>{% endif %}</li>
+    <li>اطلاعیه‌های منتظر تأیید: <strong>{{ d.queues.announcements|fa }}</strong>{% if d.queues.announcements %} — <a href="{% url 'admin:announcements_announcement_changelist' %}?status__exact=pending">بررسی</a>{% endif %}</li>
     <li>اختلاف‌های باز: <strong>{{ d.exchanges.disputed|fa }}</strong>{% if d.exchanges.disputed %} — <a href="{% url 'admin:exchanges_exchange_changelist' %}?status__exact=accepted&disputed_at__isempty=0">رسیدگی</a>{% endif %}</li>
     <li>مبادله‌های تأییدشده‌ی تموم‌نشده: <strong>{{ d.exchanges.stale_accepted|fa }}</strong></li>
     <li>کاربر محدود: {{ d.users.restricted|fa }} · مسدود: {{ d.users.banned|fa }}</li>

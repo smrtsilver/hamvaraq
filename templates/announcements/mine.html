@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}اطلاعیه‌های من | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>اطلاعیه‌های من</h1><p>وضعیت اطلاعیه‌هایی که ثبت کردی.</p></div><a class="btn" href="{% url 'announcements:create' %}">{% include "components/icon.html" with name="plus" %} ثبت اطلاعیه</a></div>
+{% if items %}<div class="stack">{% for a in items %}<div class="exchange-row"><span class="grow"><strong><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></strong>
+    <span class="small muted">{{ a.get_kind_display }}{% if a.starts_at %} · {{ a.starts_at|jdate }}{% endif %}{% if a.reject_reason %} · {{ a.reject_reason }}{% endif %}</span></span>
+    <span class="pill {% if a.status == 'published' %}pill-green{% elif a.status == 'rejected' %}pill-red{% else %}pill-amber{% endif %}">{{ a.get_status_display }}</span>
+    {% if a.status != 'published' %}<a class="btn btn-ghost btn-sm" href="{% url 'announcements:edit' a.pk %}">ویرایش</a>{% endif %}</div>{% endfor %}</div>
+{% else %}{% url 'announcements:create' as create_url %}{% include "components/empty.html" with ill="bell" title="هنوز اطلاعیه‌ای ثبت نکردی" cta_url=create_url cta_label="ثبت اطلاعیه" %}{% endif %}
+{% endblock %}

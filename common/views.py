@@ -26,8 +26,25 @@ def home(request):
     cities = City.objects.annotate(n=Count("books", filter=Q(books__status=Book.Status.AVAILABLE))).filter(n__gt=0).select_related("province").order_by("-n", "name")[:10]
     return render(request, "landing.html", {
         "latest": available.select_related("city__province", "category")[:8], "stats": stats, "cities": cities,
+        "posts": _latest_posts(3), "events": _upcoming_events(3),
         "faq": FAQ, "steps": STEPS, "features": FEATURES, "faq_ld": _faq_ld(FAQ),
     })
+
+
+def _latest_posts(n):
+    from posts.models import Post
+
+    return list(Post.objects.filter(status=Post.Status.PUBLISHED, published_at__lte=timezone.now()).select_related("author", "book").order_by("-is_featured", "-published_at")[:n])
+
+
+def _upcoming_events(n, city=None):
+    from announcements.views import _published, _upcoming
+    from django.db.models.functions import Coalesce
+
+    qs = _upcoming(_published())
+    if city is not None:
+        qs = qs.filter(Q(city=city) | Q(is_online=True))
+    return list(qs.order_by("-is_featured", Coalesce("starts_at", "published_at"))[:n])
 
 
 def _faq_ld(faq):
@@ -63,7 +80,7 @@ def _member_home(request):
     done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
     return render(request, "home.html", {
         "onboarding": progress(user), "waiting": waiting, "active": active, "local": local or list(base[:8]), "local_is_city": bool(local),
-        "matches": matches, "challenges": challenges,
+        "matches": matches, "challenges": challenges, "events": _upcoming_events(3, user.city), "posts": _latest_posts(3),
         "given": done.filter(owner=user).count(), "received": done.filter(requester=user).count(),
     })
 

@@ -12,7 +12,7 @@ class StaticSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return ["home", "books:list", "cities", "challenges:list", "how_it_works", "rules"]
+        return ["home", "books:list", "posts:list", "announcements:list", "cities", "challenges:list", "how_it_works", "rules"]
 
     def location(self, name):
         return reverse(name)
@@ -52,12 +52,41 @@ class ProvinceSitemap(Sitemap):
         return reverse("province", args=[province.pk])
 
 
-SITEMAPS = {"static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap, "provinces": ProvinceSitemap}
+class PostSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.6
+
+    def items(self):
+        from django.utils import timezone
+
+        from posts.models import Post
+
+        return Post.objects.filter(status=Post.Status.PUBLISHED, published_at__lte=timezone.now()).order_by("-published_at")
+
+    def lastmod(self, obj):
+        return obj.updated_at
+
+
+class AnnouncementSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.6
+
+    def items(self):
+        from announcements.models import Announcement
+
+        return Announcement.objects.filter(status=Announcement.Status.PUBLISHED).order_by("-published_at")
+
+    def lastmod(self, obj):
+        return obj.published_at
+
+
+SITEMAPS = {"posts": PostSitemap, "announcements": AnnouncementSitemap, "static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap, "provinces": ProvinceSitemap}
 
 # مسیرهای خصوصی: تو robots.txt بسته‌ان و هدر noindex هم می‌گیرن (RobotsHeaderMiddleware)
 PRIVATE_PREFIXES = (
     "/admin/", "/staff/", "/accounts/", "/exchanges/", "/notifications/", "/trust/",
     "/books/new/", "/books/mine/", "/books/bulk/", "/books/wishlist/", "/books/isbn/", "/books/suggest/",
+    "/posts/new/", "/posts/mine/", "/posts/preview/", "/announcements/new/", "/announcements/mine/",
 )
 
 

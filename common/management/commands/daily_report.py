@@ -21,6 +21,7 @@ class Command(BaseCommand):
             f"درخواست {st.get('requested', 0)}، تأییدشده {st.get('accepted', 0)}",
             f"گیرکرده: درخواست‌های بی‌پاسخ {s['exchanges']['stale_requested']}، تأییدشده‌های معلق {s['exchanges']['stale_accepted']}",
             f"اختلاف باز: {s['exchanges']['disputed']}",
+            f"صف تأیید: معرفی {s['queues']['posts']}، اطلاعیه {s['queues']['announcements']}",
             f"گزارش باز: {s['reports']['open']}، در بررسی: {s['reports']['reviewing']}"
             + (f" (قدیمی‌ترین {s['reports']['oldest_days']} روزه)" if s["reports"]["oldest_days"] is not None else ""),
             f"حساب مشکوک: {len(s['suspicious'])}",

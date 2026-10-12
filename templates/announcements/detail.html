@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} | اطلاعیه | هم‌ورق{% endblock %}
+{% block description %}{{ item.summary }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ item.title }} | هم‌ورق{% endblock %}
+{% block og_description %}{{ item.summary }}{% endblock %}
+{% block og_image %}{% if item.cover %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ item.cover.url }}">{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block robots %}{% if item.status != 'published' %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
+{% block content %}
+<article class="post-hero">
+    {% if item.status != 'published' %}<div class="alert alert-warning"><p>این اطلاعیه هنوز منتشر نشده ({{ item.get_status_display }}){% if item.reject_reason %}: {{ item.reject_reason }}{% endif %}؛ فقط ثبت‌کننده و مدیریت می‌بینن.</p></div>{% endif %}
+    <p class="small"><a href="{% url 'announcements:list' %}">اطلاعیه‌ها</a></p>
+    <div class="cluster" style="margin-bottom:8px"><span class="pill pill-green">{{ item.get_kind_display }}</span>{% if item.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if item.is_past and not item.is_news %}<span class="pill">برگزار شد</span>{% endif %}{% if item.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}</div>
+    <h1 style="font-size:var(--fs-3xl)">{{ item.title }}</h1>
+    <p class="muted" style="font-size:var(--fs-lg)">{{ item.summary }}</p>
+    {% if item.cover %}<div class="cover-wide"><img src="{{ item.cover.url }}" alt="{{ item.title }}" fetchpriority="high"></div>{% endif %}
+
+    <div class="grid-2" style="align-items:start;margin-block:20px">
+        <div class="card"><h3>جزئیات</h3><ul class="info-list">
+            {% if item.starts_at %}<li>{% include "components/icon.html" with name="calendar" %}<div><strong>{{ item.starts_at|jlong }}</strong>{% if item.starts_at|jtime != "۰۰:۰۰" %}<small>ساعت {{ item.starts_at|jtime }}{% if item.ends_at %} تا {{ item.ends_at|jtime }}{% endif %}</small>{% endif %}{% if item.ends_at and item.ends_at|jdate != item.starts_at|jdate %}<small>تا {{ item.ends_at|jlong }}</small>{% endif %}</div></li>{% endif %}
+            <li>{% include "components/icon.html" with name="pin" %}<div>{% if item.is_online %}<strong>برگزاری آنلاین</strong>{% elif item.venue or item.city %}<strong>{% if item.venue %}{{ item.venue }}{% else %}{{ item.city.name }}{% endif %}</strong>{% if item.city %}<small>{{ item.city.name }}، {{ item.city.province.name }}</small>{% endif %}{% if item.address %}<small>{{ item.address }}</small>{% endif %}{% endif %}</div></li>
+            {% if item.organizer %}<li>{% include "components/icon.html" with name="user" %}<div><small>برگزارکننده</small><strong>{{ item.organizer }}</strong></div></li>{% endif %}
+            <li>{% include "components/icon.html" with name="gift" %}<div><strong>{% if item.is_free %}رایگان{% else %}{{ item.price_note|default:"پولی" }}{% endif %}</strong>{% if item.is_free and item.price_note %}<small>{{ item.price_note }}</small>{% endif %}</div></li>
+        </ul></div>
+        <div class="card"><h3>اقدام</h3><div class="stack stack-sm">
+            {% if item.link %}<a class="btn btn-block" href="{{ item.link }}" target="_blank" rel="nofollow noopener noreferrer">{% include "components/icon.html" with name="link" %} ثبت‌نام / اطلاعات بیشتر</a>{% endif %}
+            {% if can_ics %}<a class="btn btn-secondary btn-block" href="{% url 'announcements:ics' item.pk %}">{% include "components/icon.html" with name="calendar" %} افزودن به تقویم</a>
+            {% if user.is_authenticated and not item.is_past %}<form method="post" action="{% url 'announcements:bookmark' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-block">{% include "components/icon.html" with name="bell" %} {% if bookmarked %}یادآوری فعاله؛ برداشتن{% else %}قبل از شروع بهم یادآوری کن{% endif %}</button></form>{% endif %}{% endif %}
+        </div></div>
+    </div>
+    {% if item.body %}<div class="rich">{{ item.body|richtext }}</div>{% endif %}
+    <div class="cluster" style="margin-top:20px">
+        {% if mine and item.submitted_by == user %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' item.pk %}">ویرایش</a>
+        {% elif user.is_authenticated and item.status == 'published' %}<a class="muted small" href="{% url 'trust:report' 'announcement' item.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
+    </div>
+</article>
+{% endblock %}

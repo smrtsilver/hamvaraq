@@ -7,6 +7,7 @@ class Challenge(models.Model):
         GIVE = "give", "کتاب دادن"
         RECEIVE = "receive", "کتاب گرفتن"
         ANY = "any", "مبادله (دادن یا گرفتن)"
+        POST = "post", "نوشتن معرفی کتاب"
 
     title = models.CharField(max_length=100, verbose_name="عنوان")
     description = models.CharField(max_length=300, blank=True, verbose_name="توضیح")
@@ -34,6 +35,10 @@ class Challenge(models.Model):
 
         from exchanges.models import Exchange
 
+        if self.kind == self.Kind.POST:
+            from posts.models import Post
+
+            return Post.objects.filter(author=user, status=Post.Status.PUBLISHED, published_at__gte=self.starts_at, published_at__lte=self.ends_at).count()
         qs = Exchange.objects.filter(
             status=Exchange.Status.COMPLETED, completed_at__gte=self.starts_at, completed_at__lte=self.ends_at)
         if self.kind == self.Kind.GIVE:

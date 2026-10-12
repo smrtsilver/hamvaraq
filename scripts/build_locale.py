@@ -20,6 +20,7 @@ T = {
     "…and %(count)d more object.": ("…و %(count)d مورد دیگر.", "…و %(count)d مورد دیگر."),
     "Run": "اجرا",
     "Breadcrumbs": "مسیر صفحه",
+    "Hold down “Control”, or “Command” on a Mac, to select more than one.": "برای انتخاب چند مورد، کلید کنترل را نگه دارید و روی موارد کلیک کنید.",
     "Model name": "نام مدل",
     "Please correct the error below.": ("لطفاً خطای زیر را اصلاح کنید.", "لطفاً خطاهای زیر را اصلاح کنید."),
     "This action will <strong>enable</strong> password-based authentication for this user.":

@@ -28,6 +28,8 @@ urlpatterns = [
     path("exchanges/", include("exchanges.urls")),
     path("trust/", include("trust.urls")),
     path("challenges/", include("challenges.urls")),
+    path("posts/", include("posts.urls")),
+    path("announcements/", include("announcements.urls")),
     path("notifications/", include("notifications.urls")),
 ]
 

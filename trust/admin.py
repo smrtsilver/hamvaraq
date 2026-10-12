@@ -11,7 +11,7 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ("status", "reason", "decision")
     search_fields = ("reporter__username", "description")
     readonly_fields = (
-        "reporter", "target_user", "target_book", "target_message", "reason", "description", "image",
+        "reporter", "target_user", "target_book", "target_message", "target_post", "target_announcement", "reason", "description", "image",
         "created_at", "closed_at", "handled_by", "context",
     )
     fields = readonly_fields + ("status", "decision", "decision_note")
@@ -24,6 +24,8 @@ class ReportAdmin(admin.ModelAdmin):
 
         user = obj.accused
         lines = []
+        if user is None:
+            return "—"
         if obj.target_message_id:
             ex = obj.target_message.exchange
             lines += [(f"{m.sender}: {m.text}",) for m in ex.messages.all()]

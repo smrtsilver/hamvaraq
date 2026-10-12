@@ -1,0 +1,10 @@
+<a class="event-card" href="{{ a.get_absolute_url }}">
+    {% if a.starts_at and not a.is_news %}<div class="date-badge{% if a.is_past %} past{% endif %}"><strong>{{ a.starts_at|jday }}</strong><span>{{ a.starts_at|jmonth }}</span></div>
+    {% else %}<div class="date-badge news">{% include "components/icon.html" with name="news" %}<span>خبر</span></div>{% endif %}
+    <div class="grow">
+        <div class="cluster" style="gap:6px">{% if a.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}<span class="pill pill-green">{{ a.get_kind_display }}</span>{% if a.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if not a.is_free %}<span class="pill">پولی</span>{% endif %}</div>
+        <h3>{{ a.title }}</h3>
+        <p>{{ a.summary }}</p>
+        <div class="event-meta">{% if a.starts_at and not a.is_news %}<span>{% include "components/icon.html" with name="calendar" %} {{ a.starts_at|jtime }}</span>{% endif %}{% if a.place_label %}<span>{% include "components/icon.html" with name="pin" %} {{ a.place_label }}</span>{% endif %}</div>
+    </div>
+</a>

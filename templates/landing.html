@@ -50,6 +50,16 @@
     <p class="center"><a href="{% url 'cities' %}">همه‌ی شهرها و استان‌ها</a></p>
 </div></section>{% endif %}
 
+{% if events %}<section class="lp-section"><div class="container">
+    <div class="section-head"><div><h2>اتفاق‌های فرهنگی</h2><p>نمایشگاه، رونمایی، نشست نقد و کتاب‌خوانی جمعی</p></div><a class="btn btn-secondary btn-sm" href="{% url 'announcements:list' %}">همه‌ی اطلاعیه‌ها</a></div>
+    <div class="event-list">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div>
+</div></section>{% endif %}
+
+{% if posts %}<section class="lp-section lp-alt"><div class="container">
+    <div class="section-head"><div><h2>معرفی‌های تازه</h2><p>کتاب‌خوان‌ها درباره‌ی کتاب‌هایی که خوندن می‌نویسن</p></div><a class="btn btn-secondary btn-sm" href="{% url 'posts:list' %}">همه‌ی معرفی‌ها</a></div>
+    <div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div>
+</div></section>{% endif %}
+
 <section class="lp-section"><div class="container faq-wrap">
     <div class="lp-title"><h2>سوال‌های پرتکرار</h2></div>
     {% for q, a in faq %}<details class="faq"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}

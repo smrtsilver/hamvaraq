@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sitemaps",
+    "django.forms",  # تا ویجت‌های پیش‌فرض با FORM_RENDERER پروژه هم پیدا بشن
     "common",
     "accounts",
     "books",
@@ -57,6 +58,8 @@ INSTALLED_APPS = [
     "trust",
     "notifications",
     "challenges",
+    "posts",
+    "announcements",
 ]
 
 MIDDLEWARE = [
@@ -95,6 +98,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "HamVaraqDjangoServer.wsgi.application"
+
+# قالب‌های سفارشی ویجت (مثل تاریخ جلالی) از templates/forms/ خونده می‌شن
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
@@ -222,3 +228,15 @@ VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
 VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
 VAPID_SUBJECT = env("VAPID_SUBJECT", default="mailto:admin@hamvaraq.ir")
 PUSH_SYNC = IS_TEST  # تو تست ارسال همون لحظه و بدون ترد انجام می‌شه
+
+# ---- معرفی کتاب (پست کاربری) ----
+POST_MIN_LENGTH = 150        # حداقل نویسه‌ی متن
+POST_TRUST_AFTER = 2         # بعد از این تعداد نوشته‌ی تأییدشده، خودکار منتشر می‌شه
+POST_MAX_LINKS_NEW = 3       # سقف لینک برای نویسنده‌ی تازه
+POST_DAILY_LIMIT = 3         # حداکثر نوشته‌ی جدید در ۲۴ ساعت
+
+# ---- اطلاعیه‌های فرهنگی ----
+EVENT_CITY_NOTIFY_LIMIT = 300    # سقف اعلان به کاربران شهر موقع انتشار یک رویداد
+EVENT_REMIND_HOURS = 30          # یادآوری «فردا» برای کسانی که یادآوری زدن
+ANNOUNCEMENT_DAILY_LIMIT = 3     # حداکثر اطلاعیه‌ی جدید هر کاربر در ۲۴ ساعت
+BADGE_COLUMNIST_POSTS = 5

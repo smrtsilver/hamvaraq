@@ -41,6 +41,9 @@ msgstr "اجرا"
 msgid "Breadcrumbs"
 msgstr "مسیر صفحه"
 
+msgid "Hold down “Control”, or “Command” on a Mac, to select more than one."
+msgstr "برای انتخاب چند مورد، کلید کنترل را نگه دارید و روی موارد کلیک کنید."
+
 msgid "Model name"
 msgstr "نام مدل"
 

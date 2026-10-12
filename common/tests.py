@@ -1373,10 +1373,25 @@ class NoEnglishAuditTests(TestCase):
         for model in ("accounts/user", "accounts/badge", "accounts/userbadge", "books/book", "books/category", "books/review",
                       "books/wishlist", "books/booknote", "books/bookjourney", "challenges/challenge", "common/city",
                       "common/province", "common/meetingpoint", "common/sitesetting", "exchanges/exchange", "notifications/notification",
-                      "trust/report", "trust/vote"):
+                      "trust/report", "trust/vote", "posts/post", "posts/tag", "announcements/announcement", "announcements/announcementbookmark",
+                      "notifications/pushsubscription", "notifications/notificationpreference"):
             urls += [f"/admin/{model}/"] + ([] if model == "common/sitesetting" else [f"/admin/{model}/add/"])
         urls.append("/admin/common/sitesetting/1/change/")
         self.check(urls, "ادمین")
+
+    def test_posts_and_announcements_pages(self):
+        from posts.models import Post
+        from announcements.models import Announcement
+        from announcements import services as asv
+        post = Post.objects.create(author=self.a, book=self.book, title="معرفی بوف کور", body="متن " * 60, status="published", published_at=timezone.now())
+        ev = Announcement(title="رونمایی کتاب", summary="خلاصه", kind="launch", city=self.tehran, venue="خانه‌ی کتاب",
+                          starts_at=timezone.now() + timezone.timedelta(days=3))
+        asv.submit(ev, self.boss)
+        urls = ["/posts/", post.get_absolute_url(), "/announcements/", "/announcements/?tab=past", ev.get_absolute_url(),
+                "/posts/by/سارا/"]
+        self.check(urls, "مهمان محتوا")
+        self.client.login(username="سارا", password="x12345678")
+        self.check(urls + ["/posts/new/", f"{post.get_absolute_url()}edit/", "/posts/mine/", "/announcements/new/", "/announcements/mine/"], "عضو محتوا")
 
     def test_completed_exchange_and_vote_pages(self):
         ex = services.request_book(self.b2.pk, self.a)
@@ -1663,3 +1678,464 @@ class PwaAssetTests(TestCase):
         html = self.client.get("/").content.decode()
         for needle in ('rel="manifest"', "apple-touch-icon", 'name="theme-color"', "pwa.js", "viewport-fit=cover"):
             self.assertIn(needle, html)
+
+
+class RichTextTests(TestCase):
+    def render(self, text):
+        from common.richtext import render
+        return str(render(text))
+
+    def test_html_is_escaped_everywhere(self):
+        for payload in ("<script>alert(1)</script>", "<img src=x onerror=alert(1)>", "**<b>x</b>**", "> <iframe src=//evil>", "- <a href=x>l</a>", "## <h1>x</h1>"):
+            out = self.render(payload)
+            self.assertNotIn("<script", out); self.assertNotIn("<img", out); self.assertNotIn("<iframe", out); self.assertNotIn("<a href=x", out); self.assertNotIn("<h1", out)
+
+    def test_only_http_links_with_safe_rel(self):
+        out = self.render("[بد](javascript:alert(1)) [دیتا](data:text/html,x) [خوب](https://example.com/a?b=1&c=2)")
+        self.assertNotIn('href="javascript', out); self.assertNotIn('href="data', out)
+        self.assertIn('href="https://example.com/a?b=1&amp;c=2"', out)
+        self.assertIn('rel="nofollow ugc noopener noreferrer"', out)
+        self.assertIn('target="_blank"', out)
+
+    def test_attribute_breakout_blocked(self):
+        out = self.render('[x](https://a.com" onclick="alert(1))')
+        self.assertNotIn("onclick=", out.replace("&quot;", "")[:0] or out.split("<a")[1] if "<a" in out else "")
+        self.assertNotIn("<a", out)
+
+    def test_formatting_blocks(self):
+        out = self.render("## تیتر\n\nمتن **پررنگ** و *مورب* و ***هر دو***\nخط دوم\n\n> نقل\n> ادامه\n\n- یک\n- دو\n\n۱. اول\n۲. دوم")
+        for needle in ("<h3>تیتر</h3>", "<strong>پررنگ</strong>", "<em>مورب</em>", "<strong><em>هر دو</em></strong>", "<br>خط دوم", "<blockquote>نقل<br>ادامه</blockquote>",
+                       "<ul><li>یک</li><li>دو</li></ul>", "<ol><li>اول</li><li>دوم</li></ol>"):
+            self.assertIn(needle, out)
+
+    def test_plain_helpers_and_limits(self):
+        from common.richtext import count_links, plain, MAX_LEN
+        self.assertEqual(count_links("[a](https://x.com) [b](http://y.com) [c](ftp://z)"), 2)
+        self.assertEqual(plain("**سلام** [دنیا](https://x.com) ## تیتر"), "سلام دنیا تیتر")
+        self.assertLessEqual(len(self.render("ا" * (MAX_LEN * 2))), MAX_LEN + 20)
+        self.assertEqual(self.render(""), "")
+
+    def test_template_filter(self):
+        from django.template import Context, Template
+        out = Template("{{ t|richtext }}").render(Context({"t": "<b>x</b>"}))
+        self.assertIn("&lt;b&gt;", out)
+
+
+class JalaliWidgetTests(TestCase):
+    def field(self, **kw):
+        from common.widgets import JalaliDateTimeField
+        return JalaliDateTimeField(**kw)
+
+    def test_conversion_to_tehran_aware_datetime(self):
+        f = self.field()
+        dt = f.clean(["1405", "1", "1", "09:30"])
+        self.assertTrue(timezone.is_aware(dt))
+        local = timezone.localtime(dt)
+        self.assertEqual((local.year, local.month, local.day, local.hour, local.minute), (2026, 3, 21, 9, 30))
+
+    def test_leap_and_invalid_dates(self):
+        from django.core.exceptions import ValidationError
+        f = self.field()
+        self.assertIsNotNone(f.clean(["1403", "12", "30", ""]))           # ۱۴۰۳ کبیسه است
+        for bad in (["1404", "12", "30", ""], ["1405", "7", "31", ""], ["1405", "13", "1", ""], ["1405", "1", "1", "ab:cd"]):
+            with self.assertRaises(ValidationError):
+                f.clean(bad)
+
+    def test_required_optional_and_partial(self):
+        from django.core.exceptions import ValidationError
+        self.assertIsNone(self.field(required=False).clean(["", "", "", ""]))
+        with self.assertRaises(ValidationError):
+            self.field(required=True).clean(["", "", "", ""])
+        with self.assertRaises(ValidationError):
+            self.field(required=False).clean(["1405", "", "5", ""])      # ناقص
+
+    def test_widget_roundtrip_and_render(self):
+        from common.widgets import JalaliDateTimeWidget
+        w = JalaliDateTimeWidget()
+        dt = timezone.make_aware(__import__("datetime").datetime(2026, 10, 12, 18, 45), timezone.get_current_timezone())
+        self.assertEqual(w.decompress(dt), ["1405", "7", "20", "18:45"])
+        html = w.render("d", dt)
+        self.assertIn('class="jdt"', html); self.assertIn("مهر", html); self.assertIn('type="time"', html)
+        self.assertEqual(w.decompress(None), ["", "", "", ""])
+
+
+class PostTests(Base):
+    BODY = "این کتاب یکی از بهترین‌هاییه که تو سال‌های اخیر خوندم و فکر می‌کنم هر کتاب‌خوانی باید حداقل یک‌بار تجربه‌اش کنه. " * 3
+
+    def post_data(self, **kw):
+        d = {"title": "معرفی بوف کور", "book_title": "بوف کور", "book_author": "هدایت", "body": self.BODY, "rating": "5", "tags_text": "رمان، کلاسیک"}
+        d.update(kw)
+        return d
+
+    def login(self, who="taker"):
+        self.client.login(username=who, password="x12345678")
+
+    def make(self, author=None, **kw):
+        from posts.models import Post
+        d = dict(author=author or self.taker, title="عنوان", book_title="کتاب", book_author="ن", body=self.BODY, status="published", published_at=timezone.now())
+        d.update(kw)
+        return Post.objects.create(**d)
+
+    def test_first_post_goes_to_pending_then_trusted_auto_publishes(self):
+        from posts.models import Post
+        self.login()
+        r = self.client.post(reverse("posts:create"), self.post_data(title="یک"))
+        self.assertRedirects(r, reverse("posts:mine"))
+        p1 = Post.objects.get(title="یک"); self.assertEqual(p1.status, "pending")
+        self.assertEqual(self.client.get(reverse("posts:list")).context["page"].paginator.count, 0)   # هنوز عمومی نیست
+        self.assertEqual(self.client.get(p1.get_absolute_url()).status_code, 200)                      # نویسنده می‌بینه
+        self.client.logout()
+        self.assertEqual(self.client.get(p1.get_absolute_url()).status_code, 404)                      # بقیه نه
+        for t in ("دو", "سه"):                                                                         # دو نوشته‌ی تأییدشده ← اعتماد
+            self.make(title=t)
+        Post.objects.exclude(title="یک").update(created_at=timezone.now() - timedelta(days=2))         # از سقف روزانه خارج
+        self.login()
+        r = self.client.post(reverse("posts:create"), self.post_data(title="چهار"))
+        self.assertEqual(Post.objects.get(title="چهار").status, "published")
+        self.assertRedirects(r, Post.objects.get(title="چهار").get_absolute_url())
+
+    def test_validation_rules(self):
+        from posts.forms import PostForm
+        f = lambda **kw: PostForm(self.post_data(**kw), user=self.taker)
+        self.assertFalse(f(body="کوتاه").is_valid())
+        self.assertIn("title", f(title="ببین http://spam.ir").errors)
+        self.assertFalse(f(book_title="", book_author="").is_valid())                    # کتاب مشخص نیست
+        links = " ".join(f"[l{i}](https://x{i}.com)" for i in range(5))
+        self.assertIn("body", f(body=self.BODY + links).errors)                          # سقف لینک نویسنده‌ی تازه
+        self.assertTrue(f().is_valid(), f().errors)
+
+    def test_book_choice_limited_to_users_books_and_overrides_free_text(self):
+        from posts.forms import PostForm, books_of
+        mine = self.book(owner=self.taker, title="مال من")
+        other = self.book(title="مال دیگری")
+        self.assertEqual(list(books_of(self.taker)), [mine])
+        f = PostForm(self.post_data(book=other.pk), user=self.taker)
+        self.assertIn("book", f.errors)                                                   # کتاب غیرمرتبط
+        f = PostForm(self.post_data(book=mine.pk), user=self.taker)
+        self.assertTrue(f.is_valid(), f.errors)
+        self.assertEqual((f.cleaned_data["book_title"], f.cleaned_data["book_author"]), ("", ""))
+
+    def test_received_book_counts_for_writing(self):
+        from posts.forms import books_of
+        ex = self.complete()
+        self.assertIn(ex.book, books_of(self.taker))                                      # گیرنده
+        self.assertIn(ex.book, books_of(self.giver))                                      # دهنده (مبادله‌ی کامل)
+
+    def test_duplicate_title_and_daily_limit(self):
+        self.login()
+        self.client.post(reverse("posts:create"), self.post_data(title="تکراری"))
+        r = self.client.post(reverse("posts:create"), self.post_data(title="تکراری"))
+        self.assertEqual(r.status_code, 200)                                              # عنوان تازه ثبت‌شده
+        for i in range(2):
+            self.client.post(reverse("posts:create"), self.post_data(title=f"روز {i}"))
+        from posts.models import Post
+        self.assertEqual(Post.objects.filter(author=self.taker).count(), 3)
+        r = self.client.post(reverse("posts:create"), self.post_data(title="چهارمی"))
+        self.assertRedirects(r, reverse("posts:mine"))
+        self.assertEqual(Post.objects.filter(author=self.taker).count(), 3)               # سقف ۳ در روز
+
+    def test_tags_normalized_and_capped(self):
+        p = self.make()
+        p.set_tags_from_text("رمان، ك‌لاسیک,رمان , c , d, e, f, g")
+        self.assertEqual(p.tags.count(), 5)
+        p.set_tags_from_text("كتاب, کتاب")                                               # ک عربی = ک فارسی
+        self.assertEqual(p.tags.count(), 1)
+
+    def test_list_filters_search_sort_and_detail_view_count(self):
+        a = self.make(title="جنگ و صلح", book_title="جنگ و صلح", book_author="تولستوی")
+        b = self.make(title="سووشون", book_title="سووشون", book_author="دانشور", view_count=50, is_featured=False)
+        self.make(title="پیش‌نویس", status="draft", published_at=None)
+        get = lambda **q: [p.title for p in self.client.get(reverse("posts:list"), q).context["page"]]
+        self.assertEqual(sorted(get()), ["جنگ و صلح", "سووشون"])
+        self.assertEqual(get(q="دانشور"), ["سووشون"])
+        self.assertEqual(get(q="سوشون".replace("و", "و")), [])                           # نرمال‌سازی ولی غلط املایی نه
+        self.assertEqual(get(sort="popular")[0], "سووشون")
+        a.set_tags_from_text("تاریخی")
+        self.assertEqual(get(tag=a.tags.first().pk), ["جنگ و صلح"])
+        self.client.get(a.get_absolute_url()); self.client.get(a.get_absolute_url())
+        a.refresh_from_db(); self.assertEqual(a.view_count, 1)                           # یک بازدید برای هر نشست
+        self.assertEqual(b.get_absolute_url(), reverse("posts:detail", args=[b.slug]))
+
+    def test_detail_seo_jsonld_and_review_type(self):
+        import json, re
+        p = self.make(title="بررسی", rating=4)
+        html = self.client.get(p.get_absolute_url()).content.decode()
+        ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', html, re.S).group(1))
+        self.assertEqual((ld["@type"], ld["reviewRating"]["ratingValue"]), ("Review", 4))
+        self.assertIn('property="og:type" content="article"', html)
+        self.assertNotIn("noindex", html)
+        draft = self.make(title="خصوصی", status="pending")
+        self.login()
+        self.assertIn("noindex", self.client.get(draft.get_absolute_url()).content.decode())
+
+    def test_body_renders_safely_on_page(self):
+        p = self.make(body="<script>alert(1)</script> **پررنگ** " + self.BODY)
+        html = self.client.get(p.get_absolute_url()).content.decode()
+        self.assertNotIn("<script>alert(1)", html)
+        self.assertIn("<strong>پررنگ</strong>", html)
+
+    def test_edit_permissions_and_requeue_for_untrusted(self):
+        from posts.models import Post
+        p = self.make(status="published")
+        self.login("giver")
+        self.assertEqual(self.client.get(reverse("posts:edit", args=[p.slug])).status_code, 404)    # مال دیگری
+        self.assertEqual(self.client.post(reverse("posts:delete", args=[p.slug])).status_code, 404)
+        self.login()
+        self.client.post(reverse("posts:edit", args=[p.slug]), self.post_data(title="ویرایش‌شده"))
+        p.refresh_from_db()
+        self.assertEqual((p.title, p.status), ("ویرایش‌شده", "pending"))                          # فقط ۱ نوشته‌ی تأییدشده بود ← دوباره صف
+        self.client.post(reverse("posts:delete", args=[p.slug]))
+        self.assertFalse(Post.objects.filter(pk=p.pk).exists())
+
+    def test_admin_moderation_notifies_and_awards_badge(self):
+        p = self.make(status="pending", published_at=None)
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.client.post("/admin/posts/post/", {"action": "approve", "_selected_action": [p.pk]})
+        p.refresh_from_db()
+        self.assertEqual(p.status, "published"); self.assertIsNotNone(p.published_at)
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="منتشر شد", kind="event").exists())
+        self.assertTrue(self.taker.user_badges.filter(badge__code="writer").exists())
+        q = self.make(status="pending", published_at=None, title="رد می‌شه")
+        self.client.post("/admin/posts/post/", {"action": "reject_generic", "_selected_action": [q.pk]})
+        q.refresh_from_db(); self.assertEqual(q.status, "rejected"); self.assertTrue(q.reject_reason)
+        self.assertEqual(boss.is_staff, True)
+
+    def test_staff_posts_publish_immediately_and_preview_endpoint(self):
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.client.post(reverse("posts:create"), self.post_data(title="رسمی"))
+        from posts.models import Post
+        self.assertEqual(Post.objects.get(title="رسمی").status, "published")
+        r = self.client.post(reverse("posts:preview"), {"body": "**x** <script>"})
+        self.assertIn("<strong>x</strong>", r.json()["html"]); self.assertNotIn("<script>", r.json()["html"])
+        self.client.logout()
+        self.assertEqual(self.client.post(reverse("posts:preview"), {"body": "x"}).status_code, 302)
+
+    def test_report_post_and_book_page_section_and_author_page(self):
+        from trust.models import Report
+        p = self.make(author=self.giver)
+        self.login()
+        url = reverse("trust:report", args=["post", p.pk])
+        self.client.post(url, {"reason": "other", "description": "x"}); self.client.post(url, {"reason": "other"})
+        self.assertEqual(Report.objects.get().accused, self.giver)
+        self.assertEqual(Report.objects.get().target_label, "معرفی «عنوان»")
+        self.login("giver")
+        self.client.post(url, {"reason": "other"})                                         # گزارش خودش نه
+        self.assertEqual(Report.objects.count(), 1)
+        book = self.book(); Post = type(p); Post.objects.filter(pk=p.pk).update(book=book)
+        html = self.client.get(reverse("books:detail", args=[book.pk])).content.decode()
+        self.assertIn("معرفی‌ها", html); self.assertIn(p.title, html)
+        self.assertEqual(len(self.client.get(reverse("posts:author", args=["giver"])).context["page"]), 1)
+
+    def test_badges_and_post_challenge(self):
+        from challenges.models import Challenge
+        c = Challenge.objects.create(title="یه معرفی", kind="post", target=2, starts_at=timezone.now() - timedelta(days=1), ends_at=timezone.now() + timedelta(days=9))
+        for i in range(2):
+            self.make(title=f"p{i}")
+        self.assertEqual(c.progress(self.taker), 2)
+        from accounts.badges import check_badges
+        check_badges(self.taker)
+        codes = set(self.taker.user_badges.values_list("badge__code", flat=True))
+        self.assertIn("writer", codes); self.assertIn(c.badge_code, codes); self.assertNotIn("columnist", codes)
+        for i in range(3):
+            self.make(title=f"q{i}")
+        check_badges(self.taker)
+        self.assertTrue(self.taker.user_badges.filter(badge__code="columnist").exists())
+
+    def test_reserved_slug_and_unique_slugs(self):
+        a = self.make(title="new"); b = self.make(title="new")
+        self.assertEqual(a.slug, "new-post"); self.assertEqual(b.slug, "new-post-2")
+        self.assertEqual(self.client.get(a.get_absolute_url()).status_code, 200)
+        self.assertEqual(self.client.get("/posts/new/").status_code, 302)                  # مسیر ثابت (لاگین)
+
+
+class AnnouncementTests(Base):
+    def make(self, **kw):
+        from announcements.models import Announcement
+        d = dict(title="نمایشگاه کتاب", kind="book_fair", summary="خلاصه", status="published", published_at=timezone.now(),
+                 starts_at=timezone.now() + timedelta(days=3), city=self.tehran, venue="مصلی", submitted_by=self.giver)
+        d.update(kw)
+        return Announcement.objects.create(**d)
+
+    def form_data(self, **kw):
+        d = {"title": "رونمایی کتاب تازه", "kind": "launch", "summary": "رونمایی با حضور نویسنده", "city": self.tehran.pk,
+             "starts_at_0": "1405", "starts_at_1": "9", "starts_at_2": "10", "starts_at_3": "17:30", "venue": "کتابخانه‌ی ملی", "is_free": "on"}
+        d.update(kw)
+        return d
+
+    def test_upcoming_past_tabs_and_ordering(self):
+        soon = self.make(title="زودتر", starts_at=timezone.now() + timedelta(days=1))
+        later = self.make(title="دیرتر", starts_at=timezone.now() + timedelta(days=9))
+        feat = self.make(title="ویژه", starts_at=timezone.now() + timedelta(days=20), is_featured=True)
+        old = self.make(title="قدیمی", starts_at=timezone.now() - timedelta(days=5), ends_at=timezone.now() - timedelta(days=4))
+        ongoing = self.make(title="در جریان", starts_at=timezone.now() - timedelta(days=1), ends_at=timezone.now() + timedelta(days=2))
+        news = self.make(title="خبر تازه", kind="news", starts_at=None, venue="", city=None)
+        self.make(title="پیش‌نویس", status="pending")
+        titles = lambda **q: [a.title for a in self.client.get(reverse("announcements.list".replace(".", ":")), q).context["page"]]
+        up = titles()
+        self.assertEqual(up[0], "ویژه")                                                     # ویژه اول
+        self.assertEqual(set(up), {"ویژه", "زودتر", "دیرتر", "در جریان", "خبر تازه"})
+        self.assertNotIn("قدیمی", up); self.assertNotIn("پیش‌نویس", up)
+        self.assertEqual(titles(tab="past"), ["قدیمی"])
+        self.assertTrue(old.is_past); self.assertFalse(ongoing.is_past); self.assertFalse(soon.is_past)
+        self.assertTrue(news.is_news and later and feat)
+
+    def test_filters_by_province_city_kind_online(self):
+        self.make(title="تهران")
+        self.make(title="اصفهان", city=self.isfahan)
+        self.make(title="آنلاین", is_online=True, city=None, venue="")
+        self.make(title="کارگاه", kind="workshop")
+        names = lambda **q: sorted(a.title for a in self.client.get(reverse("announcements:list"), q).context["page"])
+        self.assertEqual(names(province=self.isfahan.province_id), ["اصفهان"])
+        self.assertEqual(names(city=self.tehran.pk), ["تهران", "کارگاه"])
+        self.assertEqual(names(kind="workshop"), ["کارگاه"])
+        self.assertEqual(names(online="on"), ["آنلاین"])
+        self.assertEqual(names(province=self.tehran.province_id, city=self.isfahan.pk), ["تهران", "کارگاه"])   # شهر نامربوط نادیده
+
+    def test_detail_jsonld_event_and_news_and_hidden_pending(self):
+        import json, re
+        a = self.make(is_free=False, price_note="۵۰ هزار تومان", organizer="نشر آگاه")
+        html = self.client.get(a.get_absolute_url()).content.decode()
+        ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', html, re.S).group(1))
+        self.assertEqual((ld["@type"], ld["isAccessibleForFree"], ld["location"]["@type"]), ("Event", False, "Place"))
+        self.assertIn("افزودن به تقویم", html); self.assertIn("۵۰ هزار تومان", html)
+        on = self.make(title="وبینار", is_online=True, city=None, venue="", link="https://meet.example/x")
+        ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', self.client.get(on.get_absolute_url()).content.decode(), re.S).group(1))
+        self.assertEqual(ld["location"]["@type"], "VirtualLocation")
+        n = self.make(kind="news", starts_at=None, venue="", city=None)
+        ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', self.client.get(n.get_absolute_url()).content.decode(), re.S).group(1))
+        self.assertEqual(ld["@type"], "NewsArticle")
+        hidden = self.make(status="pending")
+        self.assertEqual(self.client.get(hidden.get_absolute_url()).status_code, 404)
+        self.client.login(username="giver", password="x12345678")                           # ثبت‌کننده
+        self.assertEqual(self.client.get(hidden.get_absolute_url()).status_code, 200)
+        self.assertEqual(self.client.get(reverse("announcements:detail_pk", args=[a.pk])).status_code, 200)
+
+    def test_ics_valid_and_escaped_and_folded(self):
+        a = self.make(title="رونمایی; «کتاب» تازه, ویژه", summary="خط اول\nخط دوم", address="خیابان, پلاک ۵" + " طولانی" * 30)
+        r = self.client.get(reverse("announcements:ics", args=[a.pk]))
+        self.assertEqual(r["Content-Type"], "text/calendar; charset=utf-8")
+        body = r.content.decode()
+        self.assertTrue(body.startswith("BEGIN:VCALENDAR\r\n") and body.endswith("END:VCALENDAR\r\n"))
+        for needle in ("BEGIN:VEVENT", f"UID:announcement-{a.pk}@hamvaraq", "DTSTART:", "DTEND:", "\;", "\\,", "\\n"):
+            self.assertIn(needle, body)
+        for line in body.split("\r\n"):
+            self.assertLessEqual(len(line.encode()), 76, line)                              # شکستن خطوط بلند (RFC 5545)
+        news = self.make(kind="news", starts_at=None)
+        self.assertEqual(self.client.get(reverse("announcements:ics", args=[news.pk])).status_code, 404)
+
+    def test_submit_form_jalali_pending_and_validation(self):
+        from announcements.models import Announcement
+        self.client.login(username="taker", password="x12345678")
+        r = self.client.post(reverse("announcements:create"), self.form_data())
+        self.assertRedirects(r, reverse("announcements:mine"))
+        a = Announcement.objects.get()
+        self.assertEqual((a.status, a.submitted_by), ("pending", self.taker))
+        local = timezone.localtime(a.starts_at)
+        self.assertEqual((local.year, local.month, local.day, local.hour, local.minute), (2026, 12, 1, 17, 30))   # ۱۰ آذر ۱۴۰۵
+        bad = lambda **kw: self.client.post(reverse("announcements:create"), self.form_data(**kw)).status_code
+        self.assertEqual(bad(starts_at_0="", starts_at_1="", starts_at_2=""), 200)          # رویداد بدون تاریخ
+        self.assertEqual(bad(ends_at_0="1405", ends_at_1="9", ends_at_2="9"), 200)          # پایان قبل از شروع
+        self.assertEqual(bad(city="", venue=""), 200)                                       # بدون شهر/محل
+        self.assertEqual(Announcement.objects.count(), 1)
+        ok_news = self.client.post(reverse("announcements:create"), self.form_data(kind="news", starts_at_0="", starts_at_1="", starts_at_2="", city="", venue="", title="خبر"))
+        self.assertEqual(ok_news.status_code, 302)
+
+    def test_staff_publish_immediately_and_city_notification(self):
+        from announcements.models import Announcement
+        User.objects.create_superuser("boss", password="x12345678", city=self.tehran)
+        local_user = User.objects.create_user("همشهری", password="x12345678", city=self.tehran)
+        User.objects.create_user("دور", password="x12345678", city=self.isfahan)
+        self.client.login(username="boss", password="x12345678")
+        self.client.post(reverse("announcements:create"), self.form_data())
+        a = Announcement.objects.get()
+        self.assertEqual(a.status, "published")
+        names = set(Notification.objects.filter(kind="event").values_list("user__username", flat=True))
+        self.assertIn("همشهری", names); self.assertIn("giver", names) if self.giver.city_id == self.tehran.pk else None
+        self.assertNotIn("دور", names); self.assertNotIn("boss", names)                     # شهر دیگه و ثبت‌کننده نه
+        self.assertTrue(local_user.notifications.filter(text__contains="رونمایی").exists())
+
+    def test_online_and_news_do_not_mass_notify(self):
+        from announcements import services
+        online = self.make(is_online=True, city=None)
+        news = self.make(kind="news", starts_at=None)
+        self.assertEqual((services.notify_city(online), services.notify_city(news)), (0, 0))
+
+    def test_admin_moderation_flow(self):
+        item = self.make(status="pending", published_at=None, submitted_by=self.taker)
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.client.post("/admin/announcements/announcement/", {"action": "approve", "_selected_action": [item.pk]})
+        item.refresh_from_db(); self.assertEqual(item.status, "published")
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="منتشر شد").exists())
+        r = self.make(status="pending", title="تبلیغ", published_at=None, submitted_by=self.taker)
+        self.client.post("/admin/announcements/announcement/", {"action": "reject_generic", "_selected_action": [r.pk]})
+        r.refresh_from_db(); self.assertEqual(r.status, "rejected"); self.assertTrue(r.reject_reason)
+
+    def test_edit_rules_and_daily_limit(self):
+        from announcements.models import Announcement
+        item = self.make(status="rejected", submitted_by=self.taker)
+        pub = self.make(title="منتشر", submitted_by=self.taker)
+        self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.get(reverse("announcements:edit", args=[item.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("announcements:edit", args=[pub.pk])).status_code, 404)    # منتشرشده قابل ویرایش نیست
+        self.client.login(username="giver", password="x12345678")
+        self.assertEqual(self.client.get(reverse("announcements:edit", args=[item.pk])).status_code, 404)   # مال دیگری
+        self.client.login(username="taker", password="x12345678")
+        Announcement.objects.filter(submitted_by=self.taker).delete()
+        for i in range(3):
+            self.client.post(reverse("announcements:create"), self.form_data(title=f"اطلاعیه {i}"))
+        r = self.client.post(reverse("announcements:create"), self.form_data(title="چهارمی"))
+        self.assertRedirects(r, reverse("announcements:mine"))
+        self.assertEqual(Announcement.objects.filter(submitted_by=self.taker).count(), 3)
+
+    def test_bookmark_toggle_and_reminder_command_once(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from announcements.models import AnnouncementBookmark
+        soon = self.make(title="فردا", starts_at=timezone.now() + timedelta(hours=20))
+        far = self.make(title="دور", starts_at=timezone.now() + timedelta(days=10))
+        self.client.login(username="taker", password="x12345678")
+        for a in (soon, far):
+            self.client.post(reverse("announcements:bookmark", args=[a.pk]))
+        self.assertEqual(AnnouncementBookmark.objects.count(), 2)
+        out = StringIO(); call_command("announcement_reminders", stdout=out)
+        self.assertIn("1", out.getvalue())
+        self.assertEqual(Notification.objects.filter(user=self.taker, text__contains="یادآوری").count(), 1)
+        call_command("announcement_reminders", stdout=StringIO())                         # دوباره: تکراری نمی‌فرسته
+        self.assertEqual(Notification.objects.filter(user=self.taker, text__contains="یادآوری").count(), 1)
+        self.client.post(reverse("announcements:bookmark", args=[far.pk]))                  # برداشتن
+        self.assertEqual(AnnouncementBookmark.objects.count(), 1)
+
+    def test_report_announcement_and_admin_created_has_no_accused(self):
+        from trust.models import Report
+        from trust.services import apply_decision
+        a = self.make(submitted_by=None)
+        self.client.login(username="taker", password="x12345678")
+        self.client.post(reverse("trust:report", args=["announcement", a.pk]), {"reason": "other"})
+        r = Report.objects.get(); self.assertIsNone(r.accused)
+        r.decision, r.decision_note = "ban", "x"
+        apply_decision(r, self.giver)                                                      # کاربری برای مسدودسازی نیست؛ خطا نمی‌ده
+        r.refresh_from_db(); self.assertEqual((r.status, r.decision), ("closed", "reject"))
+
+    def test_home_and_landing_sections_and_sitemap(self):
+        from posts.models import Post
+        a = self.make()
+        Post.objects.create(author=self.taker, title="معرفی‌ای", book_title="ک", book_author="ن", body="ب" * 200, status="published", published_at=timezone.now())
+        html = self.client.get("/").content.decode()
+        self.assertIn("اتفاق‌های فرهنگی", html); self.assertIn("معرفی‌های تازه", html); self.assertIn(a.title, html)
+        sm = self.client.get("/sitemap.xml").content.decode()
+        self.assertIn(f"/announcements/{a.pk}/", sm); self.assertIn("/posts/", sm)
+        User.objects.filter(pk=self.giver.pk).update(city=self.tehran)
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get("/")
+        self.assertEqual([e.title for e in r.context["events"]], [a.title])
+
+    def test_staff_dashboard_queues(self):
+        self.make(status="pending")
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.get("/staff/")
+        self.assertEqual(r.context["d"]["queues"], {"posts": 0, "announcements": 1})
+        self.assertContains(r, "اطلاعیه‌های منتظر تأیید")

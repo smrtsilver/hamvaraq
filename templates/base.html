@@ -39,6 +39,8 @@
         <a class="brand" href="{% url 'home' %}" aria-label="هم‌ورق، صفحه‌ی اصلی">{% include "components/_logo.html" %}</a>
         <nav class="nav" aria-label="ناوبری اصلی">
             <a href="{% url 'books:list' %}"{% if ns == 'books' and name == 'list' or ns == 'books' and name == 'detail' %} aria-current="page"{% endif %}>کتاب‌ها</a>
+            <a href="{% url 'posts:list' %}"{% if ns == 'posts' %} aria-current="page"{% endif %}>معرفی‌ها</a>
+            <a href="{% url 'announcements:list' %}"{% if ns == 'announcements' %} aria-current="page"{% endif %}>اطلاعیه‌ها</a>
             <a href="{% url 'cities' %}"{% if name == 'cities' or name == 'city' or name == 'province' %} aria-current="page"{% endif %}>شهرها</a>
             <a href="{% url 'challenges:list' %}"{% if ns == 'challenges' %} aria-current="page"{% endif %}>چالش‌ها</a>
             <a href="{% url 'how_it_works' %}"{% if name == 'how_it_works' %} aria-current="page"{% endif %}>راهنما</a>
@@ -65,6 +67,8 @@
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
+                        <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
+                        <a href="{% url 'announcements:mine' %}">{% include "components/icon.html" with name="news" %} اطلاعیه‌های من</a>
                         <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
                         <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %} تنظیمات اعلان</a>
                         {% if user.is_staff %}<hr><a href="{% url 'staff_dashboard' %}">{% include "components/icon.html" with name="sparkle" %} داشبورد مدیریت</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
@@ -100,6 +104,7 @@
             </div>
             <div><p class="footer-title">کاوش</p><ul>
                 <li><a href="{% url 'books:list' %}">کتاب‌ها</a></li><li><a href="{% url 'cities' %}">شهرها و استان‌ها</a></li>
+                <li><a href="{% url 'posts:list' %}">معرفی کتاب</a></li><li><a href="{% url 'announcements:list' %}">اطلاعیه‌های فرهنگی</a></li>
                 <li><a href="{% url 'challenges:list' %}">چالش‌ها</a></li></ul></div>
             <div><p class="footer-title">راهنما</p><ul>
                 <li><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></li><li><a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></li>

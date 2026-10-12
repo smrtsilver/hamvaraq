@@ -8,6 +8,8 @@ DEFINITIONS = {
     "book-lover": ("کتاب‌دوست", "اولین مبادله‌ی کامل‌شده"),
     "courier": ("پیک کتاب", "چند مبادله‌ی کامل‌شده"),
     "neighborhood-library": ("کتابخونه‌ی محله", "چند کتاب هم‌زمان در قفسه"),
+    "writer": ("نویسنده‌ی هم‌ورق", "اولین معرفی کتاب منتشرشده"),
+    "columnist": ("قلم‌ورق", "چند معرفی کتاب منتشرشده"),
 }
 
 
@@ -36,6 +38,13 @@ def check_badges(user):
         earned.append("courier")
     if shelf >= settings.BADGE_NEIGHBORHOOD_BOOKS:
         earned.append("neighborhood-library")
+    from posts.models import Post
+
+    written = Post.objects.filter(author=user, status=Post.Status.PUBLISHED).count()
+    if written >= 1:
+        earned.append("writer")
+    if written >= settings.BADGE_COLUMNIST_POSTS:
+        earned.append("columnist")
 
     new = []
     for code in earned:

@@ -82,4 +82,32 @@ class Command(BaseCommand):
             Review.objects.get_or_create(book=ex.book, user=users["ali"], defaults={"stars": 5, "text": "عالی بود."})
             ex2 = services.request_book(Book.objects.get(title="کلیدر").pk, users["sara"])
             services.accept(ex2.pk, users["neda"])
+        self._seed_content(users, cities, now)
         self.stdout.write(self.style.SUCCESS(f"آماده. ورود با sara / ali / neda … و رمز {PASSWORD}"))
+
+    def _seed_content(self, users, cities, now):
+        from announcements import services as asv
+        from announcements.models import Announcement
+        from posts import services as psv
+        from posts.models import Post
+        if not Post.objects.exists():
+            book = Book.objects.get(title="بوف کور")
+            body = ("## چرا خواندمش\n\nبوف کور را اول با کنجکاوی و بعد با دلهره خواندم. "
+                    "فضای رمان آدم را به درون ذهنی می‌برد که میان خواب و بیداری سرگردان است.\n\n"
+                    "> زندگی من در یک شب خلاصه شده بود.\n\n"
+                    "**برای چه کسی؟** کسی که حوصله‌ی روایت‌های بی‌پرده و تاریک دارد.\n\n- نثر فشرده\n- فضاسازی قوی\n- پایان باز\n\n"
+                    "پیشنهادم این است که شب‌ها و با آرامش بخوانیدش و بعد درباره‌اش حرف بزنیم.")
+            post = Post.objects.create(author=users["sara"], book=book, title="بوف کور؛ سفری به درون", body=body, rating=5,
+                                       status="published", published_at=now)
+            psv.publish(post, notify_author=False)
+        if not Announcement.objects.exists():
+            boss = User.objects.filter(is_staff=True).first() or users["sara"]
+            for title, kind, city, venue, days, summary in (
+                ("نشست نقد رمان کلیدر", "critique", "تهران", "فرهنگسرای ارسباران", 6, "گفتگو درباره‌ی ساختار روایی کلیدر با حضور علاقه‌مندان."),
+                ("کتاب‌خوانی جمعی بوف کور", "reading_club", "اصفهان", "کافه کتاب سی‌وسه‌پل", 10, "جلسه‌ی خوانش گروهی؛ ورود آزاد."),
+            ):
+                item = Announcement(title=title, kind=kind, city=cities[city], venue=venue, summary=summary,
+                                    starts_at=now + timedelta(days=days))
+                asv.submit(item, boss if boss.is_staff else users["sara"])
+                if item.status != "published":
+                    asv.publish(item, notify_people=False)

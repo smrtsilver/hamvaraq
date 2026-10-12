@@ -55,6 +55,16 @@ def report(request, kind, pk):
         if not target.exchange.is_party(request.user):
             return redirect("home")
         fields, own = {"target_message": target}, target.sender_id == request.user.pk
+    elif kind == "post":
+        from posts.models import Post
+
+        target = get_object_or_404(Post, pk=pk, status=Post.Status.PUBLISHED)
+        fields, own = {"target_post": target}, target.author_id == request.user.pk
+    elif kind == "announcement":
+        from announcements.models import Announcement
+
+        target = get_object_or_404(Announcement, pk=pk, status=Announcement.Status.PUBLISHED)
+        fields, own = {"target_announcement": target}, target.submitted_by_id == request.user.pk
     else:
         return redirect("home")
     if own:
