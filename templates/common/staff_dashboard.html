@@ -2,19 +2,17 @@
 {% block title %}داشبورد مدیریت | هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>داشبورد مدیریت</h1>
-<p><a href="{% url 'admin:index' %}">پنل ادمین</a> ·
-   <a href="{% url 'admin:trust_report_changelist' %}?status__exact=open">گزارش‌های باز</a></p>
+<div class="page-head"><div><h1>داشبورد مدیریت</h1><p>وضعیت سایت، موارد نیازمند توجه و حساب‌های مشکوک.</p></div><div class="cluster"><a class="btn btn-secondary btn-sm" href="{% url 'admin:index' %}">پنل ادمین</a><a class="btn btn-sm" href="{% url 'admin:trust_report_changelist' %}?status__exact=open">گزارش‌های باز</a></div></div>
 
 <div class="stats">
-    <div class="card"><strong>{{ d.users.total|fa }}</strong><span class="muted">کاربر ({{ d.users.new7|fa }} جدید در ۷ روز)</span></div>
-    <div class="card"><strong>{{ d.books.available|fa }}</strong><span class="muted">کتاب موجود ({{ d.books.new7|fa }} جدید در ۷ روز)</span></div>
-    <div class="card"><strong>{{ d.exchanges.completed7|fa }}</strong><span class="muted">مبادله‌ی موفق در ۷ روز ({{ d.exchanges.completed30|fa }} در ۳۰ روز)</span></div>
-    <div class="card"><strong>{{ d.reports.open|fa }}</strong><span class="muted">گزارش باز{% if d.reports.reviewing %} · {{ d.reports.reviewing|fa }} در بررسی{% endif %}{% if d.reports.oldest_days is not None %} · قدیمی‌ترین {{ d.reports.oldest_days|fa }} روزه{% endif %}</span></div>
+    <div class="stat"><strong>{{ d.users.total|fa }}</strong><span>کاربر ({{ d.users.new7|fa }} جدید در ۷ روز)</span></div>
+    <div class="stat"><strong>{{ d.books.available|fa }}</strong><span>کتاب موجود ({{ d.books.new7|fa }} جدید در ۷ روز)</span></div>
+    <div class="stat"><strong>{{ d.exchanges.completed7|fa }}</strong><span>مبادله‌ی موفق در ۷ روز ({{ d.exchanges.completed30|fa }} در ۳۰ روز)</span></div>
+    <div class="stat"><strong>{{ d.reports.open|fa }}</strong><span>گزارش باز{% if d.reports.reviewing %} · {{ d.reports.reviewing|fa }} در بررسی{% endif %}{% if d.reports.oldest_days is not None %} · قدیمی‌ترین {{ d.reports.oldest_days|fa }} روزه{% endif %}</span></div>
 </div>
 
-<h2>نیازمند توجه</h2>
-<ul class="list">
+<h2 style="margin-top:28px">نیازمند توجه</h2>
+<ul class="list-clean card">
     <li>درخواست‌های بی‌پاسخ (بیش از چند روز): <strong>{{ d.exchanges.stale_requested|fa }}</strong></li>
     <li>اختلاف‌های باز: <strong>{{ d.exchanges.disputed|fa }}</strong>{% if d.exchanges.disputed %} — <a href="{% url 'admin:exchanges_exchange_changelist' %}?status__exact=accepted&disputed_at__isempty=0">رسیدگی</a>{% endif %}</li>
     <li>مبادله‌های تأییدشده‌ی تموم‌نشده: <strong>{{ d.exchanges.stale_accepted|fa }}</strong></li>
@@ -23,12 +21,12 @@
 
 <h2>حساب‌های مشکوک <span class="pill">{{ d.suspicious|length|fa }}</span></h2>
 <p class="muted">فقط سرنخ برای بررسی دستیه، نه حکم.</p>
-<ul class="list">{% for u, reasons in d.suspicious %}
+<ul class="list-clean card">{% for u, reasons in d.suspicious %}
     <li><a href="{% url 'admin:accounts_user_change' u.pk %}">{{ u.username }}</a> — {{ reasons|join:"؛ " }}</li>
 {% empty %}<li class="muted">موردی نیست.</li>{% endfor %}</ul>
 
 {% for title, series in d.daily.items %}
-<h3>{% if title == 'users' %}ثبت‌نام{% elif title == 'books' %}کتاب جدید{% else %}مبادله‌ی تکمیل‌شده{% endif %} — ۱۴ روز اخیر</h3>
+<h3 style="margin-top:20px">{% if title == 'users' %}ثبت‌نام{% elif title == 'books' %}کتاب جدید{% else %}مبادله‌ی تکمیل‌شده{% endif %} — ۱۴ روز اخیر</h3>
 <div class="bars">{% for day, n, pct in series %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i style="height:{{ pct }}%"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
 {% endfor %}
 {% endblock %}

@@ -33,15 +33,15 @@ class LocationMixin:
     location_required = True
     location_empty = EMPTY_LABEL
 
-    def setup_location(self, city=None, province_label="استان", city_label="شهر", after=None):
+    def setup_location(self, city=None, province_label="استان", city_label="شهر", after=None, province_ph="جستجوی استان…", city_ph="جستجوی شهر…"):
         required = self.location_required
         self.fields["province"] = forms.ModelChoiceField(
             Province.objects.all(), required=False, label=province_label, empty_label=self.location_empty,
-            widget=forms.Select(attrs={"data-location": "province", "data-combobox": "", "data-placeholder": "جستجوی استان…"}),
+            widget=forms.Select(attrs={"data-location": "province", "data-combobox": "", "data-placeholder": province_ph}),
         )
         self.fields["city"] = CityChoiceField(
             City.objects.select_related("province"), required=required, label=city_label, empty_label=self.location_empty,
-            widget=CitySelect(attrs={"data-location": "city", "data-combobox": "", "data-placeholder": "جستجوی شهر…"}),
+            widget=CitySelect(attrs={"data-location": "city", "data-combobox": "", "data-placeholder": city_ph}),
         )
         if city is not None:
             self.initial.setdefault("city", city.pk)

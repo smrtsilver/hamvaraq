@@ -98,12 +98,12 @@ class BookFilterForm(LocationMixin, PersianFormMixin, forms.Form):
     q = forms.CharField(required=False, label="جستجو", widget=forms.TextInput(attrs={
         "placeholder": "عنوان، نویسنده یا شابک", "autocomplete": "off", "enterkeyhint": "search", "type": "search"}))
     category = forms.ModelChoiceField(Category.objects.all(), required=False, empty_label="همه‌ی دسته‌ها", label="دسته",
-                                      widget=forms.Select(attrs={"data-combobox": "", "data-placeholder": "جستجوی دسته…"}))
+                                      widget=forms.Select(attrs={"data-combobox": "", "data-placeholder": "همه‌ی دسته‌ها"}))
     condition = forms.ChoiceField(choices=[("", "همه‌ی وضعیت‌ها"), *Book.Condition.choices], required=False, label="وضعیت")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setup_location(after="q")
+        self.setup_location(after="q", province_ph="همه‌ی استان‌ها", city_ph="همه‌ی شهرها")
 
     def clean(self):
         cleaned = super().clean()

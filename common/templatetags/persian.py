@@ -14,3 +14,12 @@ register.filter("ago", jalali.ago)
 @register.filter
 def jlong(value):
     return jalali.jdate(value, long=True)
+
+
+@register.filter
+def mod(value, arg):
+    """باقی‌مانده؛ برای رنگ آواتار بر اساس شناسه."""
+    try:
+        return int(value) % int(arg)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return 0

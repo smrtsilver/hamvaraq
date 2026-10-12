@@ -14,23 +14,25 @@
         who.textContent = m.sender;
         const text = document.createElement("span");
         text.className = "msg-text";
-        text.textContent = " " + m.text;       // textContent: متن کاربر هیچ‌وقت HTML نمی‌شه
-        text.style.whiteSpace = "pre-wrap";
-        const time = document.createElement("small");
-        time.className = "muted";
-        time.textContent = " " + m.time + " ";
-        div.append(who, text, time);
+        text.textContent = m.text;             // textContent: متن کاربر هیچ‌وقت HTML نمی‌شه
+        const meta = document.createElement("small");
         if (m.report_url) {
             const a = document.createElement("a");
-            a.className = "muted";
             a.href = m.report_url;
             a.textContent = "گزارش";
-            div.append(a);
+            meta.append(a);
         }
+        const time = document.createElement("span");
+        time.textContent = m.time;
+        meta.append(time);
+        div.append(who, text, meta);
         box.append(div);
         lastId = Math.max(lastId, m.id);
         if (empty) empty.hidden = true;
     }
+
+    const toBottom = () => { box.scrollTop = box.scrollHeight; };
+    toBottom();
 
     async function poll() {
         if (busy || document.hidden) return;
@@ -40,7 +42,7 @@
             if (r.ok) {
                 const d = await r.json();
                 d.messages.forEach(addMessage);
-                if (d.messages.length) window.scrollTo({top: document.body.scrollHeight, behavior: "smooth"});
+                if (d.messages.length) toBottom();
             }
         } catch (_) { /* بعدی دوباره امتحان می‌کنه */ }
         busy = false;

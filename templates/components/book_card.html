@@ -1,0 +1,10 @@
+<a class="book-card" href="{% url 'books:detail' b.pk %}">
+    <div class="cover">
+        {% if b.status != 'available' %}<span class="pill status status-{{ b.status }}">{{ b.get_status_display }}</span>{% endif %}
+        {% if b.cover %}<img src="{{ b.thumb_url }}" alt="جلد کتاب «{{ b.title }}»" loading="lazy" width="420" height="560">
+        {% else %}<span class="cover-fallback">{{ b.title|truncatechars:34 }}</span>{% endif %}
+    </div>
+    <h3 class="book-title">{{ b.title }}</h3>
+    <p class="book-author">{{ b.author }}</p>
+    <div class="book-meta"><span class="chip">{% include "components/icon.html" with name="pin" %}{{ b.city.name }}</span><span class="chip">{{ b.get_condition_display }}</span></div>
+</a>

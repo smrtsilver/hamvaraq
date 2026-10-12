@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 {% block title %}چالش‌ها | هم‌ورق{% endblock %}
+{% block description %}چالش‌های فصلی هم‌ورق: کتاب بده، نشان بگیر.{% endblock %}
 {% block content %}
-<h1>چالش‌های فصلی</h1>
+<div class="page-head"><div><h1>چالش‌های فصلی</h1><p>به هدف برس و نشان مخصوص همون چالش رو بگیر.</p></div></div>
+<div class="grid-2">
 {% for i in items %}
 <div class="card">
-    <h3>{{ i.c.title }} {% if i.complete %}<span class="pill pill-green">انجام شد ✓</span>{% elif i.upcoming %}<span class="pill">به‌زودی</span>{% endif %}</h3>
-    <p class="muted">{{ i.c.description }} · {{ i.c.get_kind_display }} · تا {{ i.c.ends_at|jdate }}</p>
-    {% if user.is_authenticated %}<div class="progress"><i style="width:{{ i.percent }}%"></i></div>
-    <p class="muted">{{ i.done|fa }} از {{ i.c.target|fa }}</p>{% else %}<p class="muted">هدف: {{ i.c.target|fa }} مبادله — <a href="{% url 'accounts:login' %}">وارد شو</a></p>{% endif %}
+    <div class="cluster" style="justify-content:space-between"><h3 style="margin:0">{{ i.c.title }}</h3>
+        {% if i.complete %}<span class="pill pill-green">{% include "components/icon.html" with name="check" %} انجام شد</span>{% elif i.upcoming %}<span class="pill">به‌زودی</span>{% else %}<span class="pill pill-amber">فعال</span>{% endif %}</div>
+    <p class="muted">{{ i.c.description }}</p>
+    <p class="small muted">{{ i.c.get_kind_display }} · تا {{ i.c.ends_at|jlong }}</p>
+    {% if user.is_authenticated %}<div class="progress" role="progressbar" aria-valuenow="{{ i.percent }}" aria-valuemin="0" aria-valuemax="100"><i style="width:{{ i.percent }}%"></i></div>
+    <p class="small muted" style="margin:8px 0 0">{{ i.done|fa }} از {{ i.c.target|fa }}</p>
+    {% else %}<p class="small">هدف: {{ i.c.target|fa }} مبادله — <a href="{% url 'accounts:login' %}">وارد شو</a> تا پیشرفتت رو ببینی.</p>{% endif %}
 </div>
-{% empty %}<p class="muted">الان چالش فعالی نیست.</p>{% endfor %}
+{% empty %}<div style="grid-column:1/-1">{% include "components/empty.html" with ill="books" title="الان چالش فعالی نیست" text="به‌زودی چالش تازه می‌آد؛ همین‌جا سر بزن." %}</div>{% endfor %}
+</div>
 {% endblock %}

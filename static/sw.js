@@ -1,7 +1,7 @@
 // سرویس‌ورکر ساده: فایل‌های استاتیک کش می‌شن، صفحه‌ها همیشه از شبکه (محتوا شخصیه) و
 // وقتی آفلاینیم صفحه‌ی /offline/ نشون داده می‌شه. صفحه‌ی دیگه‌ای هیچ‌وقت کش نمی‌شه.
 const VERSION = "hv-v1";
-const PRECACHE = ["/offline/", "/static/css/base.css", "/static/js/isbn.js", "/static/favicon.svg"];
+const PRECACHE = ["/offline/", "/static/css/app.css", "/static/js/app.js", "/static/favicon.svg"];
 
 self.addEventListener("install", (e) => {
     e.waitUntil(caches.open(VERSION).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));

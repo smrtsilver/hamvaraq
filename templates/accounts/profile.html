@@ -1,19 +1,36 @@
 {% extends "base.html" %}
 {% load trust_tags %}
 {% block title %}{{ owner.username }} | هم‌ورق{% endblock %}
+{% block description %}قفسه‌ی {{ owner.username }} در هم‌ورق.{% endblock %}
 {% block content %}
-<div class="card">
-    <h1>{{ owner.username }} {% reputation_badge owner %}</h1>
-    <p class="muted">{% if owner.city %}{{ owner.city }} · {% endif %}عضو از {{ owner.date_joined|jlong }}</p>
-    {% if owner.is_restricted %}<p class="alert alert-warning">این کاربر موقتاً فقط می‌تونه کتاب بده.</p>{% endif %}
-    <p>{% for ub in badges %}<span class="pill pill-green" title="{{ ub.badge.description }}">{{ ub.badge.name }}</span> {% endfor %}</p>
-    {% if user.is_authenticated and user != owner %}<a class="muted" href="{% url 'trust:report' 'user' owner.pk %}">گزارش کاربر</a>{% endif %}
+<section class="card">
+    <div class="profile-head">
+        {% include "components/avatar.html" with u=owner size="xl" %}
+        <div class="grow">
+            <h1 style="margin-bottom:4px">{{ owner.username }}</h1>
+            <div class="cluster">{% reputation_badge owner %}{% if owner.city %}<span class="chip">{% include "components/icon.html" with name="pin" %}{{ owner.city.name }}، {{ owner.city.province.name }}</span>{% endif %}<span class="chip">عضو از {{ owner.date_joined|jlong }}</span></div>
+            {% if owner.is_restricted %}<div class="alert alert-warning" style="margin-bottom:0"><p>این کاربر موقتاً فقط می‌تونه کتاب بده.</p></div>{% endif %}
+            {% if badges %}<div class="badges-row" style="margin-top:12px">{% for ub in badges %}<span class="badge-item" title="{{ ub.badge.description }}">{% include "components/icon.html" with name="star" %}{{ ub.badge.name }}</span>{% endfor %}</div>{% endif %}
+        </div>
+        <div class="cluster">
+            {% if user == owner %}<a class="btn btn-secondary btn-sm" href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
+            {% elif user.is_authenticated %}<a class="btn btn-ghost btn-sm" href="{% url 'trust:report' 'user' owner.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
+        </div>
+    </div>
+</section>
+<div class="stats" style="margin-top:16px">
+    <div class="stat"><strong>{{ given|fa }}</strong><span>کتاب داده</span></div>
+    <div class="stat"><strong>{{ received|fa }}</strong><span>کتاب گرفته</span></div>
+    <div class="stat"><strong>{{ owner.points|fa }}</strong><span>امتیاز</span></div>
+    <div class="stat"><strong>{{ books|length|fa }}</strong><span>کتاب تو قفسه</span></div>
 </div>
-<h2>قفسه‌ی {{ owner.username }}</h2>
+
+<section class="section-sm"><div class="section-head"><h2>قفسه‌ی {{ owner.username }}</h2></div>
 {% if books %}<div class="shelf">{% for b in books %}
-    <a class="spine spine-{{ b.pk|add:0 }}" href="{% url 'books:detail' b.pk %}" title="{{ b.title }} — {{ b.author }}">
+    <a class="spine" href="{% url 'books:detail' b.pk %}" title="{{ b.title }} — {{ b.author }}">
         {% if b.cover %}<img src="{{ b.thumb_url }}" alt="{{ b.title }}" loading="lazy">{% else %}<span class="spine-title">{{ b.title|truncatechars:28 }}</span>{% endif %}
-        {% if b.status == 'exchanged' %}<small class="spine-tag">در دست</small>{% endif %}
-    </a>{% endfor %}
-</div>{% else %}<p class="muted">قفسه خالیه.</p>{% endif %}
+        {% if b.status == 'exchanged' %}<small class="spine-tag">در دست</small>{% endif %}</a>{% endfor %}</div>
+{% else %}{% include "components/empty.html" with ill="books" title="قفسه خالیه" text="هنوز کتابی تو این قفسه نیست." %}{% endif %}
+</section>
+{% if available %}<section class="section-sm"><div class="section-head"><div><h2>برای مبادله موجوده</h2><p>روی هر کتاب بزن و درخواست بده</p></div></div>{% include "components/book_grid.html" with books=available %}</section>{% endif %}
 {% endblock %}

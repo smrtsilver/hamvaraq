@@ -1,0 +1,6 @@
+<div class="empty">
+    {% if ill == "books" %}{% include "components/ill_books.html" %}{% elif ill == "chat" %}{% include "components/ill_chat.html" %}{% elif ill == "bell" %}{% include "components/ill_bell.html" %}{% else %}{% include "components/ill_books.html" %}{% endif %}
+    <h3>{{ title }}</h3>
+    {% if text %}<p>{{ text }}</p>{% endif %}
+    {% if cta_url %}<a class="btn" href="{{ cta_url }}">{{ cta_label }}</a>{% endif %}
+</div>

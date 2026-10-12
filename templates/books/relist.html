@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}دوباره بذار برای مبادله | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>«{{ book.title }}» رو دوباره بذار</h1>
-<p class="muted">کتاب الان کجاست؟ شهرش رو انتخاب کن تا کسایی که اون‌جان پیداش کنن.</p>
-<form method="post" class="card form" data-location-group>{% csrf_token %}{{ form.as_div }}<button class="btn">بذار تو قفسه‌ی مبادله</button></form>
+<div class="narrow card">
+    <h1>دوباره بذارش برای مبادله</h1>
+    <p class="muted">«{{ book.title }}» رو خوندی؟ بسپارش به نفر بعدی. کتاب الان کجاست؟</p>
+    <form method="post" data-location-group novalidate>{% csrf_token %}{% include "components/form.html" %}<button class="btn btn-lg btn-block">بذار تو قفسه‌ی مبادله</button></form>
+</div>
 {% endblock %}

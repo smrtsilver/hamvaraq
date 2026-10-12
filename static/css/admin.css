@@ -1,0 +1,14 @@
+/* پوسته‌ی برند هم‌ورق برای ادمین جنگو (متغیرهای CSS خود ادمین) */
+:root,html[data-theme="light"]{
+  --primary:#1F6F54;--secondary:#185A44;--accent:#E0A43A;--primary-fg:#fff;
+  --header-bg:#124A39;--header-color:#CFE3DA;--header-branding-color:#fff;--header-link-color:#fff;
+  --breadcrumbs-bg:#1F6F54;--breadcrumbs-fg:#E4F1EB;--breadcrumbs-link-fg:#fff;
+  --link-fg:#1F6F54;--link-hover-color:#124A39;--link-selected-fg:#124A39;
+  --button-bg:#1F6F54;--button-hover-bg:#185A44;--default-button-bg:#124A39;--default-button-hover-bg:#0d3a2d;
+  --object-tools-bg:#124A39;--object-tools-hover-bg:#1F6F54;--selected-row:#FBF0D9;
+  --font-family-primary:Vazirmatn,Tahoma,sans-serif;--font-family-monospace:ui-monospace,monospace;
+}
+body{font-family:Vazirmatn,Tahoma,sans-serif}
+.hv-brand{display:flex!important;align-items:center;gap:10px}.hv-brand .logo-mark{width:34px;height:34px}
+#site-name a{font-weight:800}
+.module h2,.module caption{background:#1F6F54}

@@ -1,8 +1,18 @@
 {% extends "base.html" %}
+{% block title %}ورود | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>ورود</h1>
-<form method="post" class="card form">{% csrf_token %}{{ form.as_div }}
-    <input type="hidden" name="next" value="{{ request.GET.next }}">
-    <button class="btn">ورود</button></form>
-<p><a href="{% url 'accounts:signup' %}">ثبت‌نام</a> · <a href="{% url 'accounts:password_reset' %}">فراموشی رمز</a></p>
+<div class="auth">
+    {% include "accounts/_auth_promo.html" %}
+    <div class="auth-form">
+        <h1>خوش برگشتی</h1>
+        <p class="muted">برای ادامه وارد حسابت شو.</p>
+        <form method="post" novalidate>{% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% include "components/form.html" %}
+            <button class="btn btn-lg btn-block">ورود</button>
+        </form>
+        <div class="auth-links"><a href="{% url 'accounts:password_reset' %}">رمزت رو فراموش کردی؟</a><span>حساب نداری؟ <a href="{% url 'accounts:signup' %}">هم‌ورق شو</a></span></div>
+    </div>
+</div>
 {% endblock %}

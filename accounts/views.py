@@ -34,11 +34,17 @@ def signup(request):
 
 
 def profile(request, username):
-    owner = get_object_or_404(User, username=username)
+    from exchanges.models import Exchange
+
+    owner = get_object_or_404(User.objects.select_related("city__province"), username=username)
     shelf = owner.books.exclude(status=Book.Status.RESERVED).select_related("city").order_by("-created_at")
+    done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
     return render(request, "accounts/profile.html", {
         "owner": owner,
         "books": shelf,
+        "available": [b for b in shelf if b.status == Book.Status.AVAILABLE],
+        "given": done.filter(owner=owner).count(),
+        "received": done.filter(requester=owner).count(),
         "badges": owner.user_badges.select_related("badge"),
     })
 

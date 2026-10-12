@@ -2,14 +2,9 @@
 {% block title %}کتاب‌های {{ city.name }} | هم‌ورق{% endblock %}
 {% block description %}{{ stats.exchanged|fa }} کتاب در {{ city.name }} دست‌به‌دست شده و {{ stats.available|fa }} کتاب برای مبادله موجوده.{% endblock %}
 {% block content %}
-<h1>{{ city.name }} <small class="muted"><a href="{% url 'province' city.province.pk %}">{{ city.province.name }}</a></small></h1>
-<div class="stats">
-    <div class="card"><strong>{{ stats.exchanged|fa }}</strong><span class="muted">کتاب دست‌به‌دست شده</span></div>
-    <div class="card"><strong>{{ stats.available|fa }}</strong><span class="muted">کتاب موجود</span></div>
-    <div class="card"><strong>{{ stats.users|fa }}</strong><span class="muted">عضو</span></div>
-</div>
-{% if top_categories %}<p>محبوب‌ترین دسته‌ها: {% for c in top_categories %}<span class="pill">{{ c.category__name }} ({{ c.n|fa }})</span> {% endfor %}</p>{% endif %}
-<h2>تازه‌رسیده‌ها</h2>
-{% include "books/_grid.html" with books=latest %}
-<p><a href="{% url 'books:list' %}?province={{ city.province_id }}&city={{ city.pk }}">همه‌ی کتاب‌های {{ city.name }}</a></p>
+<div class="page-head"><div><h1>{{ city.name }}</h1><p><a href="{% url 'province' city.province.pk %}">استان {{ city.province.name }}</a></p></div>
+    <a class="btn btn-secondary" href="{% url 'books:list' %}?province={{ city.province_id }}&city={{ city.pk }}">همه‌ی کتاب‌های {{ city.name }}</a></div>
+{% include "common/_place_stats.html" %}
+{% if top_categories %}<p style="margin-top:20px">محبوب‌ترین دسته‌ها: {% for c in top_categories %}<span class="chip">{{ c.category__name }} <small>{{ c.n|fa }}</small></span> {% endfor %}</p>{% endif %}
+<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% include "components/book_grid.html" with books=latest %}</section>
 {% endblock %}

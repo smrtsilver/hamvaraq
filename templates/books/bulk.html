@@ -1,18 +1,22 @@
 {% extends "base.html" %}
+{% block title %}ثبت دسته‌ای کتاب | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>ثبت دسته‌ای کتاب</h1>
-<p class="muted">شهر و وضعیت برای همه‌ی ردیف‌ها یکسانه. ردیف‌های خالی نادیده گرفته می‌شن. با وارد کردن شابک، عنوان و نویسنده خودکار پر می‌شه (اگه پیدا بشه).</p>
-<form method="post" class="card form">{% csrf_token %}
-    {{ common.as_div }}
-    {{ rows.management_form }}
-    {{ rows.non_form_errors }}
-    {% for f in rows %}
-    <fieldset class="bulk-row" data-isbn-scope>
-        <legend>کتاب {{ forloop.counter|fa }}</legend>
-        {{ f.non_field_errors }}
-        {{ f.as_div }}
-    </fieldset>
-    {% endfor %}
-    <button class="btn">ثبت همه</button>
-</form>
+<div class="medium">
+    <div class="page-head"><div><h1>ثبت دسته‌ای</h1><p>چند کتاب رو یک‌جا ثبت کن. ردیف‌های خالی نادیده گرفته می‌شن و با شابک، عنوان و نویسنده خودکار پر می‌شه.</p></div></div>
+    <form method="post" novalidate data-location-group>{% csrf_token %}
+        <div class="card"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
+            <div class="form-grid"><div>{% include "components/field.html" with field=common.province %}</div><div>{% include "components/field.html" with field=common.city %}</div></div>
+            {% include "components/field.html" with field=common.condition %}</div>
+        {{ rows.management_form }}
+        {% for e in rows.non_form_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
+        {% for f in rows %}
+        <fieldset class="card" data-isbn-scope style="margin-top:16px"><legend class="pill pill-green">کتاب {{ forloop.counter|fa }}</legend>
+            {% for e in f.non_field_errors %}<p class="err">{{ e }}</p>{% endfor %}
+            <div class="form-grid"><div>{% include "components/field.html" with field=f.isbn %}</div><div>{% include "components/field.html" with field=f.category %}</div>
+            <div>{% include "components/field.html" with field=f.title %}</div><div>{% include "components/field.html" with field=f.author %}</div></div>
+        </fieldset>{% endfor %}
+        <div class="form-actions" style="margin-top:20px"><button class="btn btn-lg">ثبت همه</button></div>
+    </form>
+</div>
 {% endblock %}

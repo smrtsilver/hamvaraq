@@ -4,10 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const wrap = document.createElement("span");
         wrap.className = "file-pick";
         const button = document.createElement("span");
-        button.className = "btn btn-sm btn-outline";
+        button.className = "btn btn-sm btn-secondary";
         button.textContent = input.multiple ? "انتخاب عکس‌ها" : "انتخاب عکس";
         const label = document.createElement("span");
-        label.className = "muted";
+        label.className = "file-name";
         label.textContent = "هنوز فایلی انتخاب نشده";
         input.before(wrap);
         wrap.append(button, label, input);
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const reason = form.querySelector("[name=reason]");
         const comment = form.querySelector("[name=comment]");
         if (!radios.length || !reason) return;
-        const rows = [reason, comment].filter(Boolean).map((el) => el.closest("div"));
+        const rows = [reason, comment].filter(Boolean).map((el) => el.closest(".field") || el.closest("div"));
         const sync = () => {
             const dislike = [...radios].some((r) => r.checked && r.value === "0");
             rows.forEach((row) => (row.hidden = !dislike));

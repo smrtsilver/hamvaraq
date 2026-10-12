@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{% block title %}لیست آرزو | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>لیست آرزو</h1>
-<form method="post" class="inline-form">{% csrf_token %}
-    <input name="text" maxlength="200" placeholder="عنوان، نویسنده یا شابک" required><button class="btn btn-sm">افزودن</button></form>
-<ul class="list">{% for w in wishes %}
-    <li>{{ w.text }}
-        <form method="post" action="{% url 'books:wishlist_delete' w.pk %}" class="inline">{% csrf_token %}<button class="link">حذف</button></form></li>
-{% empty %}<li class="muted">چیزی تو لیست نیست. وقتی کتابی که می‌خوای ثبت بشه خبرت می‌کنیم.</li>{% endfor %}</ul>
+<div class="medium">
+    <div class="page-head"><div><h1>لیست آرزو</h1><p>اگه کسی کتابی با این عنوان، نویسنده یا شابک ثبت کنه، خبرت می‌کنیم.</p></div></div>
+    <form method="post" class="card inline-form" novalidate>{% csrf_token %}
+        <input name="text" maxlength="200" placeholder="عنوان، نویسنده یا شابک" required autocomplete="off" aria-label="کتاب دلخواه"><button class="btn">{% include "components/icon.html" with name="heart" %} افزودن</button></form>
+    {% if wishes %}<ul class="list-clean card" style="margin-top:16px">{% for w in wishes %}<li><span>{% include "components/icon.html" with name="heart" %} {{ w.text }}</span>
+        <form method="post" action="{% url 'books:wishlist_delete' w.pk %}" class="inline">{% csrf_token %}<button class="link link-danger small">حذف</button></form></li>{% endfor %}</ul>
+    {% else %}<div style="margin-top:16px">{% include "components/empty.html" with ill="books" title="هنوز چیزی تو لیست نیست" text="اسم کتابی که دنبالشی رو بنویس؛ هر وقت ثبت شد همین‌جا و تو اعلان‌ها بهت خبر می‌دیم." %}</div>{% endif %}
+</div>
 {% endblock %}

@@ -872,7 +872,7 @@ class PhotoTests(Base):
         self.post_book(cover=_jpeg(800, 600), extra_photos=[_jpeg(500, 500), _jpeg(500, 500)])
         b = Book.objects.get(title="عکسی")
         self.assertEqual(b.photos.count(), 2)
-        self.assertContains(self.client.get(reverse("books:detail", args=[b.pk])), "photo-strip")
+        self.assertContains(self.client.get(reverse("books:detail", args=[b.pk])), "data-gallery-thumb")
         # سقف ۴ عکس اضافه (۲ تا هست، ۳ تا دیگه نمی‌شه)
         r = self.client.post(reverse("books:edit", args=[b.pk]), {
             "title": "عکسی", "author": "ن", "condition": "used", "city": self.isfahan.pk,
@@ -1109,14 +1109,13 @@ class GuideTests(Base):
         services.accept(ex.pk, self.giver); services.confirm(ex.pk, self.giver); services.confirm(ex.pk, u)
         self.assertTrue(progress(u)["complete"])
 
-    def test_home_shows_checklist_until_complete_and_how3_for_guests(self):
+    def test_home_shows_checklist_for_members_and_hero_for_guests(self):
         guest = self.client.get("/")
-        self.assertContains(guest, "کتابت رو بذار")
+        self.assertContains(guest, "هم‌ورق شو")
         self.assertNotContains(guest, "شروع سریع")
         self.client.login(username="giver", password="x12345678")
         home = self.client.get("/")
         self.assertContains(home, "شروع سریع")
-        self.assertNotContains(home, "کتابت رو بذار")
         self.assertIsNotNone(home.context["onboarding"])
 
     def test_guide_in_nav_footer_sitemap_and_help_in_exchange(self):

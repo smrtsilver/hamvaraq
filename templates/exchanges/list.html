@@ -1,9 +1,19 @@
 {% extends "base.html" %}
+{% block title %}مبادله‌های من | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>مبادله‌های من</h1>
-<ul class="list">{% for e in exchanges %}
-    <li><a href="{% url 'exchanges:detail' e.pk %}">{{ e.book.title }}</a>
-        — {% if e.owner == user %}به {{ e.requester.username }}{% else %}از {{ e.owner.username }}{% endif %}
-        <span class="pill">{{ e.get_status_display }}</span>{% if e.unread %} <span class="pill pill-green">{{ e.unread|fa }} پیام جدید</span>{% endif %}</li>
-{% empty %}<li class="muted">هنوز مبادله‌ای نداری.</li>{% endfor %}</ul>
+<div class="page-head"><div><h1>مبادله‌های من</h1><p>درخواست‌ها و کتاب‌هایی که در حال رد و بدل شدنن.</p></div></div>
+{% if exchanges %}
+<div class="stack">
+{% for e in exchanges %}
+    <a class="exchange-row" href="{% url 'exchanges:detail' e.pk %}">
+        <span class="thumb">{% if e.book.cover %}<img src="{{ e.book.thumb_url }}" alt="" loading="lazy">{% endif %}</span>
+        <span class="grow"><strong>{{ e.book.title }}</strong>
+            <span class="small muted">{% if e.owner == user %}به {{ e.requester.username }}{% else %}از {{ e.owner.username }}{% endif %} · {{ e.updated_at|ago }}</span></span>
+        {% if e.unread %}<span class="pill pill-green">{% include "components/icon.html" with name="chat" %} {{ e.unread|fa }} پیام جدید</span>{% endif %}
+        <span class="pill {% if e.status == 'completed' %}pill-green{% elif e.status == 'cancelled' or e.status == 'rejected' %}pill-red{% elif e.status == 'accepted' %}pill-amber{% endif %}">{{ e.get_status_display }}</span>
+    </a>
+{% endfor %}
+</div>
+{% else %}{% url 'books:list' as books_url %}{% include "components/empty.html" with ill="chat" title="هنوز مبادله‌ای نداری" text="یه کتاب پیدا کن و درخواستش بده؛ یا کتابت رو ثبت کن تا بقیه درخواست بدن." cta_url=books_url cta_label="دیدن کتاب‌ها" %}{% endif %}
 {% endblock %}

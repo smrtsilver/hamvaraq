@@ -1,22 +1,12 @@
 {% extends "base.html" %}
-{% block title %}هم‌ورق | کتاب بده، کتاب بگیر؛ مبادله‌ی رایگان کتاب{% endblock %}
+{% block title %}هم‌ورق | {{ site.tagline }}{% endblock %}
 {% block content %}
 <section class="hero">
-    <h1>کتاب بده، کتاب بگیر</h1>
-    <p>با ثبت‌نام ۱ امتیاز هدیه می‌گیری. هر کتابی که بدی ۱ امتیاز می‌گیری و با هر امتیاز یه کتاب می‌گیری. هیچ پولی رد و بدل نمی‌شه.</p>
-    <a class="btn" href="{% url 'books:list' %}">دیدن کتاب‌ها</a>
-    <a class="btn btn-outline" href="{% url 'books:create' %}">کتاب می‌دم</a>
-    <a class="btn btn-outline" href="{% url 'cities' %}">شهرها</a>
-    <p class="muted">{{ stats.books|fa }} کتاب ثبت شده · {{ stats.exchanges|fa }} مبادله‌ی موفق</p>
+    <h1>{{ site.hero_title }}</h1>
+    <p class="lead">{{ site.hero_subtitle }}</p>
+    <div class="cluster"><a class="btn btn-lg" href="{% url 'books:list' %}">دیدن کتاب‌ها</a><a class="btn btn-lg btn-secondary" href="{% url 'accounts:signup' %}">{{ site.cta_title }}</a></div>
 </section>
 {% include "common/_onboarding.html" %}
-{% if not user.is_authenticated %}
-<section class="how3">
-    <div class="card"><b>۱. کتابت رو بذار</b><p class="muted">کتابی که دیگه نمی‌خونی رو ثبت کن. با هر کتابی که بدی ۱ امتیاز می‌گیری.</p></div>
-    <div class="card"><b>۲. کتاب بگیر</b><p class="muted">ثبت‌نام ۱ امتیاز هدیه داره. با هر امتیاز یه کتاب می‌گیری، بدون پول.</p></div>
-    <div class="card"><b>۳. حضوری یا با پست تحویل بده</b><p class="muted">خودتون تو چت هماهنگ می‌کنید. <a href="{% url 'how_it_works' %}">بیشتر بخون</a></p></div>
-</section>
-{% endif %}
-<h2>تازه‌رسیده‌ها</h2>
-{% include "books/_grid.html" with books=latest %}
+<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2><a href="{% url 'books:list' %}">همه‌ی کتاب‌ها</a></div>
+    {% include "components/book_grid.html" with books=latest %}</section>
 {% endblock %}

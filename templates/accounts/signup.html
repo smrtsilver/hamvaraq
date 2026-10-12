@@ -1,6 +1,17 @@
 {% extends "base.html" %}
+{% block title %}هم‌ورق شو | ثبت‌نام{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>ثبت‌نام</h1>
-<form method="post" class="card form" id="signup-form">{% csrf_token %}{{ form.as_div }}<button class="btn">ثبت‌نام</button></form>
-<p class="muted">با ثبت‌نام ۱ امتیاز هدیه می‌گیری و همین الان می‌تونی یه کتاب بگیری. بعد از اون با هر کتابی که بدی ۱ امتیاز می‌گیری.</p>
+<div class="auth">
+    {% include "accounts/_auth_promo.html" %}
+    <div class="auth-form">
+        <h1>هم‌ورق شو</h1>
+        <p class="muted">ثبت‌نام رایگانه و ۱ امتیاز هدیه داره؛ همین الان می‌تونی یه کتاب بگیری.</p>
+        <form method="post" id="signup-form" novalidate>{% csrf_token %}
+            {% include "components/form.html" %}
+            <button class="btn btn-lg btn-block">ساخت حساب</button>
+        </form>
+        <div class="auth-links"><span>قبلاً ثبت‌نام کردی؟ <a href="{% url 'accounts:login' %}">ورود</a></span></div>
+    </div>
+</div>
 {% endblock %}

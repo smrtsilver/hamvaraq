@@ -1,6 +1,11 @@
 {% extends "base.html" %}
+{% block title %}گزارش | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<h1>گزارش</h1>
-<p>{% if kind == 'user' %}کاربر {{ target }}{% elif kind == 'book' %}کتاب «{{ target }}»{% else %}پیام: {{ target.text }}{% endif %}</p>
-<form method="post" enctype="multipart/form-data" class="card form">{% csrf_token %}{{ form.as_div }}<button class="btn">ارسال گزارش</button></form>
+<div class="medium">
+    <div class="page-head"><div><h1>گزارش</h1><p>{% if kind == 'user' %}کاربر «{{ target }}»{% elif kind == 'book' %}کتاب «{{ target }}»{% else %}پیام: {{ target.text|truncatechars:60 }}{% endif %}</p></div></div>
+    <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}{% include "components/form.html" %}
+        <div class="form-actions"><button class="btn btn-danger">ارسال گزارش</button><a class="btn btn-ghost" href="javascript:history.back()">انصراف</a></div></form>
+    <p class="hint">گزارش بی‌اساس و تکراری خودش تخلفه. مدیریت بررسی می‌کنه و از نتیجه باخبرت می‌کنیم.</p>
+</div>
 {% endblock %}
