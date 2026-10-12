@@ -16,6 +16,7 @@
         <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-outline">لغو درخواست</button></form>{% endif %}
 {% elif ex.status == 'accepted' %}
     <p>درباره‌ی نحوه‌ی تحویل (حضوری یا پست) تو چت زیر هماهنگ کنید و بعد از تحویل هر دو نفر تأیید کنید.</p>
+    <p class="muted">🛡️ تحویل حضوری رو تو مکان عمومی و شلوغ انجام بدید و اطلاعات شخصی تو چت ننویسید. <a href="{% url 'how_it_works' %}#safety" target="_blank">نکته‌های امن</a></p>
     {% if is_owner and ex.owner_confirmed or not is_owner and ex.requester_confirmed %}<p class="muted">تأییدت ثبت شده؛ منتظر طرف مقابل.</p>
     {% else %}<form method="post" action="{% url 'exchanges:confirm' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">تحویل انجام شد</button></form>{% endif %}
     <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline" onsubmit="return confirm('لغو بشه؟')">{% csrf_token %}<button class="btn btn-outline">لغو مبادله</button></form>

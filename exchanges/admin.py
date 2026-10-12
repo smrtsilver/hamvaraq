@@ -19,6 +19,14 @@ class ExchangeAdmin(admin.ModelAdmin):
     search_fields = ("book__title", "owner__username", "requester__username")
     inlines = [MessageInline]
 
+    def get_inline_instances(self, request, obj=None):
+        """چت فقط وقتی برای ادمین دیده می‌شه که اختلاف یا گزارشی روی پیام‌های همین مبادله باشه (حریم خصوصی)."""
+        from trust.models import Report
+
+        if obj is None or not (obj.disputed_at or Report.objects.filter(target_message__exchange=obj).exists()):
+            return []
+        return super().get_inline_instances(request, obj)
+
 
     def _resolve(self, request, queryset, outcome):
         done = 0

@@ -237,7 +237,7 @@ class BookTests(Base):
 
     def test_signup_flow(self):
         r = self.client.post(reverse("accounts:signup"), {
-            "username": "newuser", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk})
+            "username": "newuser", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk, "accept_rules": "on"})
         self.assertEqual(r.status_code, 302)
         u = User.objects.get(username="newuser")
         self.assertEqual(u.points, 1)  # امتیاز خوش‌آمد (آی‌پی لوکال شمرده نمی‌شه)
@@ -549,7 +549,7 @@ class ThrottleTests(Base):
     def test_signup_honeypot(self):
         from django.core.cache import cache
         cache.clear()
-        data = {"username": "bot", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "website": "http://spam"}
+        data = {"username": "bot", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "website": "http://spam", "accept_rules": "on"}
         self.client.post(reverse("accounts:signup"), data)
         self.assertFalse(User.objects.filter(username="bot").exists())
 
@@ -971,7 +971,8 @@ class WelcomePointsTests(Base):
         from django.test import Client
         c = Client()
         c.post(reverse("accounts:signup"), {
-            "username": name, "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk},
+            "username": name, "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk,
+            "accept_rules": "on"},
             REMOTE_ADDR=ip)
         return User.objects.get(username=name), c
 
@@ -1051,3 +1052,96 @@ class WelcomePointsTests(Base):
         self.client.login(username="boss", password="x12345678")
         r = self.client.get(reverse("admin:accounts_user_change", args=[boss.pk]))
         self.assertContains(r, "شناسه‌ی شبکه")
+
+
+class GuideTests(Base):
+    def test_pages_render_with_real_settings_values(self):
+        r = self.client.get(reverse("how_it_works"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "۷ روز")   # REQUEST_EXPIRE_DAYS
+        self.assertContains(r, "۲۱ روز")  # ACCEPTED_EXPIRE_DAYS
+        self.assertContains(r, "۲۴ ساعت")  # VOTE_EDIT_HOURS
+        self.assertContains(r, 'id="safety"')
+        self.assertContains(self.client.get(reverse("rules")), "۱۴ روز")  # RESTRICTION_DAYS
+        self.assertNotContains(r, "شروع سریع")  # مهمان چک‌لیست نمی‌بینه
+
+    def test_numbers_in_guide_follow_settings(self):
+        from django.test import override_settings
+        with override_settings(REQUEST_EXPIRE_DAYS=10):
+            self.assertContains(self.client.get(reverse("how_it_works")), "۱۰ روز")
+
+    def test_signup_requires_accepting_rules(self):
+        from django.core.cache import cache
+        cache.clear()
+        data = {"username": "norules", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk}
+        r = self.client.post(reverse("accounts:signup"), data)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(username="norules").exists())
+        self.assertContains(r, "قوانین")
+        self.assertContains(self.client.get(reverse("accounts:signup")), reverse("rules"))
+
+    def test_onboarding_steps_follow_real_progress(self):
+        from common.onboarding import progress
+        u = User.objects.create_user("newbie", password="x12345678", points=1)
+        p = progress(u)
+        self.assertEqual((p["done"], p["total"], p["complete"]), (0, 5, False))
+        u.city = self.tehran; u.save()
+        book = self.book()
+        services.request_book(book.pk, u)
+        Wishlist.objects.create(user=u, text="x")
+        done = [s["done"] for s in progress(u)["steps"]]
+        self.assertEqual(done, [True, False, True, False, True])
+        # دادن کتاب + مبادله‌ی کامل
+        Book.objects.create(owner=u, title="مال من", author="ن", city=self.tehran)
+        ex = Exchange.objects.get(requester=u)
+        services.accept(ex.pk, self.giver); services.confirm(ex.pk, self.giver); services.confirm(ex.pk, u)
+        self.assertTrue(progress(u)["complete"])
+
+    def test_home_shows_checklist_until_complete_and_how3_for_guests(self):
+        guest = self.client.get("/")
+        self.assertContains(guest, "کتابت رو بذار")
+        self.assertNotContains(guest, "شروع سریع")
+        self.client.login(username="giver", password="x12345678")
+        home = self.client.get("/")
+        self.assertContains(home, "شروع سریع")
+        self.assertNotContains(home, "کتابت رو بذار")
+        self.assertIsNotNone(home.context["onboarding"])
+
+    def test_guide_in_nav_footer_sitemap_and_help_in_exchange(self):
+        page = self.client.get("/").content.decode()
+        self.assertIn(reverse("how_it_works"), page)
+        self.assertIn(reverse("rules"), page)
+        sm = self.client.get("/sitemap.xml").content.decode()
+        self.assertIn("/how-it-works/", sm); self.assertIn("/rules/", sm)
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        self.client.login(username="taker", password="x12345678")
+        self.assertContains(self.client.get(reverse("exchanges:detail", args=[ex.pk])), "how-it-works/#safety")
+
+    def test_empty_search_suggests_next_steps(self):
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get(reverse("books:list"), {"q": "چیزی که نیست"})
+        self.assertContains(r, "لیست آرزو")
+
+
+class ChatPrivacyTests(Base):
+    def test_admin_sees_chat_only_for_disputed_or_reported(self):
+        from exchanges.models import Message
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        msg = Message.objects.create(exchange=ex, sender=self.taker, text="متن‌خصوصی‌۱۲۳")
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        url = reverse("admin:exchanges_exchange_change", args=[ex.pk])
+        self.assertNotContains(self.client.get(url), "متن‌خصوصی‌۱۲۳")          # عادی: چت پنهانه
+        Report.objects.create(reporter=self.giver, target_message=msg, reason="abuse")
+        self.assertContains(self.client.get(url), "متن‌خصوصی‌۱۲۳")             # گزارش روی پیام: دیده می‌شه
+        User.objects.filter(pk=self.taker.pk).update(points=1)
+        self.taker.refresh_from_db()
+        ex2 = services.request_book(self.book(title="دیگری").pk, self.taker)
+        services.accept(ex2.pk, self.giver)
+        Message.objects.create(exchange=ex2, sender=self.taker, text="پیام‌دوم‌۴۵۶")
+        url2 = reverse("admin:exchanges_exchange_change", args=[ex2.pk])
+        self.assertNotContains(self.client.get(url2), "پیام‌دوم‌۴۵۶")
+        services.open_dispute(ex2.pk, self.taker, "other")
+        self.assertContains(self.client.get(url2), "پیام‌دوم‌۴۵۶")              # اختلاف: دیده می‌شه

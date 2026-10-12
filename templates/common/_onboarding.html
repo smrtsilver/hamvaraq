@@ -1,0 +1,12 @@
+{% if onboarding and not onboarding.complete %}
+<section class="card onboarding">
+    <h3>شروع سریع <span class="pill pill-green">{{ onboarding.done|fa }} از {{ onboarding.total|fa }}</span></h3>
+    <div class="progress"><i style="width:{% widthratio onboarding.done onboarding.total 100 %}%"></i></div>
+    <ol class="steps">{% for st in onboarding.steps %}
+        <li class="{% if st.done %}done{% endif %}"><span class="tick">{% if st.done %}✓{% else %}{{ forloop.counter|fa }}{% endif %}</span>
+            <div><strong>{{ st.title }}</strong><br><span class="muted">{{ st.hint }}</span></div>
+            {% if not st.done %}<a class="btn btn-sm btn-outline" href="{{ st.url }}">{{ st.cta }}</a>{% endif %}</li>{% endfor %}
+    </ol>
+    <p class="muted"><a href="{% url 'how_it_works' %}">راهنمای کامل</a></p>
+</section>
+{% endif %}

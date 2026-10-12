@@ -64,3 +64,10 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .photo-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .photo-strip img{width:72px;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
 .photo-strip form{display:flex;flex-direction:column;align-items:center}
+.how3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.steps{list-style:none;padding:0;margin:10px 0}
+.steps li{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.steps li>div{flex:1}
+.steps .tick{width:28px;height:28px;border-radius:50%;background:var(--bd);display:flex;align-items:center;justify-content:center;flex:none}
+.steps li.done .tick{background:var(--g);color:#fff}.steps li.done strong{text-decoration:line-through;color:var(--mu)}
+details.card summary{cursor:pointer;font-weight:700}

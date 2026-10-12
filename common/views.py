@@ -15,7 +15,10 @@ def home(request):
         "books": Book.objects.count(),
         "exchanges": Exchange.objects.filter(status=Exchange.Status.COMPLETED).count(),
     }
-    return render(request, "home.html", {"latest": latest, "stats": stats})
+    from .onboarding import progress
+
+    onboarding = progress(request.user) if request.user.is_authenticated else None
+    return render(request, "home.html", {"latest": latest, "stats": stats, "onboarding": onboarding})
 
 
 def page_not_found(request, exception=None):
@@ -59,3 +62,18 @@ def staff_dashboard(request):
     # هر سری رو برای رسم میله‌ای با درصد ارتفاع آماده می‌کنیم
     data["daily"] = {k: [(d, n, round(100 * n / peak)) for d, n in v] for k, v in data["daily"].items()}
     return render(request, "common/staff_dashboard.html", {"d": data})
+
+
+def how_it_works(request):
+    from django.conf import settings
+
+    from .onboarding import progress
+
+    return render(request, "common/how_it_works.html", {
+        "s": settings, "onboarding": progress(request.user) if request.user.is_authenticated else None})
+
+
+def rules(request):
+    from django.conf import settings
+
+    return render(request, "common/rules.html", {"s": settings})

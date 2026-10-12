@@ -9,6 +9,14 @@
     <a class="btn btn-outline" href="{% url 'cities' %}">شهرها</a>
     <p class="muted">{{ stats.books|fa }} کتاب ثبت شده · {{ stats.exchanges|fa }} مبادله‌ی موفق</p>
 </section>
+{% include "common/_onboarding.html" %}
+{% if not user.is_authenticated %}
+<section class="how3">
+    <div class="card"><b>۱. کتابت رو بذار</b><p class="muted">کتابی که دیگه نمی‌خونی رو ثبت کن. با هر کتابی که بدی ۱ امتیاز می‌گیری.</p></div>
+    <div class="card"><b>۲. کتاب بگیر</b><p class="muted">ثبت‌نام ۱ امتیاز هدیه داره. با هر امتیاز یه کتاب می‌گیری، بدون پول.</p></div>
+    <div class="card"><b>۳. حضوری یا با پست تحویل بده</b><p class="muted">خودتون تو چت هماهنگ می‌کنید. <a href="{% url 'how_it_works' %}">بیشتر بخون</a></p></div>
+</section>
+{% endif %}
 <h2>تازه‌رسیده‌ها</h2>
 {% include "books/_grid.html" with books=latest %}
 {% endblock %}

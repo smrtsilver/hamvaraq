@@ -31,6 +31,7 @@
         </a>
         <nav>
             <a href="{% url 'books:list' %}">کتاب‌ها</a>
+            <a href="{% url 'how_it_works' %}">راهنما</a>
             <a href="{% url 'cities' %}">شهرها</a>
             <a href="{% url 'challenges:list' %}">چالش‌ها</a>
             {% if user.is_authenticated %}
@@ -52,7 +53,7 @@
     {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
     {% block content %}{% endblock %}
 </main>
-<footer class="container foot">هم‌ورق — کتاب بده، کتاب بگیر؛ بدون پول.</footer>
+<footer class="container foot">هم‌ورق — کتاب بده، کتاب بگیر؛ بدون پول.<br><a href="{% url 'how_it_works' %}">چطور کار می‌کنه</a> · <a href="{% url 'rules' %}">قوانین</a></footer>
 <script src="{% static 'js/isbn.js' %}" defer></script>
 <script src="{% static 'js/pwa.js' %}" defer></script>
 </body>

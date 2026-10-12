@@ -7,5 +7,5 @@
         <span class="muted">{{ b.city }} · {{ b.get_condition_display }}</span>
         {% if b.status != 'available' %}<span class="pill">{{ b.get_status_display }}</span>{% endif %}
     </a>
-{% empty %}<p class="muted">کتابی پیدا نشد.</p>{% endfor %}
+{% empty %}<div class="card empty"><p>کتابی پیدا نشد.</p>{% if user.is_authenticated %}<p class="muted">فیلترها رو کم کن، یا کتاب دلخواهت رو به <a href="{% url 'books:wishlist' %}">لیست آرزو</a> اضافه کن تا خبرت کنیم؛ یا اگه کتابی داری <a href="{% url 'books:create' %}">ثبتش کن</a>.</p>{% else %}<p class="muted"><a href="{% url 'accounts:signup' %}">ثبت‌نام کن</a> و اولین کتابت رو بذار.</p>{% endif %}</div>{% endfor %}
 </div>

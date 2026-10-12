@@ -5,10 +5,12 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
-from common.views import city_detail, city_list, healthz, home, staff_dashboard
+from common.views import city_detail, city_list, healthz, home, how_it_works, rules, staff_dashboard
 
 urlpatterns = [
     path("", home, name="home"),
+    path("how-it-works/", how_it_works, name="how_it_works"),
+    path("rules/", rules, name="rules"),
     path("cities/", city_list, name="cities"),
     path("cities/<int:pk>/", city_detail, name="city"),
     path("staff/", staff_dashboard, name="staff_dashboard"),
