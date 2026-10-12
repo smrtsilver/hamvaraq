@@ -65,7 +65,7 @@
                         <a href="{% url 'accounts:profile' user.username %}">{% include "components/icon.html" with name="user" %} پروفایل و قفسه</a>
                         <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} کتاب‌های من</a>
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
-                        <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو</a>
+                        <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
                         <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
                         <a href="{% url 'announcements:mine' %}">{% include "components/icon.html" with name="news" %} اطلاعیه‌های من</a>

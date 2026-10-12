@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from common.text import normalize, work_key
 from notifications.services import notify as _notify
 
@@ -10,6 +12,8 @@ def notify(user, text, url=""):
 
 def notify_wishlists(book):
     """کسایی که عنوان، نویسنده یا شابکِ این کتاب تو لیست آرزوشونه خبردار می‌شن."""
+    if not settings.WISHLIST_ENABLED:
+        return
     fields = [normalize(f) for f in (book.title, book.author, book.isbn) if f]
     seen = set()
     for wish in Wishlist.objects.exclude(user=book.owner).select_related("user"):

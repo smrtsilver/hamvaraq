@@ -3,11 +3,12 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="medium">
-    <div class="page-head"><div><h1>لیست آرزو</h1><p>اگه کسی کتابی با این عنوان، نویسنده یا شابک ثبت کنه، خبرت می‌کنیم.</p></div></div>
-    <form method="post" class="card inline-form" novalidate>{% csrf_token %}
-        <input name="text" maxlength="200" placeholder="عنوان، نویسنده یا شابک" required autocomplete="off" aria-label="کتاب دلخواه"><button class="btn">{% include "components/icon.html" with name="heart" %} افزودن</button></form>
-    {% if wishes %}<ul class="list-clean card" style="margin-top:16px">{% for w in wishes %}<li><span>{% include "components/icon.html" with name="heart" %} {{ w.text }}</span>
-        <form method="post" action="{% url 'books:wishlist_delete' w.pk %}" class="inline">{% csrf_token %}<button class="link link-danger small">حذف</button></form></li>{% endfor %}</ul>
-    {% else %}<div style="margin-top:16px">{% include "components/empty.html" with ill="books" title="هنوز چیزی تو لیست نیست" text="اسم کتابی که دنبالشی رو بنویس؛ هر وقت ثبت شد همین‌جا و تو اعلان‌ها بهت خبر می‌دیم." %}</div>{% endif %}
+    <div class="page-head"><div><h1>لیست آرزو</h1><p>کتابی که دنبالشی رو ثبت کن تا وقتی کسی اون رو گذاشت خبرت کنیم.</p></div></div>
+    <div class="card" style="text-align:center;padding:40px 24px">
+        <span class="doc-ico amber" style="margin:0 auto 16px;width:56px;height:56px">{% include "components/icon.html" with name="heart" %}</span>
+        <h2 style="margin:0 0 8px">به‌زودی</h2>
+        <p class="muted" style="max-width:420px;margin:0 auto 20px">داریم لیست آرزو رو دقیق‌تر می‌کنیم تا با عنوان، نویسنده و شابک کتاب بتونی دقیق جستجو کنی و اعلان بگیری. تا اون موقع می‌تونی کتاب‌ها رو مرور کنی.</p>
+        <a class="btn" href="{% url 'books:list' %}">دیدن کتاب‌ها</a>
+    </div>
 </div>
 {% endblock %}

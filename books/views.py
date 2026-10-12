@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.forms import formset_factory
 from django.http import HttpResponse, JsonResponse
@@ -151,6 +152,8 @@ def my_books(request):
 
 @login_required
 def wishlist(request):
+    if not settings.WISHLIST_ENABLED:
+        return render(request, "books/wishlist.html", {"wishes": []})
     if request.method == "POST":
         text = request.POST.get("text", "").strip()[:200]
         if text:
@@ -163,6 +166,8 @@ def wishlist(request):
 @login_required
 @require_POST
 def wishlist_delete(request, pk):
+    if not settings.WISHLIST_ENABLED:
+        return redirect("books:wishlist")
     get_object_or_404(Wishlist, pk=pk, user=request.user).delete()
     return redirect("books:wishlist")
 

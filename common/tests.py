@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -217,6 +217,22 @@ class BookTests(Base):
         r = self.client.get(reverse("books:list"), {"condition": "new", "city": self.isfahan.pk})
         self.assertEqual([b.title for b in r.context["page"]], ["ب"])
 
+    def test_wishlist_is_coming_soon_when_disabled(self):
+        from notifications.models import Notification
+        self.client.login(username="taker", password="x12345678")
+        r = self.client.get("/books/wishlist/")
+        self.assertContains(r, "به‌زودی")
+        self.assertNotContains(r, 'name="text"')
+        before = Wishlist.objects.count()
+        self.client.post("/books/wishlist/", {"text": "بوف"})
+        self.assertEqual(Wishlist.objects.count(), before)
+        Wishlist.objects.create(user=self.taker, text="بوف")
+        self.book(title="بوف کور")
+        self.assertFalse(Notification.objects.filter(user=self.taker, kind="wishlist").exists())
+        from common.onboarding import steps
+        self.assertFalse(any("لیست آرزو" in st["title"] for st in steps(self.taker)))
+
+    @override_settings(WISHLIST_ENABLED=True)
     def test_wishlist_notifies(self):
         Wishlist.objects.create(user=self.taker, text="بوف")
         self.client.login(username="giver", password="x12345678")
@@ -545,6 +561,7 @@ class PersianTextTests(Base):
         b.refresh_from_db()
         self.assertIn("کتاب نو", b.search_text)
 
+    @override_settings(WISHLIST_ENABLED=True)
     def test_same_work_and_wishlist_use_normalization(self):
         from books.services import same_work
         a = Book.objects.create(owner=self.giver, title="بوف کور", author="هدايت", city=self.isfahan)
@@ -1126,6 +1143,7 @@ class GuideTests(Base):
         self.assertContains(r, "قوانین")
         self.assertContains(self.client.get(reverse("accounts:signup")), reverse("rules"))
 
+    @override_settings(WISHLIST_ENABLED=True)
     def test_onboarding_steps_follow_real_progress(self):
         from common.onboarding import progress
         u = User.objects.create_user("newbie", password="x12345678", points=1)
@@ -1501,6 +1519,7 @@ class LandingAndHomeTests(Base):
         self.assertNotIn("تازه‌رسیده‌ها", html)
         self.assertNotIn("تو کدوم شهری؟", html)
 
+    @override_settings(WISHLIST_ENABLED=True)
     def test_member_home_todos_wishlist_local_and_challenges(self):
         from challenges.models import Challenge
         mine = self.book(title="کتاب من")

@@ -11,7 +11,7 @@
     <button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button>
 </form>
 <p class="result-count">{{ page.paginator.count|fa }} کتاب پیدا شد</p>
-{% url 'books:wishlist' as wishlist_url %}{% with books=page empty_title="کتابی با این مشخصات پیدا نشد" empty_text="فیلترها رو کم کن، یا کتاب دلخواهت رو تو لیست آرزو بذار تا وقتی ثبت شد خبرت کنیم." empty_url=wishlist_url empty_label="لیست آرزو" %}
+{% with books=page empty_title="کتابی با این مشخصات پیدا نشد" empty_text="فیلترها رو کم کن یا شهر دیگه‌ای رو امتحان کن." %}
     {% include "components/book_grid.html" %}
 {% endwith %}
 {% include "components/pagination.html" %}

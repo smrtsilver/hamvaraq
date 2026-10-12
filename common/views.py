@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.http import HttpResponse
@@ -67,7 +68,7 @@ def _member_home(request):
     active = list(mine.filter(status=Exchange.Status.ACCEPTED)[:5])
     base = Book.objects.filter(status=Book.Status.AVAILABLE).exclude(owner=user).select_related("city__province", "category")
     local = list(base.filter(city=user.city)[:8]) if user.city_id else []
-    wishes = [normalize(w.text) for w in user.wishes.all()]
+    wishes = [normalize(w.text) for w in user.wishes.all()] if settings.WISHLIST_ENABLED else []
     matches = []
     if wishes:
         for b in base[:300]:
@@ -151,7 +152,6 @@ def staff_dashboard(request):
 
 
 def how_it_works(request):
-    from django.conf import settings
 
     from .onboarding import progress
 
@@ -160,6 +160,5 @@ def how_it_works(request):
 
 
 def rules(request):
-    from django.conf import settings
 
     return render(request, "common/rules.html", {"s": settings})

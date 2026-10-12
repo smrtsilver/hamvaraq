@@ -224,6 +224,7 @@ WELCOME_WINDOW_DAYS = 30
 
 # ---- اعلان بیرون از سایت (Web Push) ----
 # بدون این کلیدها فقط اعلان داخل سایت کار می‌کنه. ساختن: python manage.py generate_vapid_keys
+WISHLIST_ENABLED = env.bool("WISHLIST_ENABLED", default=False)  # فعلاً «به‌زودی»؛ اطلاعات کتاب (شابک و ...) کامل بشه، روشنش می‌کنیم
 GOOGLE_BOOKS_API_KEY = env("GOOGLE_BOOKS_API_KEY", default="")  # اختیاری؛ بدون کلید سهمیه‌ی Google Books خیلی کمه
 VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
 VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
