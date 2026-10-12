@@ -314,10 +314,20 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .pager a:hover{border-color:var(--primary);text-decoration:none;color:var(--primary)}.pager .cur{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-weight:800}
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:48px 20px;border:1.5px dashed var(--line-strong);border-radius:var(--r-lg);background:var(--surface-2)}
 .empty .ill{width:150px;height:auto;margin-bottom:8px}.empty h3{margin:0}.empty p{margin:0 0 10px;color:var(--ink-3);max-width:420px}
-.filters-bar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:28px;box-shadow:var(--shadow-1)}
-.filters-bar>*,.form-grid>*,.grid-2>*{min-width:0}
-.filters-bar .field{margin:0}.filters-bar .field>label{font-size:var(--fs-xs);color:var(--ink-3)}
-.filters-bar .field:nth-child(1){grid-column:span 1}
+/* نوار فیلتر: یه کلاس برای همه‌ی فهرست‌ها (کتاب، معرفی، اطلاعیه). ستون‌ها خودکار می‌شکنن؛ فیلد جستجو عریض‌تره. */
+.filterbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:28px;box-shadow:var(--shadow-1)}
+.filterbar>*,.form-grid>*,.grid-2>*{min-width:0}
+.filterbar>.field,.filterbar>.combo{flex:1 1 170px;min-width:0}
+.filterbar .field{margin:0}.filterbar .field>label{font-size:var(--fs-xs);color:var(--ink-3);font-weight:700}
+.filterbar .field:first-child,.filterbar .field-wide{flex:2 1 260px}
+.filterbar .field:has(.check){align-self:end}
+.filterbar .field>label.check{display:flex;margin:0;min-height:46px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);font-size:var(--fs-sm)}
+.filterbar .field>label.check:hover{border-color:var(--ink-3)}
+.filterbar .field>label.check:has(input:checked){border-color:var(--primary);background:var(--primary-soft);color:var(--primary-ink)}
+.filterbar .check input{width:20px;height:20px}
+.filterbar-actions{display:flex;align-items:end;flex:0 0 auto}
+.filterbar-actions .btn{min-height:46px;min-width:120px}
+.filterbar select:has(option[value=""]:checked){color:var(--ink-3)}
 .result-count{color:var(--ink-3);font-size:var(--fs-sm);margin-bottom:14px}
 table.table{width:100%;border-collapse:collapse}.table th,.table td{padding:12px 14px;text-align:start;border-bottom:1px solid var(--line)}.table th{color:var(--ink-3);font-size:var(--fs-xs)}
 .list-clean{list-style:none;padding:0;margin:0}.list-clean li{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between}
@@ -356,7 +366,7 @@ details.faq[open] summary::after{content:"–"}details.faq p{padding:0 20px 16px
   .book-hero{grid-template-columns:minmax(0,1fr);gap:28px}
   .split,.grid-2{grid-template-columns:minmax(0,1fr)}
   .grid-3,.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .filters-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.filters-bar .field:nth-child(1){grid-column:1/-1}.filters-bar button{grid-column:1/-1}
+  .filterbar .field:first-child,.filterbar .field-wide,.filterbar-actions{flex:1 1 100%}.filterbar-actions .btn{width:100%}
   .footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child{grid-column:1/-1}
   .hero{padding:36px 24px}
   .bottom-nav{position:fixed;inset-inline:0;bottom:0;z-index:70;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;height:calc(var(--nav-h) + env(safe-area-inset-bottom));
@@ -377,7 +387,6 @@ details.faq[open] summary::after{content:"–"}details.faq p{padding:0 20px 16px
   .card{padding:18px}
   .book-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
   .grid-3,.grid-4,.form-grid{grid-template-columns:minmax(0,1fr)}
-  .filters-bar{grid-template-columns:minmax(0,1fr)}
   .menu-name,.menu-points{display:none}.menu>summary{padding:3px}
   .brand .logo-svg{height:36px}
   .msg{max-width:92%}
@@ -605,6 +614,7 @@ p a:not(.btn),.hint a,.prose a,.auth-links a,.alert a,.small a:not(.btn),.footer
 .sd-all{display:block;margin:8px 4px 0;padding:14px;border-radius:var(--r);text-align:center;font-weight:700;color:var(--primary-ink);background:var(--bg-soft);text-decoration:none}
 .sd-all:hover,.sd-all.on{background:var(--primary-soft);text-decoration:none}
 @media (max-width:980px){
+  .header-search{display:none}
   .only-mobile{display:inline-grid!important}
   .search-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0}
 }

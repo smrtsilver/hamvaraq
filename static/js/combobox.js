@@ -144,6 +144,11 @@
 
     function init() {
         const combos = new Map();
+        document.querySelectorAll(".filterbar select:not([data-combobox])").forEach((s) => {
+            const empty = s.querySelector('option[value=""]');
+            if (!empty) return; // لیست بی‌گزینه‌ی خالی (مثل مرتب‌سازی) همون select ساده می‌مونه
+            s.dataset.combobox = ""; s.dataset.placeholder = empty.textContent;
+        });
         document.querySelectorAll("select[data-combobox]").forEach((s) => combos.set(s, new Combo(s)));
         // آبشاری: عوض شدن استان ← شهر نامربوط پاک می‌شه و لیست شهرها فیلتر می‌شه
         document.querySelectorAll('select[data-location="province"]').forEach((p) => {
