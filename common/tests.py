@@ -1415,3 +1415,65 @@ class SuggestAndSettingsTests(Base):
         from django.utils.translation import gettext
         self.assertEqual(gettext("- Select an option -"), "انتخاب کنید")
         self.assertEqual(gettext("Breadcrumbs"), "مسیر صفحه")
+
+
+class LandingAndHomeTests(Base):
+    def test_guest_landing_sections_and_real_stats(self):
+        self.book()
+        self.complete(self.book(title="دوم"))
+        r = self.client.get("/")
+        self.assertTemplateUsed(r, "landing.html")
+        self.assertEqual((r.context["stats"]["books"], r.context["stats"]["exchanges"]), (2, 1))
+        html = r.content.decode()
+        for needle in ("چطور کار می‌کنه؟", "تازه‌رسیده‌ها", "سوال‌های پرتکرار", "هم‌ورق شو", "chip", "ill-hero"):
+            self.assertIn(needle, html)
+        self.assertEqual(html.count("<details class=\"faq\">"), 6)
+
+    def test_landing_structured_data_valid_json_and_escaped(self):
+        import json, re
+        html = self.client.get("/").content.decode()
+        blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, flags=re.S)
+        self.assertEqual(len(blocks), 2)
+        faq, site = (json.loads(b) for b in blocks)
+        self.assertEqual(faq["@type"], "FAQPage")
+        self.assertEqual(len(faq["mainEntity"]), 6)
+        self.assertEqual(site["potentialAction"]["@type"], "SearchAction")
+
+    def test_landing_uses_site_settings_texts(self):
+        from common.models import SiteSetting
+        SiteSetting(hero_title="تیتر دلخواه من", cta_title="بپیوند", telegram_url="https://t.me/x").save()
+        html = self.client.get("/").content.decode()
+        self.assertIn("تیتر دلخواه من", html)
+        self.assertIn("بپیوند", html)
+        self.assertIn("https://t.me/x", html)  # فوتر
+
+    def test_landing_hides_empty_sections(self):
+        html = self.client.get("/").content.decode()
+        self.assertNotIn("تازه‌رسیده‌ها", html)
+        self.assertNotIn("تو کدوم شهری؟", html)
+
+    def test_member_home_todos_wishlist_local_and_challenges(self):
+        from challenges.models import Challenge
+        mine = self.book(title="کتاب من")
+        ex = services.request_book(mine.pk, self.taker)            # taker از giver می‌خواد
+        Book.objects.create(owner=self.taker, title="کلیدر", author="دولت‌آبادی", city=self.isfahan)
+        Wishlist.objects.create(user=self.giver, text="كلیدر")      # ک عربی؛ باید پیدا بشه
+        Challenge.objects.create(title="چالش", kind="give", target=2, starts_at=timezone.now() - timedelta(days=1), ends_at=timezone.now() + timedelta(days=5))
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get("/")
+        self.assertTemplateUsed(r, "home.html")
+        self.assertEqual([e.pk for e in r.context["waiting"]], [ex.pk])
+        self.assertEqual([b.title for b in r.context["matches"]], ["کلیدر"])
+        self.assertTrue(r.context["local_is_city"])                 # giver شهر داره (اصفهان)
+        self.assertEqual(len(r.context["challenges"]), 1)
+        self.assertContains(r, "کتاب من")
+        self.assertNotContains(r, "تو کدوم شهری؟")
+
+    def test_member_home_without_city_falls_back_to_latest(self):
+        User.objects.filter(pk=self.giver.pk).update(city=None)
+        self.book(owner=self.taker, title="دیگران")
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get("/")
+        self.assertFalse(r.context["local_is_city"])
+        self.assertEqual([b.title for b in r.context["local"]], ["دیگران"])
+        self.assertContains(r, "شهرت رو انتخاب کن")

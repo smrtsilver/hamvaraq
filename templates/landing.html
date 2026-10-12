@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب؛ {{ site.tagline }}{% endblock %}
+{% block description %}هم‌ورق جاییه که کتاب‌خوان‌ها کتاب‌هاشون رو رایگان دست‌به‌دست می‌کنن. با ثبت‌نام ۱ امتیاز هدیه بگیر، کتاب بسپار و کتاب بعدیت رو بگیر؛ بدون پول.{% endblock %}
+{% block main_class %}main-bleed{% endblock %}
+{% block head_extra %}
+<script type="application/ld+json">{{ faq_ld|safe }}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"هم‌ورق","url":"{{ request.scheme }}://{{ request.get_host }}/","potentialAction":{"@type":"SearchAction","target":"{{ request.scheme }}://{{ request.get_host }}{% url 'books:list' %}?q={search_term_string}","query-input":"required name=search_term_string"}}</script>
+{% endblock %}
+{% block main %}
+<section class="lp-hero"><div class="container">
+    <div class="lp-hero-in">
+        <div>
+            <span class="lp-eyebrow">{% include "components/icon.html" with name="leaf" %} {{ site.tagline }}</span>
+            <h1>{{ site.hero_title }}</h1>
+            <p class="lead">{{ site.hero_subtitle }}</p>
+            <div class="cluster"><a class="btn btn-lg" href="{% url 'accounts:signup' %}">{{ site.cta_title }}</a><a class="btn btn-lg btn-secondary" href="{% url 'books:list' %}">دیدن کتاب‌ها</a></div>
+            <p class="note">{% include "components/icon.html" with name="gift" %} ثبت‌نام رایگانه و ۱ امتیاز هدیه داره · بدون شماره و آدرس</p>
+        </div>
+        <div class="lp-hero-art">{% include "components/ill_hero.html" %}</div>
+    </div>
+    <div class="lp-stats" aria-label="آمار هم‌ورق">
+        <div><strong>{{ stats.books|fa }}</strong><span>کتاب ثبت‌شده</span></div>
+        <div><strong>{{ stats.exchanges|fa }}</strong><span>مبادله‌ی موفق</span></div>
+        <div><strong>{{ stats.cities|fa }}</strong><span>شهر با کتاب موجود</span></div>
+        <div><strong>{{ stats.users|fa }}</strong><span>کتاب‌خوان عضو</span></div>
+    </div>
+</div></section>
+
+<section class="lp-section"><div class="container">
+    <div class="lp-title"><h2>چطور کار می‌کنه؟</h2><p>سه قدم ساده از قفسه‌ی تو تا قفسه‌ی یه نفر دیگه.</p></div>
+    <div class="how">{% for icon, title, text in steps %}
+        <div class="how-step"><span class="n">{{ forloop.counter|fa }}</span><div class="ico">{% include "components/icon.html" with name=icon %}</div><h3>{{ title }}</h3><p>{{ text }}</p></div>{% endfor %}
+    </div>
+    <div class="eq" aria-label="قاعده‌ی امتیاز"><span class="term">۱ کتاب دادی</span><span class="op">=</span><span class="term hl">{% include "components/icon.html" with name="star" %} ۱ امتیاز</span><span class="op">=</span><span class="term">۱ کتاب گرفتی</span></div>
+</div></section>
+
+{% if latest %}<section class="lp-section lp-alt"><div class="container">
+    <div class="section-head"><div><h2>تازه‌رسیده‌ها</h2><p>کتاب‌هایی که همین الان آماده‌ی مبادله‌ان</p></div><a class="btn btn-secondary btn-sm" href="{% url 'books:list' %}">همه‌ی کتاب‌ها</a></div>
+    {% include "components/book_grid.html" with books=latest %}
+</div></section>{% endif %}
+
+<section class="lp-section"><div class="container">
+    <div class="lp-title"><h2>چرا هم‌ورق؟</h2><p>ساده، امن و برای کتاب‌خوان‌ها.</p></div>
+    <div class="grid-4">{% for icon, title, text in features %}<div class="feature"><div class="ico">{% include "components/icon.html" with name=icon %}</div><h3>{{ title }}</h3><p>{{ text }}</p></div>{% endfor %}</div>
+</div></section>
+
+{% if cities %}<section class="lp-section lp-alt"><div class="container">
+    <div class="lp-title"><h2>تو کدوم شهری؟</h2><p>شهرهایی که الان کتاب موجود دارن.</p></div>
+    <p class="center">{% for c in cities %}<a class="chip" style="font-size:var(--fs-sm);padding:6px 18px" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.n|fa }}</small></a> {% endfor %}</p>
+    <p class="center"><a href="{% url 'cities' %}">همه‌ی شهرها و استان‌ها</a></p>
+</div></section>{% endif %}
+
+<section class="lp-section"><div class="container faq-wrap">
+    <div class="lp-title"><h2>سوال‌های پرتکرار</h2></div>
+    {% for q, a in faq %}<details class="faq"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}
+    <p class="center" style="margin-top:20px"><a href="{% url 'how_it_works' %}">راهنمای کامل</a> · <a href="{% url 'rules' %}">قوانین</a></p>
+</div></section>
+
+<section class="lp-section" style="padding-top:0"><div class="container">
+    <div class="cta-band"><h2>{{ site.cta_title }}</h2><p>{{ site.cta_text }}</p>
+        <a class="btn btn-lg btn-accent" href="{% url 'accounts:signup' %}">ساخت حساب رایگان</a></div>
+</div></section>
+{% endblock %}

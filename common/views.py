@@ -1,4 +1,5 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
@@ -10,15 +11,61 @@ from exchanges.models import Exchange
 
 
 def home(request):
-    latest = Book.objects.filter(status=Book.Status.AVAILABLE).select_related("city", "category")[:8]
+    """مهمان: لندینگ. عضو: «خانه‌ی من» با کارهای در انتظار و پیشنهادها."""
+    if request.user.is_authenticated:
+        return _member_home(request)
+    from .content import FAQ, FEATURES, STEPS
+
+    available = Book.objects.filter(status=Book.Status.AVAILABLE)
     stats = {
         "books": Book.objects.count(),
         "exchanges": Exchange.objects.filter(status=Exchange.Status.COMPLETED).count(),
+        "cities": available.values("city").distinct().count(),
+        "users": User.objects.filter(is_active=True).count(),
     }
+    cities = City.objects.annotate(n=Count("books", filter=Q(books__status=Book.Status.AVAILABLE))).filter(n__gt=0).select_related("province").order_by("-n", "name")[:10]
+    return render(request, "landing.html", {
+        "latest": available.select_related("city__province", "category")[:8], "stats": stats, "cities": cities,
+        "faq": FAQ, "steps": STEPS, "features": FEATURES, "faq_ld": _faq_ld(FAQ),
+    })
+
+
+def _faq_ld(faq):
+    import json
+
+    data = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
+    return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
+
+
+def _member_home(request):
+    from challenges.models import Challenge
+    from common.text import normalize
+
     from .onboarding import progress
 
-    onboarding = progress(request.user) if request.user.is_authenticated else None
-    return render(request, "home.html", {"latest": latest, "stats": stats, "onboarding": onboarding})
+    user = request.user
+    mine = Exchange.objects.filter(Q(owner=user) | Q(requester=user)).select_related("book", "owner", "requester")
+    waiting = list(mine.filter(owner=user, status=Exchange.Status.REQUESTED)[:5])
+    active = list(mine.filter(status=Exchange.Status.ACCEPTED)[:5])
+    base = Book.objects.filter(status=Book.Status.AVAILABLE).exclude(owner=user).select_related("city__province", "category")
+    local = list(base.filter(city=user.city)[:8]) if user.city_id else []
+    wishes = [normalize(w.text) for w in user.wishes.all()]
+    matches = []
+    if wishes:
+        for b in base[:300]:
+            if any(w and (w in b.search_text) for w in wishes):
+                matches.append(b)
+            if len(matches) == 6:
+                break
+    now = timezone.now()
+    challenges = [{"c": c, "done": min(c.progress(user), c.target)} for c in Challenge.objects.filter(is_active=True, starts_at__lte=now, ends_at__gte=now)[:2]]
+    done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
+    return render(request, "home.html", {
+        "onboarding": progress(user), "waiting": waiting, "active": active, "local": local or list(base[:8]), "local_is_city": bool(local),
+        "matches": matches, "challenges": challenges,
+        "given": done.filter(owner=user).count(), "received": done.filter(requester=user).count(),
+    })
 
 
 def page_not_found(request, exception=None):
