@@ -269,7 +269,10 @@ class IsbnAndBulkTests(Base):
         from books import isbn
         cache.clear()
         body = json.dumps({"ISBN:9780140328721": {"title": "Fantastic Mr Fox", "authors": [{"name": "Roald Dahl"}]}})
-        with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(body.encode())) as m:
+        with (
+            mock.patch("books.isbn._nlai", return_value=None),
+            mock.patch("urllib.request.urlopen", return_value=io.BytesIO(body.encode())) as m,
+        ):
             r = isbn.lookup("978-0-14-032872-1")
             isbn.lookup("9780140328721")
         self.assertEqual(r, {"isbn": "9780140328721", "title": "Fantastic Mr Fox", "author": "Roald Dahl"})
@@ -291,10 +294,16 @@ class IsbnAndBulkTests(Base):
         from books import isbn
         cache.clear()
         g = json.dumps({"items": [{"volumeInfo": {"title": "کلیدر", "authors": ["دولت‌آبادی"]}}]})
-        with mock.patch("urllib.request.urlopen", side_effect=[io.BytesIO(b"{}"), io.BytesIO(g.encode())]):
+        with (
+            mock.patch("books.isbn._nlai", return_value=None),
+            mock.patch("urllib.request.urlopen", side_effect=[io.BytesIO(b"{}"), io.BytesIO(g.encode())]),
+        ):
             r = isbn.lookup("9789643051092")
         self.assertEqual(r["title"], "کلیدر")
-        with mock.patch("urllib.request.urlopen", side_effect=[urllib.error.URLError("x"), io.BytesIO(b"{}")]):
+        with (
+            mock.patch("books.isbn._nlai", return_value=None),
+            mock.patch("urllib.request.urlopen", side_effect=[urllib.error.URLError("x"), io.BytesIO(b"{}")]),
+        ):
             cache.clear()
             self.assertIsNone(isbn.lookup("9789643051099"))
             self.assertIsNone(cache.get("isbn:9789643051099"))  # با خطای شبکه نتیجه‌ی منفی کش نمی‌شه
