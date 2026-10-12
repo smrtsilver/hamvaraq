@@ -26,6 +26,7 @@
             {% elif user.points < 1 %}<p class="alert alert-info">امتیاز نداری؛ اول <a href="{% url 'books:create' %}">یه کتاب بده</a>.</p>
             {% else %}<form method="post" action="{% url 'exchanges:request' book.pk %}">{% csrf_token %}<button class="btn">درخواست کتاب (۱ امتیاز)</button></form>{% endif %}
         {% endif %}
+        <p><a class="muted" href="{% url 'books:card' book.pk %}?download=1">دانلود کارت استوری</a></p>
         {% if user.is_authenticated and not is_owner %}<p><a class="muted" href="{% url 'trust:report' 'book' book.pk %}">گزارش کتاب</a></p>{% endif %}
     </div>
 </div>

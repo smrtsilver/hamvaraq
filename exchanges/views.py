@@ -51,6 +51,17 @@ confirm = _action(services.confirm, "تأییدت ثبت شد.")
 
 
 @login_required
+@require_POST
+def propose_meeting(request, pk):
+    if _run(request, services.propose_meeting, pk, request.user, request.POST.get("point") or 0):
+        messages.success(request, "پیشنهادت برای نقطه‌ی تحویل ارسال شد.")
+    return redirect("exchanges:detail", pk)
+
+
+agree_meeting = _action(services.agree_meeting, "نقطه‌ی تحویل تأیید شد.")
+
+
+@login_required
 def exchange_list(request):
     qs = Exchange.objects.filter(Q(owner=request.user) | Q(requester=request.user)).select_related("book", "owner", "requester")
     return render(request, "exchanges/list.html", {"exchanges": qs})
@@ -69,6 +80,7 @@ def exchange_detail(request, pk):
         "chat": ex.messages.select_related("sender"),
         "chat_open": ex.status in (*Exchange.ACTIVE, Exchange.Status.COMPLETED),
         "my_vote": my_vote,
+        "meeting_options": services.meeting_options(ex) if ex.status == Exchange.Status.ACCEPTED else [],
         "vote_form": VoteForm(instance=my_vote) if ex.status == Exchange.Status.COMPLETED and (not my_vote or can_edit_vote(my_vote)) else None,
         "can_note": ex.status == Exchange.Status.COMPLETED and ex.owner_id == request.user.pk and not hasattr(ex, "note"),
     }

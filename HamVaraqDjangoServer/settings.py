@@ -137,6 +137,9 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# آدرسی که روی کارت اشتراک‌گذاری چاپ می‌شه
+SITE_URL = env("SITE_URL", default="hamvaraq.ir")
+
 # ---- قوانین دامنه‌ی هم‌ورق ----
 VOTE_EDIT_HOURS = 24            # رأی تا این مدت قابل ویرایشه
 LOW_REPUTATION_PERCENT = 60     # زیر این درصد (با حداقل رأی) هشدار «اعتبار پایین»

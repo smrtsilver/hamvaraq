@@ -53,3 +53,5 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .spine-tag{position:absolute;bottom:0;inset-inline:0;background:#000a;text-align:center;font-size:.65rem}
 .spine:nth-child(5n+1){background:#2f855a}.spine:nth-child(5n+2){background:#2b6cb0;height:165px}.spine:nth-child(5n+3){background:#b7791f;height:140px}.spine:nth-child(5n+4){background:#97266d;height:158px}.spine:nth-child(5n){background:#4a5568;height:148px}
 .progress{height:10px;background:var(--bd);border-radius:999px;overflow:hidden}.progress>i{display:block;height:100%;background:var(--g)}
+@font-face{font-family:Vazirmatn;font-weight:400;font-display:swap;src:url("../fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2")}
+@font-face{font-family:Vazirmatn;font-weight:700;font-display:swap;src:url("../fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2")}

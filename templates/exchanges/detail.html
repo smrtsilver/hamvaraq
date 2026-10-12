@@ -21,6 +21,22 @@
 {% endif %}
 </div>
 
+{% if ex.status == 'accepted' %}
+<section class="card"><h3>📍 نقطه‌ی تحویل</h3>
+    {% if ex.meeting_point %}
+        <p><strong>{{ ex.meeting_point.name }}</strong> ({{ ex.meeting_point.get_kind_display }}، {{ ex.meeting_point.city }}){% if ex.meeting_point.address %}<br><span class="muted">{{ ex.meeting_point.address }}</span>{% endif %}</p>
+        {% if ex.meeting_agreed %}<p class="pill pill-green">هر دو تأیید کردین</p>
+        {% elif ex.meeting_proposed_by_id == user.pk %}<p class="muted">منتظر تأیید {{ other.username }}…</p>
+        {% else %}<form method="post" action="{% url 'exchanges:meeting_agree' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-sm">تأیید این نقطه</button></form>{% endif %}
+    {% endif %}
+    {% if meeting_options %}
+    <form method="post" action="{% url 'exchanges:meeting' ex.pk %}" class="inline-form">{% csrf_token %}
+        <select name="point" required>{% for p in meeting_options %}<option value="{{ p.pk }}">{{ p.get_kind_display }} {{ p.name }} — {{ p.city }}</option>{% endfor %}</select>
+        <button class="btn btn-sm btn-outline">{% if ex.meeting_point %}پیشنهاد نقطه‌ی دیگه{% else %}پیشنهاد نقطه{% endif %}</button></form>
+    {% elif not ex.meeting_point %}<p class="muted">برای شهر شما نقطه‌ای تعریف نشده؛ تو چت هماهنگ کنید. نقطه‌ی عمومی و شلوغ بهتره.</p>{% endif %}
+</section>
+{% endif %}
+
 {% if ex.status == 'completed' %}
     <section class="card">
         <h3>رأی به {{ other.username }}</h3>

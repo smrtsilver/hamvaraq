@@ -12,6 +12,8 @@ urlpatterns = [
     path("<int:pk>/reject/", views.reject, name="reject"),
     path("<int:pk>/cancel/", views.cancel, name="cancel"),
     path("<int:pk>/confirm/", views.confirm, name="confirm"),
+    path("<int:pk>/meeting/", views.propose_meeting, name="meeting"),
+    path("<int:pk>/meeting/agree/", views.agree_meeting, name="meeting_agree"),
     path("<int:pk>/message/", views.send_message, name="message"),
     path("<int:pk>/note/", views.add_note, name="note"),
 ]

@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.forms import formset_factory
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,6 +12,7 @@ from django.db.models import Q
 from accounts.badges import check_badges
 from exchanges.models import Exchange
 
+from . import card as book_card
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, ReviewForm
 from .models import Book, Review, Wishlist
@@ -196,3 +197,12 @@ def review_save(request, pk):
     else:
         messages.error(request, "ستاره‌ی ۱ تا ۵ رو انتخاب کن.")
     return redirect("books:detail", pk)
+
+
+def book_card_png(request, pk):
+    book = get_object_or_404(Book.objects.select_related("city"), pk=pk)
+    resp = HttpResponse(book_card.render_card(book), content_type="image/png")
+    if request.GET.get("download"):
+        resp["Content-Disposition"] = f'attachment; filename="hamvaraq-book-{book.pk}.png"'
+    resp["Cache-Control"] = "public, max-age=300"
+    return resp

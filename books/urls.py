@@ -16,5 +16,6 @@ urlpatterns = [
     path("<int:pk>/edit/", views.book_edit, name="edit"),
     path("<int:pk>/delete/", views.book_delete, name="delete"),
     path("<int:pk>/review/", views.review_save, name="review"),
+    path("<int:pk>/card.png", views.book_card_png, name="card"),
     path("<int:pk>/relist/", views.book_relist, name="relist"),
 ]

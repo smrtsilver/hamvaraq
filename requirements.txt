@@ -1,8 +1,10 @@
+arabic-reshaper==3.0.1
 asgiref==3.12.1
-Django==6.1.2
 django-environ==0.14.0
+Django==6.1.2
 gunicorn==26.2.0
 pillow==12.3.0
 psycopg2-binary==2.9.13
+python-bidi==0.6.11
 sqlparse==0.6.0
 whitenoise==6.12.0

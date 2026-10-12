@@ -421,3 +421,58 @@ class SimilarTests(Base):
         got = similar_books(c)
         self.assertIn(mine, got)               # دهنده‌ی نسخه‌ی دیگه
         self.assertTrue(self.client.get(reverse("books:detail", args=[c.pk])).status_code == 200)
+
+
+class MeetingAndCardTests(Base):
+    def setUp(self):
+        from common.models import MeetingPoint
+        self.p1 = MeetingPoint.objects.create(city=self.isfahan, name="میدان امام", kind="metro")
+        self.p2 = MeetingPoint.objects.create(city=self.tehran, name="کافه کتاب", kind="cafe")
+        self.far = MeetingPoint.objects.create(city=City.objects.create(name="یزد"), name="دور", kind="cafe")
+        self.off = MeetingPoint.objects.create(city=self.isfahan, name="غیرفعال", kind="cafe", is_active=False)
+        self.ex = services.request_book(self.book().pk, self.taker)
+
+    def test_only_after_accept_and_only_allowed_points(self):
+        with self.assertRaises(services.ExchangeError):
+            services.propose_meeting(self.ex.pk, self.taker, self.p1.pk)  # هنوز تأیید نشده
+        services.accept(self.ex.pk, self.giver)
+        self.assertEqual({p.pk for p in services.meeting_options(self.ex)}, {self.p1.pk, self.p2.pk})
+        for bad in (self.far.pk, self.off.pk, 0):
+            with self.assertRaises(services.ExchangeError):
+                services.propose_meeting(self.ex.pk, self.taker, bad)
+
+    def test_propose_agree_flow(self):
+        services.accept(self.ex.pk, self.giver)
+        services.propose_meeting(self.ex.pk, self.taker, self.p1.pk)
+        with self.assertRaises(services.ExchangeError):
+            services.agree_meeting(self.ex.pk, self.taker)  # پیشنهاددهنده نمی‌تونه
+        ex = services.agree_meeting(self.ex.pk, self.giver)
+        self.assertTrue(ex.meeting_agreed)
+        self.assertEqual(ex.messages.count(), 2)  # پیشنهاد + تأیید تو چت
+        ex = services.propose_meeting(self.ex.pk, self.giver, self.p2.pk)  # پیشنهاد جدید تأیید رو ریست می‌کنه
+        self.assertFalse(ex.meeting_agreed)
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="کافه کتاب").exists())
+
+    def test_third_party_blocked_and_page(self):
+        services.accept(self.ex.pk, self.giver)
+        stranger = User.objects.create_user("st", password="x12345678")
+        with self.assertRaises(services.ExchangeError):
+            services.propose_meeting(self.ex.pk, stranger, self.p1.pk)
+        self.client.login(username="taker", password="x12345678")
+        r = self.client.post(reverse("exchanges:meeting", args=[self.ex.pk]), {"point": self.p1.pk})
+        self.assertEqual(r.status_code, 302)
+        self.assertContains(self.client.get(reverse("exchanges:detail", args=[self.ex.pk])), "میدان امام")
+
+    def test_share_card_png(self):
+        b = self.book(title="کارت")
+        r = self.client.get(reverse("books:card", args=[b.pk]), {"download": 1})
+        self.assertEqual(r["Content-Type"], "image/png")
+        self.assertTrue(r.content.startswith(b"\x89PNG"))
+        self.assertIn("attachment", r["Content-Disposition"])
+        self.assertEqual(self.client.get(reverse("books:card", args=[99999])).status_code, 404)
+
+    def test_wrap_truncates_long_titles(self):
+        from books.card import _font, wrap
+        lines = wrap("کلمه " * 80, _font(True, 72), 900, 2)
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(lines[-1].endswith("…"))

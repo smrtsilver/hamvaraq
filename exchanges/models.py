@@ -19,6 +19,10 @@ class Exchange(models.Model):
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.REQUESTED, db_index=True, verbose_name="وضعیت")
     owner_confirmed = models.BooleanField(default=False)
     requester_confirmed = models.BooleanField(default=False)
+    # نقطه‌ی تحویل: یه نفر پیشنهاد می‌ده، طرف مقابل تأیید می‌کنه
+    meeting_point = models.ForeignKey("common.MeetingPoint", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="نقطه‌ی تحویل")
+    meeting_proposed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    meeting_agreed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)

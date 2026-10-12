@@ -142,3 +142,52 @@ def _complete(ex):
     notify(receiver, f"کتاب «{book.title}» مال توئه. به {giver.username} رأی بده.", _url(ex))
     check_badges(giver)
     check_badges(receiver)
+
+
+def meeting_options(exchange):
+    """نقطه‌های فعال شهر کتاب و شهر دو طرف."""
+    from common.models import MeetingPoint
+
+    city_ids = {c for c in (exchange.book.city_id, exchange.owner.city_id, exchange.requester.city_id) if c}
+    return MeetingPoint.objects.filter(city_id__in=city_ids, is_active=True).select_related("city")
+
+
+@transaction.atomic
+def propose_meeting(exchange_id, user, point_id):
+    from common.models import MeetingPoint
+
+    from .models import Message
+
+    ex = _get_locked(exchange_id)
+    if not ex.is_party(user):
+        raise ExchangeError("این مبادله مال تو نیست.")
+    if ex.status != Exchange.Status.ACCEPTED:
+        raise ExchangeError("نقطه‌ی تحویل فقط برای مبادله‌ی تأییدشده‌ست.")
+    point = meeting_options(ex).filter(pk=point_id).first()
+    if not point:
+        raise ExchangeError("این نقطه برای این مبادله مجاز نیست.")
+    ex.meeting_point, ex.meeting_proposed_by, ex.meeting_agreed = point, user, False
+    ex.save(update_fields=["meeting_point", "meeting_proposed_by", "meeting_agreed", "updated_at"])
+    Message.objects.create(exchange=ex, sender=user, text=f"📍 پیشنهاد نقطه‌ی تحویل: {point.name} ({point.city})")
+    notify(ex.other_party(user), f"{user.username} نقطه‌ی تحویل پیشنهاد داد: {point.name}", _url(ex))
+    return ex
+
+
+@transaction.atomic
+def agree_meeting(exchange_id, user):
+    from .models import Message
+
+    ex = _get_locked(exchange_id)
+    if not ex.is_party(user):
+        raise ExchangeError("این مبادله مال تو نیست.")
+    if ex.status != Exchange.Status.ACCEPTED or not ex.meeting_point_id:
+        raise ExchangeError("نقطه‌ای برای تأیید نیست.")
+    if ex.meeting_proposed_by_id == user.pk:
+        raise ExchangeError("پیشنهاد خودت رو باید طرف مقابل تأیید کنه.")
+    if ex.meeting_agreed:
+        return ex
+    ex.meeting_agreed = True
+    ex.save(update_fields=["meeting_agreed", "updated_at"])
+    Message.objects.create(exchange=ex, sender=user, text=f"✅ نقطه‌ی تحویل تأیید شد: {ex.meeting_point.name}")
+    notify(ex.other_party(user), f"{user.username} نقطه‌ی تحویل رو تأیید کرد: {ex.meeting_point.name}", _url(ex))
+    return ex
