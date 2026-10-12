@@ -1,9 +1,11 @@
 from django import forms
 
+from common.forms import PersianFormMixin
+
 from .models import Report, Vote
 
 
-class VoteForm(forms.ModelForm):
+class VoteForm(PersianFormMixin, forms.ModelForm):
     like = forms.TypedChoiceField(
         choices=[("1", "👍 لایک"), ("0", "👎 دیسلایک")], coerce=lambda v: v == "1",
         widget=forms.RadioSelect, label="رأی",
@@ -25,7 +27,7 @@ class VoteForm(forms.ModelForm):
         return data
 
 
-class ReportForm(forms.ModelForm):
+class ReportForm(PersianFormMixin, forms.ModelForm):
     def clean_image(self):
         from django.core.files.uploadedfile import UploadedFile
 

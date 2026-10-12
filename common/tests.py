@@ -1145,3 +1145,43 @@ class ChatPrivacyTests(Base):
         self.assertNotContains(self.client.get(url2), "پیام‌دوم‌۴۵۶")
         services.open_dispute(ex2.pk, self.taker, "other")
         self.assertContains(self.client.get(url2), "پیام‌دوم‌۴۵۶")              # اختلاف: دیده می‌شه
+
+
+class PersianFormsTests(Base):
+    def test_no_english_empty_choice_and_autocomplete_attrs(self):
+        import re
+        self.client.login(username="giver", password="x12345678")
+        ex_done = self.complete(self.book(title="تمام"))
+        User.objects.filter(pk=self.taker.pk).update(points=1)
+        self.taker.refresh_from_db()
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        pages = ["/accounts/signup/", "/accounts/settings/", "/books/new/", "/books/bulk/", "/books/",
+                 f"/exchanges/{ex.pk}/", f"/exchanges/{ex_done.pk}/", f"/trust/report/book/{self.book(title='گزارش').pk}/"]
+        for url in pages:
+            html = self.client.get(url).content.decode()
+            self.assertNotIn("Select an option", html, url)
+            self.assertNotIn("---------", html, url)
+            visible = re.sub(r"<script.*?</script>|<style.*?</style>", "", html, flags=re.S)
+            for attr in re.findall(r'(?:placeholder|title|alt|aria-label)="([^"]*)"', visible):
+                self.assertNotRegex(attr, "[A-Za-z]{3,}", f"{url}: {attr}")
+        self.client.logout()
+        html = self.client.get("/accounts/signup/").content.decode()
+        self.assertIn('autocomplete="username"', html)
+        self.assertEqual(html.count('autocomplete="new-password"'), 2)
+        self.assertIn('autocomplete="email"', html)
+        self.assertNotRegex(html.split('id="signup-form"')[1].split("</form>")[0], r"characters|Letters|digits")
+        self.assertIn('autocomplete="current-password"', self.client.get("/accounts/login/").content.decode())
+
+    def test_admin_app_names_are_persian(self):
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        html = self.client.get("/admin/").content.decode()
+        for name in ("حساب‌ها", "مبادله‌ها", "اعتماد و ایمنی"):
+            self.assertIn(name, html)
+        self.assertIn("مدیریت هم‌ورق", html)
+
+    def test_favicon_redirects(self):
+        r = self.client.get("/favicon.ico")
+        self.assertEqual(r.status_code, 301)
+        self.assertTrue(r["Location"].endswith("/static/favicon.svg"))

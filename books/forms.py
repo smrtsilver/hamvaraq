@@ -2,6 +2,7 @@ from django import forms
 
 from django.core.files.uploadedfile import UploadedFile
 
+from common.forms import PersianFormMixin
 from common.images import process_upload
 from common.models import City
 
@@ -36,7 +37,7 @@ def _check_size(f):
         raise forms.ValidationError("حجم هر عکس باید کمتر از ۵ مگابایت باشه.")
 
 
-class BookForm(forms.ModelForm):
+class BookForm(PersianFormMixin, forms.ModelForm):
     extra_photos = MultipleImageField(required=False, label="عکس‌های بیشتر",
                                       help_text=f"تا {BookPhoto.MAX_EXTRA} عکس دیگه (پشت جلد، وضعیت داخل کتاب…)")
 
@@ -83,7 +84,7 @@ class BookForm(forms.ModelForm):
             BookPhoto.objects.create(book=book, image=image, position=start + i)
 
 
-class BookFilterForm(forms.Form):
+class BookFilterForm(PersianFormMixin, forms.Form):
     q = forms.CharField(required=False, label="جستجو")
     city = forms.ModelChoiceField(City.objects.all(), required=False, empty_label="همه‌ی شهرها", label="شهر")
     category = forms.ModelChoiceField(Category.objects.all(), required=False, empty_label="همه‌ی دسته‌ها", label="دسته")
@@ -95,7 +96,7 @@ def _isbn_widget(isbn, title, author):
     from django.urls import reverse
 
     isbn.widget.attrs["data-isbn-url"] = reverse("books:isbn")
-    isbn.widget.attrs["placeholder"] = "اختیاری؛ با وارد کردنش عنوان و نویسنده پر می‌شه"
+    isbn.widget.attrs["placeholder"] = "اختیاری؛ عنوان و نویسنده خودکار پر می‌شه"
     title.widget.attrs["data-isbn-title"] = ""
     author.widget.attrs["data-isbn-author"] = ""
 
@@ -110,14 +111,14 @@ def _clean_isbn(value):
     return normalized
 
 
-class BulkCommonForm(forms.Form):
+class BulkCommonForm(PersianFormMixin, forms.Form):
     """مقدارهای مشترک بین همه‌ی کتاب‌های یه ثبت دسته‌ای."""
 
     city = forms.ModelChoiceField(City.objects.all(), label="شهر")
     condition = forms.ChoiceField(choices=Book.Condition.choices, initial=Book.Condition.USED, label="وضعیت فیزیکی")
 
 
-class BulkRowForm(forms.Form):
+class BulkRowForm(PersianFormMixin, forms.Form):
     isbn = forms.CharField(required=False, max_length=20, label="شابک")
     title = forms.CharField(required=False, max_length=200, label="عنوان")
     author = forms.CharField(required=False, max_length=150, label="نویسنده")
@@ -139,7 +140,7 @@ class BulkRowForm(forms.Form):
         return data
 
 
-class ReviewForm(forms.ModelForm):
+class ReviewForm(PersianFormMixin, forms.ModelForm):
     class Meta:
         model = Review
         fields = ["stars", "text"]

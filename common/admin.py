@@ -2,6 +2,10 @@ from django.contrib import admin
 
 from .models import City, MeetingPoint
 
+admin.site.site_header = "مدیریت هم‌ورق"
+admin.site.site_title = "مدیریت هم‌ورق"
+admin.site.index_title = "مدیریت وب‌گاه"
+
 
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
