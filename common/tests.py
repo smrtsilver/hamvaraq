@@ -240,7 +240,8 @@ class BookTests(Base):
             "username": "newuser", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk})
         self.assertEqual(r.status_code, 302)
         u = User.objects.get(username="newuser")
-        self.assertEqual(u.points, 0)
+        self.assertEqual(u.points, 1)  # امتیاز خوش‌آمد (آی‌پی لوکال شمرده نمی‌شه)
+        self.assertTrue(u.welcome_granted)
 
 
 class IsbnAndBulkTests(Base):
@@ -961,3 +962,92 @@ class InfraTests(Base):
         from pathlib import Path
         src = Path(inspect.getfile(self.__class__)).parent.parent / "HamVaraqDjangoServer" / "settings.py"
         self.assertIn("send_default_pii=False", src.read_text(encoding="utf-8"))
+
+
+class WelcomePointsTests(Base):
+    def signup(self, name, ip="8.8.8.8"):
+        from django.core.cache import cache
+        cache.clear()
+        from django.test import Client
+        c = Client()
+        c.post(reverse("accounts:signup"), {
+            "username": name, "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk},
+            REMOTE_ADDR=ip)
+        return User.objects.get(username=name), c
+
+    def test_ip_hash_is_not_raw_and_private_ips_skipped(self):
+        u, _ = self.signup("a1", "8.8.8.8")
+        self.assertEqual(len(u.signup_ip_hash), 64)
+        self.assertNotIn("8.8.8.8", u.signup_ip_hash)
+        self.assertEqual(u.signup_ip_hash, u.last_ip_hash)
+        p, _ = self.signup("a2", "192.168.1.5")
+        self.assertEqual((p.signup_ip_hash, p.points), ("", 1))  # آی‌پی خصوصی: بدون شمارش ولی هدیه می‌گیره
+
+    def test_welcome_cap_per_network_then_zero(self):
+        got = [self.signup(f"u{i}")[0].points for i in range(7)]
+        self.assertEqual(got, [1, 1, 1, 1, 1, 0, 0])  # سقف ۵ حساب هدیه برای هر شبکه
+        other, _ = self.signup("elsewhere", "9.9.9.9")
+        self.assertEqual(other.points, 1)               # شبکه‌ی دیگه آزاده
+
+    def test_window_expires_and_setting_off(self):
+        from django.test import override_settings
+        for i in range(5):
+            self.signup(f"w{i}")
+        User.objects.update(date_joined=timezone.now() - timedelta(days=31))
+        self.assertEqual(self.signup("late")[0].points, 1)  # بازه‌ی ۳۰ روزه گذشته
+        with override_settings(WELCOME_POINTS=0):
+            self.assertEqual(self.signup("none", "7.7.7.7")[0].points, 0)
+
+    def test_ipv6_grouped_by_64(self):
+        a, _ = self.signup("v6a", "2606:4700:1:2::1")
+        b, _ = self.signup("v6b", "2606:4700:1:2:ffff::9")
+        self.assertEqual(a.signup_ip_hash, b.signup_ip_hash)
+        c, _ = self.signup("v6c", "2606:4700:1:3::1")
+        self.assertNotEqual(a.signup_ip_hash, c.signup_ip_hash)
+
+    def test_login_updates_last_network(self):
+        u, _ = self.signup("mover", "8.8.8.8")
+        from django.test import Client
+        Client().post(reverse("accounts:login"), {"username": "mover", "password": "Str0ng-pass-99"}, REMOTE_ADDR="9.9.9.9")
+        u.refresh_from_db()
+        self.assertNotEqual(u.last_ip_hash, u.signup_ip_hash)
+
+    def test_new_user_can_request_immediately_with_welcome_point(self):
+        newbie, client = self.signup("fresh", "8.8.8.8")
+        book = self.book()
+        client.post(reverse("exchanges:request", args=[book.pk]), REMOTE_ADDR="8.8.8.8")
+        self.assertTrue(Exchange.objects.filter(book=book, requester=newbie).exists())
+        newbie.refresh_from_db()
+        self.assertEqual(newbie.points, 0)
+
+    def test_linked_newcomer_cannot_drain_same_network_account(self):
+        owner, _ = self.signup("main", "8.8.8.8")
+        fake, _ = self.signup("fake", "8.8.8.8")   # هم‌شبکه
+        book = Book.objects.create(owner=owner, title="هدف", author="ن", city=self.tehran)
+        with self.assertRaises(services.ExchangeError) as cm:
+            services.request_book(book.pk, fake)
+        self.assertIn("همین شبکه", str(cm.exception))
+        # از حساب شبکه‌ی دیگه آزاده
+        stranger, _ = self.signup("stranger", "9.9.9.9")
+        self.assertIsNotNone(services.request_book(book.pk, stranger))
+
+    def test_linked_user_allowed_after_giving_someone_else(self):
+        owner, _ = self.signup("main", "8.8.8.8")
+        friend, _ = self.signup("friend", "8.8.8.8")
+        far, _ = self.signup("far", "9.9.9.9")
+        mine = Book.objects.create(owner=friend, title="کتاب دوست", author="ن", city=self.tehran)
+        ex = services.request_book(mine.pk, far)
+        services.accept(ex.pk, friend); services.confirm(ex.pk, friend); services.confirm(ex.pk, far)
+        target = Book.objects.create(owner=owner, title="هدف", author="ن", city=self.tehran)
+        self.assertIsNotNone(services.request_book(target.pk, friend))  # حالا کتاب داده، پس آزاد
+
+    def test_dashboard_flags_shared_network_groups_and_admin_renders(self):
+        for i in range(3):
+            self.signup(f"g{i}", "8.8.8.8")
+        from common.stats import collect
+        flagged = {u.username for u, why in collect()["suspicious"] if any("از یه شبکه" in w for w in why)}
+        self.assertEqual(flagged, {"g0", "g1", "g2"})
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.get(reverse("admin:accounts_user_change", args=[boss.pk]))
+        self.assertContains(r, "شناسه‌ی شبکه")

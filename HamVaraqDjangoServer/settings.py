@@ -206,3 +206,8 @@ ACCEPTED_REMIND_DAYS = [7, 14]      # به هر دو طرفِ مبادله‌ی 
 ACCEPTED_EXPIRE_DAYS = 21           # هیچ‌کس تحویل رو تأیید نکرده ← لغو و برگشت امتیاز
 CONFIRM_REMIND_DAYS = [3]           # یه نفر تحویل رو تأیید کرده، نفر دوم نه
 CONFIRM_DISPUTE_DAYS = 7            # بعدش خودکار اختلاف باز می‌شه و ادمین تصمیم می‌گیره
+
+# ---- امتیاز خوش‌آمد و کنترل سوءاستفاده ----
+WELCOME_POINTS = env.int("WELCOME_POINTS", default=1)          # هدیه‌ی ثبت‌نام (۰ = خاموش)
+WELCOME_MAX_PER_IP = env.int("WELCOME_MAX_PER_IP", default=5)  # هر شبکه تو بازه‌ی زیر فقط به این تعداد حساب هدیه می‌ده
+WELCOME_WINDOW_DAYS = 30

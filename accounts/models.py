@@ -18,6 +18,10 @@ class User(AbstractUser):
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE, verbose_name="وضعیت")
     restricted_until = models.DateTimeField(null=True, blank=True, verbose_name="محدودیت تا")
     warnings = models.PositiveIntegerField(default=0, verbose_name="تعداد اخطار")
+    # کنترل سوءاستفاده از امتیاز اولیه؛ هش آی‌پی (نه خود آی‌پی)، accounts/ip.py
+    signup_ip_hash = models.CharField(max_length=64, blank=True, db_index=True, editable=False)
+    last_ip_hash = models.CharField(max_length=64, blank=True, editable=False)
+    welcome_granted = models.BooleanField(default=False, verbose_name="امتیاز خوش‌آمد گرفته")
 
     class Meta:
         verbose_name = "کاربر"
@@ -29,6 +33,12 @@ class User(AbstractUser):
         if self.status != self.Status.RESTRICTED:
             return False
         return self.restricted_until is None or self.restricted_until > timezone.now()
+
+    def is_linked_to(self, other):
+        """دو حساب که از یه شبکه (آی‌پی) وارد شدن (ثبت‌نام یا آخرین ورود)."""
+        mine = {h for h in (self.signup_ip_hash, self.last_ip_hash) if h}
+        theirs = {h for h in (other.signup_ip_hash, other.last_ip_hash) if h}
+        return bool(mine & theirs)
 
     @property
     def can_request(self):

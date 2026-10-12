@@ -7,7 +7,9 @@ from books.models import Book
 
 from common.throttle import throttle
 
+from .badges import grant_welcome
 from .forms import ProfileForm, SignupForm
+from .ip import ip_key
 from .models import User
 
 
@@ -18,7 +20,14 @@ def signup(request):
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
+        key = ip_key(request)
+        user.signup_ip_hash = user.last_ip_hash = key
+        user.save(update_fields=["signup_ip_hash", "last_ip_hash"])
+        given = grant_welcome(user, key)
         login(request, user)
+        if given:
+            messages.success(request, f"خوش اومدی! {given} امتیاز هدیه گرفتی؛ می‌تونی همین الان یه کتاب بگیری.")
+            return redirect("books:list")
         messages.success(request, "خوش اومدی! با ثبت و واگذاری اولین کتابت امتیاز می‌گیری.")
         return redirect("books:create")
     return render(request, "accounts/signup.html", {"form": form})

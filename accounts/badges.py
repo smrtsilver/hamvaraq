@@ -65,3 +65,29 @@ def _challenge_badges(user):
                 new.append(badge)
                 notify(user, f"چالش «{c.title}» رو کامل کردی و نشانش رو گرفتی!", "/challenges/")
     return new
+
+
+def grant_welcome(user, key):
+    """
+    امتیاز خوش‌آمد: هر کاربر جدید WELCOME_POINTS می‌گیره تا بتونه فوراً کتاب بگیره.
+    هر شبکه (آی‌پی) تو WELCOME_WINDOW_DAYS روز فقط به WELCOME_MAX_PER_IP حساب هدیه می‌ده؛
+    مبادله خودش امتیاز نمی‌سازه، پس این تنها جاییه که امتیاز «ساخته» می‌شه و فقط همین‌جا کنترل می‌خوایم.
+    برمی‌گردونه: امتیازی که داده شد (۰ اگه سقف شبکه پر بود).
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from .models import User
+
+    if settings.WELCOME_POINTS <= 0:
+        return 0
+    if key:
+        since = timezone.now() - timedelta(days=settings.WELCOME_WINDOW_DAYS)
+        used = User.objects.filter(signup_ip_hash=key, welcome_granted=True, date_joined__gte=since).exclude(pk=user.pk).count()
+        if used >= settings.WELCOME_MAX_PER_IP:
+            return 0
+    user.points += settings.WELCOME_POINTS
+    user.welcome_granted = True
+    user.save(update_fields=["points", "welcome_granted"])
+    return settings.WELCOME_POINTS

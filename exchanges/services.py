@@ -34,6 +34,9 @@ def request_book(book_id, requester):
         raise ExchangeError("این کتاب الان موجود نیست.")
     if requester.points < 1:
         raise ExchangeError("امتیاز کافی نداری؛ اول یه کتاب بده تا امتیاز بگیری.")
+    # با امتیاز هدیه‌ی یه حساب فیک نمی‌شه از حساب هم‌شبکه‌ی خودش کتاب گرفت؛ اول باید به یه نفر کتاب داده باشه
+    if requester.is_linked_to(book.owner) and not Exchange.objects.filter(owner=requester, status=Exchange.Status.COMPLETED).exists():
+        raise ExchangeError("این کتاب مال کسیه که از همین شبکه‌ی اینترنت وارد می‌شه. اول یه کتاب به یه نفر دیگه بده، بعد می‌تونی از ایشون هم بگیری.")
     if Exchange.objects.filter(book=book, requester=requester, status__in=Exchange.ACTIVE).exists():
         raise ExchangeError("برای این کتاب قبلاً درخواست دادی.")
     requester.points -= 1

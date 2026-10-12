@@ -57,7 +57,14 @@ def suspicious_accounts(now=None):
     for uid, user in accused.items():
         flag(user, f"{against[uid]} گزارش علیه‌ش")
 
-    # ۴) اخطارهای تکراری
+    # ۴) چند حساب از یه شبکه (احتمال حساب‌های فیک برای امتیاز هدیه)؛ ممکنه خوابگاه یا اینترنت مشترک هم باشه
+    groups = (User.objects.exclude(signup_ip_hash="").values("signup_ip_hash").annotate(n=Count("id")).filter(n__gte=3))
+    for g in groups:
+        members = list(User.objects.filter(signup_ip_hash=g["signup_ip_hash"]))
+        for u in members:
+            flag(u, f"{g['n']} حساب با ثبت‌نام از یه شبکه")
+
+    # ۵) اخطارهای تکراری
     for u in User.objects.filter(warnings__gte=2):
         flag(u, f"{u.warnings} اخطار")
     return list(found.values())
