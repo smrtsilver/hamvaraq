@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ثبت‌نام</h1>
+<form method="post" class="card form">{% csrf_token %}{{ form.as_div }}<button class="btn">ثبت‌نام</button></form>
+<p class="muted">امتیاز اولیه نداریم؛ با واگذاری اولین کتابت امتیاز می‌گیری.</p>
+{% endblock %}

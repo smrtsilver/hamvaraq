@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>گزارش</h1>
+<p>{% if kind == 'user' %}کاربر {{ target }}{% elif kind == 'book' %}کتاب «{{ target }}»{% else %}پیام: {{ target.text }}{% endif %}</p>
+<form method="post" enctype="multipart/form-data" class="card form">{% csrf_token %}{{ form.as_div }}<button class="btn">ارسال گزارش</button></form>
+{% endblock %}

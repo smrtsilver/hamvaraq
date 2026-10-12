@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ورود</h1>
+<form method="post" class="card form">{% csrf_token %}{{ form.as_div }}
+    <input type="hidden" name="next" value="{{ request.GET.next }}">
+    <button class="btn">ورود</button></form>
+<p><a href="{% url 'accounts:signup' %}">ثبت‌نام</a> · <a href="{% url 'accounts:password_reset' %}">فراموشی رمز</a></p>
+{% endblock %}

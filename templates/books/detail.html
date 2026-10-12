@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load trust_tags %}
+{% block title %}{{ book.title }} | هم‌ورق{% endblock %}
+{% block content %}
+<div class="detail">
+    <div>{% if book.cover %}<img class="cover" src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<div class="nocover big">📖</div>{% endif %}</div>
+    <div>
+        <h1>{{ book.title }}</h1>
+        <p>{{ book.author }}{% if book.category %} · {{ book.category }}{% endif %}</p>
+        <p class="muted">{{ book.city }} · {{ book.get_condition_display }} · <span class="pill">{{ book.get_status_display }}</span></p>
+        <p>صاحب: <a href="{% url 'accounts:profile' book.owner.username %}">{{ book.owner.username }}</a> {% reputation_badge book.owner %}</p>
+        {% if book.description %}<p>{{ book.description|linebreaksbr }}</p>{% endif %}
+
+        {% if is_owner %}
+            {% if book.status == 'exchanged' %}
+                <form method="post" action="{% url 'books:relist' book.pk %}">{% csrf_token %}<button class="btn">دوباره برای مبادله بذار</button></form>
+            {% endif %}
+            {% if book.status != 'reserved' %}<a class="btn btn-outline" href="{% url 'books:edit' book.pk %}">ویرایش</a>{% endif %}
+            {% if book.status != 'reserved' %}<form method="post" action="{% url 'books:delete' book.pk %}" class="inline" onsubmit="return confirm('حذف بشه؟')">{% csrf_token %}<button class="link">حذف</button></form>{% endif %}
+            {% if pending %}<h3>درخواست‌ها</h3><ul class="list">{% for e in pending %}
+                <li><a href="{% url 'exchanges:detail' e.pk %}">{{ e.requester.username }}</a> {% reputation_badge e.requester %}</li>{% endfor %}</ul>{% endif %}
+        {% elif book.status == 'available' %}
+            {% if not user.is_authenticated %}<a class="btn" href="{% url 'accounts:login' %}?next={{ request.path }}">برای درخواست وارد شو</a>
+            {% elif my_request %}<a class="btn" href="{% url 'exchanges:detail' my_request.pk %}">دیدن درخواستت</a>
+            {% elif not user.can_request %}<p class="alert alert-warning">حسابت الان فقط اجازه‌ی کتاب دادن داره.</p>
+            {% elif user.points < 1 %}<p class="alert alert-info">امتیاز نداری؛ اول <a href="{% url 'books:create' %}">یه کتاب بده</a>.</p>
+            {% else %}<form method="post" action="{% url 'exchanges:request' book.pk %}">{% csrf_token %}<button class="btn">درخواست کتاب (۱ امتیاز)</button></form>{% endif %}
+        {% endif %}
+        {% if user.is_authenticated and not is_owner %}<p><a class="muted" href="{% url 'trust:report' 'book' book.pk %}">گزارش کتاب</a></p>{% endif %}
+    </div>
+</div>
+
+{% if notes %}<h2>یادداشت صاحبان قبلی</h2>
+{% for n in notes %}<blockquote>«{{ n.text }}» <span class="muted">— {{ n.author.username }}</span></blockquote>{% endfor %}{% endif %}
+
+{% if journey %}<h2>مسیر کتاب</h2>
+<p class="journey">{% for s in journey %}{% if forloop.first %}{{ s.from_city|default:"؟" }}{% endif %} ← {{ s.to_city|default:"؟" }}{% endfor %}</p>{% endif %}
+{% endblock %}

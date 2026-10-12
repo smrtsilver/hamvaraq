@@ -1,0 +1,11 @@
+<div class="grid">
+{% for b in books %}
+    <a class="book" href="{% url 'books:detail' b.pk %}">
+        {% if b.cover %}<img src="{{ b.cover.url }}" alt="" loading="lazy">{% else %}<div class="nocover">📖</div>{% endif %}
+        <strong>{{ b.title }}</strong>
+        <span class="muted">{{ b.author }}</span>
+        <span class="muted">{{ b.city }} · {{ b.get_condition_display }}</span>
+        {% if b.status != 'available' %}<span class="pill">{{ b.get_status_display }}</span>{% endif %}
+    </a>
+{% empty %}<p class="muted">کتابی پیدا نشد.</p>{% endfor %}
+</div>

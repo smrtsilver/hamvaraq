@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>مبادله‌های من</h1>
+<ul class="list">{% for e in exchanges %}
+    <li><a href="{% url 'exchanges:detail' e.pk %}">{{ e.book.title }}</a>
+        — {% if e.owner == user %}به {{ e.requester.username }}{% else %}از {{ e.owner.username }}{% endif %}
+        <span class="pill">{{ e.get_status_display }}</span></li>
+{% empty %}<li class="muted">هنوز مبادله‌ای نداری.</li>{% endfor %}</ul>
+{% endblock %}
