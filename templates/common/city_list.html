@@ -3,8 +3,14 @@
 {% block description %}کتاب‌های موجود برای مبادله در شهرها و استان‌های ایران.{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>شهرها و استان‌ها</h1><p>ببین تو کدوم شهر کتاب موجوده.</p></div></div>
+<div class="place-grid">
 {% for g in groups %}
-<section class="card"><div class="cluster" style="justify-content:space-between"><h2 style="margin:0"><a href="{% url 'province' g.province.pk %}" style="color:inherit">{{ g.province.name }}</a></h2><span class="pill pill-green">{{ g.total|fa }} کتاب</span></div>
-    <p style="margin:12px 0 0">{% for c in g.cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a> {% endfor %}</p></section>
+<section class="place-card">
+    <header><span class="doc-ico">{% include "components/icon.html" with name="pin" %}</span>
+        <h2><a href="{% url 'province' g.province.pk %}">{{ g.province.name }}</a></h2>
+        <span class="pill pill-green">{{ g.total|fa }} کتاب</span></header>
+    <div class="place-cities">{% for c in g.cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a>{% endfor %}</div>
+</section>
 {% empty %}{% include "components/empty.html" with ill="books" title="هنوز کتابی ثبت نشده" text="اولین کتاب رو تو شهرت ثبت کن." %}{% endfor %}
+</div>
 {% endblock %}

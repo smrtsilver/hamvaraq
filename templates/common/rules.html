@@ -1,49 +1,83 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}قوانین | هم‌ورق{% endblock %}
 {% block description %}قوانین استفاده از هم‌ورق: مبادله‌ی رایگان، رفتار محترمانه، حریم خصوصی و پیامدهای تخلف.{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>قوانین هم‌ورق</h1><p>با ثبت‌نام این قوانین رو می‌پذیری.</p></div></div>
-<div class="prose">
+<header class="doc-hero">
+    <span class="eyebrow">{% include "components/icon.html" with name="shield" %} قوانین</span>
+    <h1>قوانین هم‌ورق</h1>
+    <p>چند قاعده‌ی ساده تا مبادله برای همه امن، منصفانه و دوستانه بمونه. با ثبت‌نام این قوانین رو می‌پذیری.</p>
+</header>
+<div class="doc-layout">
+<nav class="doc-toc" aria-label="فهرست قوانین"><p>در این صفحه</p><ol>
+    <li><a href="#free"><span class="n">۱</span>فقط رایگان</a></li>
+    <li><a href="#honest"><span class="n">۲</span>صادق باش</a></li>
+    <li><a href="#respect"><span class="n">۳</span>محترم باش</a></li>
+    <li><a href="#privacy"><span class="n">۴</span>حریم خصوصی</a></li>
+    <li><a href="#penalty"><span class="n">۵</span>پیامد تخلف</a></li>
+    <li><a href="#liability"><span class="n">۶</span>مسئولیت</a></li>
+</ol></nav>
+<div class="doc-body">
 
-<h2>۱. فقط رایگان</h2>
-<ul>
-    <li>مبادله‌ی کتاب فقط با امتیاز انجام می‌شه. فروش، دریافت پول، هزینه‌ی «واسطه‌گری» یا تبلیغ فروشگاه ممنوعه.</li>
-    <li>فقط کتاب (و چیزهای مرتبط با کتاب‌خوانی) ثبت کن. کالای دیگه، محتوای غیرقانونی، کپی غیرمجاز یا فایل دانلودی ممنوعه.</li>
-</ul>
+<section class="doc-sec" id="free">
+    <h2><span class="doc-ico amber">{% include "components/icon.html" with name="gift" %}</span>۱. فقط رایگان</h2>
+    <ul class="doc-list">
+        <li>مبادله‌ی کتاب فقط با امتیاز انجام می‌شه. فروش، دریافت پول، هزینه‌ی «واسطه‌گری» یا تبلیغ فروشگاه ممنوعه.</li>
+        <li>فقط کتاب (و چیزهای مرتبط با کتاب‌خوانی) ثبت کن. کالای دیگه، محتوای غیرقانونی، کپی غیرمجاز یا فایل دانلودی ممنوعه.</li>
+    </ul>
+</section>
 
-<h2>۲. صادق باش</h2>
-<ul>
-    <li>وضعیت، عکس و توضیح کتاب باید واقعی باشه. کتاب آسیب‌دیده رو با «دست‌دوم» و توضیح ثبت کن.</li>
-    <li>هر نفر فقط یه حساب داشته باشه. ساختن حساب‌های چندتایی برای گرفتن امتیاز یا رأی و رأی‌دادن متقابل برای بالا بردن اعتبار تخلفه.</li>
-    <li>قولی که دادی (زمان، مکان، ارسال) رو انجام بده؛ اگه نشد، زودتر لغو کن.</li>
-</ul>
+<section class="doc-sec" id="honest">
+    <h2><span class="doc-ico">{% include "components/icon.html" with name="check" %}</span>۲. صادق باش</h2>
+    <ul class="doc-list">
+        <li>وضعیت، عکس و توضیح کتاب باید واقعی باشه. کتاب آسیب‌دیده رو با «دست‌دوم» و توضیح ثبت کن.</li>
+        <li>هر نفر فقط یه حساب داشته باشه. ساختن حساب‌های چندتایی برای گرفتن امتیاز یا رأی و رأی‌دادن متقابل برای بالا بردن اعتبار تخلفه.</li>
+        <li>قولی که دادی (زمان، مکان، ارسال) رو انجام بده؛ اگه نشد، زودتر لغو کن.</li>
+    </ul>
+</section>
 
-<h2>۳. محترم باش</h2>
-<ul>
-    <li>توهین، تهدید، آزار و پیام‌های مزاحم تو چت و نقد ممنوعه.</li>
-    <li>اطلاعات شخصی دیگران (شماره، آدرس) رو بدون اجازه منتشر نکن.</li>
-</ul>
+<section class="doc-sec" id="respect">
+    <h2><span class="doc-ico blue">{% include "components/icon.html" with name="heart" %}</span>۳. محترم باش</h2>
+    <ul class="doc-list">
+        <li>توهین، تهدید، آزار و پیام‌های مزاحم تو چت و نقد ممنوعه.</li>
+        <li>اطلاعات شخصی دیگران (شماره، آدرس) رو بدون اجازه منتشر نکن.</li>
+    </ul>
+</section>
 
-<h2>۴. حریم خصوصی</h2>
-<ul>
-    <li>شماره‌ی تلفن یا آدرس تو سایت لازم نیست؛ هماهنگی تو چت داخلی انجامه.</li>
-    <li>برای جلوگیری از حساب‌های تکراری، از آی‌پی فقط یه «اثر انگشت» یک‌طرفه (هش) نگه می‌داریم، نه خود آی‌پی.</li>
-    <li>چت‌ها فقط وقتی که گزارشی ثبت بشه برای بررسی مدیریت قابل دیدنه.</li>
-    <li>عکس‌ها بدون اطلاعات مکانی ذخیره می‌شن.</li>
-</ul>
+<section class="doc-sec" id="privacy">
+    <h2><span class="doc-ico">{% include "components/icon.html" with name="shield" %}</span>۴. حریم خصوصی</h2>
+    <ul class="doc-list">
+        <li>شماره‌ی تلفن یا آدرس تو سایت لازم نیست؛ هماهنگی تو چت داخلی انجامه.</li>
+        <li>برای جلوگیری از حساب‌های تکراری، از آی‌پی فقط یه «اثر انگشت» یک‌طرفه (هش) نگه می‌داریم، نه خود آی‌پی.</li>
+        <li>چت‌ها فقط وقتی که گزارشی ثبت بشه برای بررسی مدیریت قابل دیدنه.</li>
+        <li>عکس‌ها بدون اطلاعات مکانی ذخیره می‌شن.</li>
+    </ul>
+</section>
 
-<h2>۵. تخلف چه پیامدی داره</h2>
-<ul>
-    <li><strong>اخطار:</strong> برای تخلف‌های سبک یا بار اول.</li>
-    <li><strong>محدودیت موقت ({{ s.RESTRICTION_DAYS|fa }} روز):</strong> فقط می‌تونی کتاب بدی، نمی‌تونی کتاب بگیری. بعد از {{ s.NO_SHOW_REPORTS_FOR_RESTRICTION|fa }} گزارش تأییدشده‌ی بدقولی خودکار اعمال می‌شه.</li>
-    <li><strong>مسدود شدن حساب:</strong> برای تکرار یا تخلف جدی مثل کلاهبرداری.</li>
-    <li>گزارش بی‌اساس و تکراری هم خودش تخلفه و اخطار داره.</li>
-    <li>مدیریت دلیل هر تصمیم رو ثبت می‌کنه و گزارش‌دهنده از نتیجه باخبر می‌شه.</li>
-</ul>
+<section class="doc-sec" id="penalty">
+    <h2><span class="doc-ico red">{% include "components/icon.html" with name="flag" %}</span>۵. تخلف چه پیامدی داره</h2>
+    <div class="sev">
+        <div><span class="lvl l1">اخطار</span><span>برای تخلف‌های سبک یا بار اول.</span></div>
+        <div><span class="lvl l2">محدودیت موقت</span><span>{{ s.RESTRICTION_DAYS|fa }} روز فقط می‌تونی کتاب بدی، نمی‌تونی کتاب بگیری. بعد از {{ s.NO_SHOW_REPORTS_FOR_RESTRICTION|fa }} گزارش تأییدشده‌ی بدقولی خودکار اعمال می‌شه.</span></div>
+        <div><span class="lvl l3">مسدود شدن</span><span>برای تکرار یا تخلف جدی مثل کلاهبرداری.</span></div>
+    </div>
+    <ul class="doc-list" style="margin-top:18px">
+        <li>گزارش بی‌اساس و تکراری هم خودش تخلفه و اخطار داره.</li>
+        <li>مدیریت دلیل هر تصمیم رو ثبت می‌کنه و گزارش‌دهنده از نتیجه باخبر می‌شه.</li>
+    </ul>
+</section>
 
-<h2>۶. مسئولیت</h2>
-<p>هم‌ورق فقط بستری برای آشنایی و هماهنگ کردن مبادله‌ست. تحویل و ارسال کتاب بین خود دو نفره و مسئولیتش با خودشونه؛ با احتیاط و تو مکان امن تحویل بدید.</p>
+<section class="doc-sec" id="liability">
+    <h2><span class="doc-ico amber">{% include "components/icon.html" with name="info" %}</span>۶. مسئولیت</h2>
+    <p>هم‌ورق فقط بستری برای آشنایی و هماهنگ کردن مبادله‌ست. تحویل و ارسال کتاب بین خود دو نفره و مسئولیتش با خودشونه.</p>
+    <div class="callout warn">{% include "components/icon.html" with name="shield" %}<div>با احتیاط و تو مکان امن تحویل بدید. <a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></div></div>
+</section>
 
-<p><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></p>
+<aside class="doc-cta">
+    <div><h2>سوالی داری؟</h2><p>راهنمای کامل رو ببین یا کتاب‌ها رو مرور کن.</p></div>
+    <div class="cluster"><a class="btn" href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a> <a class="btn btn-secondary" href="{% url 'books:list' %}">کتاب‌ها</a></div>
+</aside>
+</div>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/doc.js' %}" defer></script>{% endblock %}
