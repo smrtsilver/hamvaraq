@@ -7,7 +7,7 @@
     <div>
         <h1>{{ book.title }}</h1>
         <p>{{ book.author }}{% if book.category %} · {{ book.category }}{% endif %}</p>
-        <p class="muted">{{ book.city }} · {{ book.get_condition_display }} · <span class="pill">{{ book.get_status_display }}</span></p>
+        <p class="muted"><a href="{% url 'city' book.city.pk %}">{{ book.city }}</a> · {{ book.get_condition_display }} · <span class="pill">{{ book.get_status_display }}</span></p>
         <p>صاحب: <a href="{% url 'accounts:profile' book.owner.username %}">{{ book.owner.username }}</a> {% reputation_badge book.owner %}</p>
         {% if book.description %}<p>{{ book.description|linebreaksbr }}</p>{% endif %}
 

@@ -43,3 +43,5 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .bulk-row{border:1px solid var(--bd);border-radius:10px;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
 .bulk-row legend{padding:0 6px;color:var(--mu)}
 .bulk-row>div{display:flex;flex-direction:column}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stats .card{display:flex;flex-direction:column;text-align:center}.stats strong{font-size:1.8rem;color:var(--g)}

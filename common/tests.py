@@ -317,3 +317,20 @@ class IsbnAndBulkTests(Base):
         r = self.client.post(reverse("books:bulk"), self._bulk_data([{"title": "x", "author": "y", "isbn": "12"}]))
         self.assertEqual(r.status_code, 200)
         self.assertFalse(Book.objects.exists())
+
+
+class CityPageTests(Base):
+    def test_city_stats(self):
+        self.complete()  # اصفهان ← تهران
+        self.book(title="دیگر")
+        r = self.client.get(reverse("city", args=[self.isfahan.pk]))
+        self.assertEqual(r.context["stats"], {"available": 1, "exchanged": 1, "users": 1})
+        r = self.client.get(reverse("city", args=[self.tehran.pk]))
+        self.assertEqual(r.context["stats"]["exchanged"], 1)  # مقصد هم حساب می‌شه
+        self.assertEqual(r.context["stats"]["available"], 0)  # کتاب گیرنده هنوز «مبادله‌شده»ست
+
+    def test_city_list_only_with_books(self):
+        self.book()
+        r = self.client.get(reverse("cities"))
+        self.assertEqual([c.name for c in r.context["cities"]], ["اصفهان"])
+        self.assertEqual(self.client.get(reverse("city", args=[9999])).status_code, 404)

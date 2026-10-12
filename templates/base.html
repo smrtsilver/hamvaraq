@@ -16,6 +16,7 @@
         </a>
         <nav>
             <a href="{% url 'books:list' %}">کتاب‌ها</a>
+            <a href="{% url 'cities' %}">شهرها</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'books:create' %}">ثبت کتاب</a>
                 <a href="{% url 'books:bulk' %}">ثبت دسته‌ای</a>
