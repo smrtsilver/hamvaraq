@@ -1,0 +1,23 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}مبادله‌ها{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>مبادله‌ها</h1><p>همه‌ی مبادله‌ها؛ اختلاف‌ها را اینجا حل کن.</p></div></div>
+<form method="get" class="filterbar" role="search">
+    <div class="field field-wide"><label for="eq">جستجو</label><input id="eq" type="search" name="q" value="{{ q }}" autocomplete="off" placeholder="کتاب یا نام کاربر"></div>
+    <div class="field"><label for="es">وضعیت</label><select id="es" name="status"><option value="">همه</option>{% for v, l in statuses %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="field"><label class="check" for="ed"><input id="ed" type="checkbox" name="disputed" value="1"{% if disputed %} checked{% endif %}><span>فقط اختلاف‌ها</span></label></div>
+    <div class="filterbar-actions"><button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button></div></form>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>کتاب</th><th>صاحب</th><th>گیرنده</th><th>وضعیت</th><th>آخرین تغییر</th><th></th></tr></thead><tbody>
+{% for ex in page %}<tr>
+    <td data-label="کتاب"><a href="{{ ex.book.get_absolute_url }}">{{ ex.book.title|truncatechars:40 }}</a></td>
+    <td data-label="صاحب"><a href="{% url 'panel:user' ex.owner.pk %}">{{ ex.owner.username }}</a></td><td data-label="گیرنده"><a href="{% url 'panel:user' ex.requester.pk %}">{{ ex.requester.username }}</a></td>
+    <td data-label="وضعیت"><span class="pill {% if ex.disputed_at and ex.status == 'accepted' %}pill-amber{% endif %}">{% if ex.disputed_at and ex.status == 'accepted' %}اختلاف{% else %}{{ ex.get_status_display }}{% endif %}</span></td>
+    <td data-label="آخرین تغییر">{{ ex.updated_at|jdate }}</td>
+    <td class="acts">{% if ex.disputed_at and ex.status == 'accepted' %}
+        <form method="post" action="{% url 'panel:exchange_resolve' ex.pk %}" class="row-act">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="btn btn-sm" name="outcome" value="complete" onclick="return confirm('مبادله تکمیل بشه؟')">تکمیل</button>
+            <button class="btn btn-secondary btn-sm" name="outcome" value="cancel" onclick="return confirm('مبادله لغو و امتیاز برگردونده بشه؟')">لغو</button></form>
+        {% else %}<a class="btn btn-ghost btn-sm" href="{% url 'admin:exchanges_exchange_change' ex.pk %}">جزئیات</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="muted">مبادله‌ای نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

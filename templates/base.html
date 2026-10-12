@@ -66,12 +66,13 @@
                         <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} کتاب‌های من</a>
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>
+                        <a href="{% url 'support:mine' %}">{% include "components/icon.html" with name="flag" %} گزارش‌های من</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
                         <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
                         <a href="{% url 'announcements:mine' %}">{% include "components/icon.html" with name="news" %} اطلاعیه‌های من</a>
                         <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
                         <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %} تنظیمات اعلان</a>
-                        {% if user.is_staff %}<hr><a href="{% url 'staff_dashboard' %}">{% include "components/icon.html" with name="sparkle" %} داشبورد مدیریت</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
+                        {% if user.is_staff %}<hr><a href="{% url 'panel:index' %}">{% include "components/icon.html" with name="sparkle" %} پنل مدیریت{% if staff_todo %} <span class="pill pill-amber">{{ staff_todo|fa }}</span>{% endif %}</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
                         <hr>
                         <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>{% include "components/icon.html" with name="logout" %} خروج</button></form>
                     </div>
@@ -108,7 +109,8 @@
                 <li><a href="{% url 'challenges:list' %}">چالش‌ها</a></li></ul></div>
             <div><p class="footer-title">راهنما</p><ul>
                 <li><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></li><li><a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></li>
-                <li><a href="{% url 'rules' %}">قوانین</a></li></ul></div>
+                <li><a href="{% url 'rules' %}">قوانین</a></li>
+                <li><a href="{% url 'support:new' %}?from={{ request.path|urlencode }}">گزارش مشکل</a></li></ul></div>
             <div><p class="footer-title">حساب</p><ul>
                 {% if user.is_authenticated %}<li><a href="{% url 'accounts:profile' user.username %}">پروفایل من</a></li><li><a href="{% url 'books:create' %}">ثبت کتاب</a></li>
                 {% else %}<li><a href="{% url 'accounts:signup' %}">هم‌ورق شو</a></li><li><a href="{% url 'accounts:login' %}">ورود</a></li>{% endif %}</ul></div>

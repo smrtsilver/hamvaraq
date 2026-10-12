@@ -1,0 +1,29 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}نمای کلی{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>نمای کلی</h1><p>موارد نیازمند رسیدگی و وضعیت سایت.</p></div></div>
+<div class="todo-grid">
+    <a class="todo{% if d.reports.open %} hot{% endif %}" href="{% url 'panel:reports' %}"><b>{{ d.reports.open|fa }}</b><span>گزارش باز</span></a>
+    <a class="todo{% if nav_counts.tickets %} hot{% endif %}" href="{% url 'panel:tickets' %}"><b>{{ nav_counts.tickets|fa }}</b><span>مشکل گزارش‌شده</span></a>
+    <a class="todo{% if d.exchanges.disputed %} hot{% endif %}" href="{% url 'panel:exchanges' %}?disputed=1"><b>{{ d.exchanges.disputed|fa }}</b><span>اختلاف مبادله</span></a>
+    <a class="todo{% if d.queues.posts %} hot{% endif %}" href="{% url 'panel:posts' %}"><b>{{ d.queues.posts|fa }}</b><span>معرفی منتظر تأیید</span></a>
+    <a class="todo{% if d.queues.announcements %} hot{% endif %}" href="{% url 'panel:announcements' %}"><b>{{ d.queues.announcements|fa }}</b><span>اطلاعیه منتظر تأیید</span></a>
+    <a class="todo" href="{% url 'panel:users' %}?f=restricted"><b>{{ d.users.restricted|fa }}</b><span>کاربر محدود · {{ d.users.banned|fa }} مسدود</span></a>
+</div>
+<div class="stats" style="margin-top:20px">
+    <div class="stat"><strong>{{ d.users.total|fa }}</strong><span>کاربر ({{ d.users.new7|fa }} جدید در ۷ روز)</span></div>
+    <div class="stat"><strong>{{ d.books.available|fa }}</strong><span>کتاب موجود ({{ d.books.new7|fa }} جدید)</span></div>
+    <div class="stat"><strong>{{ d.exchanges.completed7|fa }}</strong><span>مبادله‌ی موفق در ۷ روز</span></div>
+    <div class="stat"><strong>{{ d.exchanges.stale_requested|fa }}</strong><span>درخواست بی‌پاسخ · {{ d.exchanges.stale_accepted|fa }} تأییدشده‌ی معطل</span></div>
+</div>
+<h2 style="margin-top:28px">حساب‌های مشکوک <span class="pill">{{ d.suspicious|length|fa }}</span></h2>
+<p class="muted">فقط سرنخ برای بررسی دستیه، نه حکم.</p>
+<ul class="list-clean card">{% for u, reasons in d.suspicious %}<li><a href="{% url 'panel:user' u.pk %}">{{ u.username }}</a> <span class="small muted">{{ reasons|join:"؛ " }}</span></li>{% empty %}<li class="muted">موردی نیست.</li>{% endfor %}</ul>
+<h2>آخرین اقدام‌های مدیریت</h2>
+<ul class="list-clean card">{% for l in logs %}<li><span><strong>{{ l.actor.username|default:"—" }}</strong> · {{ l.action }} · {{ l.target }}</span><span class="small muted">{{ l.created_at|jdate }}</span></li>{% empty %}<li class="muted">هنوز اقدامی ثبت نشده.</li>{% endfor %}</ul>
+<p><a href="{% url 'panel:audit' %}">همه‌ی لاگ‌ها</a></p>
+{% for title, series in d.daily.items %}
+<h3 style="margin-top:20px">{% if title == 'users' %}ثبت‌نام{% elif title == 'books' %}کتاب جدید{% else %}مبادله‌ی تکمیل‌شده{% endif %} — ۱۴ روز اخیر</h3>
+<div class="bars">{% for day, n, pct in series %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i style="height:{{ pct }}%"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
+{% endfor %}
+{% endblock %}

@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from common.models import AuditLog
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -693,13 +694,13 @@ class DashboardAndSeoTests(Base):
         for i in range(3):  # سه مبادله‌ی بین یه جفت
             self.taker.refresh_from_db(); self.taker.points = 1; self.taker.save()
             self.complete(self.book(title=f"c{i}"))
-        r = self.client.get(reverse("staff_dashboard"))
+        r = self.client.get(reverse("panel:index"))
         self.assertEqual(r.status_code, 302)  # لاگین نیست
         self.client.login(username="taker", password="x12345678")
-        self.assertEqual(self.client.get(reverse("staff_dashboard")).status_code, 302)  # staff نیست
+        self.assertEqual(self.client.get(reverse("panel:index")).status_code, 302)  # staff نیست
         User.objects.create_superuser("boss", password="x12345678")
         self.client.login(username="boss", password="x12345678")
-        r = self.client.get(reverse("staff_dashboard"))
+        r = self.client.get(reverse("panel:index"))
         self.assertEqual(r.status_code, 200)
         names = {u.username for u, _ in r.context["d"]["suspicious"]}
         self.assertEqual(names, {"giver", "taker"})
@@ -863,7 +864,7 @@ class LifecycleTests(Base):
         r = self.client.post("/admin/exchanges/exchange/", {"action": "force_cancel", "_selected_action": [ex.pk]}, follow=True)
         self.assertContains(r, "اختلاف بازی نداره")  # اختلافی ثبت نشده بود
         self.assertEqual(self.client.get("/admin/exchanges/exchange/?disputed_at__isempty=0").status_code, 200)
-        self.assertEqual(self.client.get("/staff/").status_code, 200)
+        self.assertEqual(self.client.get("/panel/").status_code, 200)
 
 
 import json
@@ -1429,6 +1430,18 @@ class NoEnglishAuditTests(TestCase):
             urls += [f"/admin/{model}/"] + ([] if model == "common/sitesetting" else [f"/admin/{model}/add/"])
         urls.append("/admin/common/sitesetting/1/change/")
         self.check(urls, "ادمین")
+
+    def test_support_and_panel_pages(self):
+        from support.models import Ticket
+        from trust.models import Report
+        t = Ticket.objects.create(user=self.a, subject="مشکل", message="پیام کافی برای تست", reply="پاسخ")
+        r = Report.objects.create(reporter=self.a, target_user=self.b, reason="abuse", description="توهین")
+        self.client.login(username="سارا", password="x12345678")
+        self.check(["/support/", "/support/?type=bug&from=/books/", "/support/mine/", t.get_absolute_url()], "عضو پشتیبانی")
+        self.client.login(username="مدیر", password="x12345678")
+        self.check(["/panel/", "/panel/reports/", f"/panel/reports/{r.pk}/", "/panel/tickets/", f"/panel/tickets/{t.pk}/", "/panel/exchanges/",
+                    "/panel/users/", f"/panel/users/{self.b.pk}/", "/panel/books/", "/panel/posts/", "/panel/announcements/", "/panel/challenges/",
+                    "/panel/challenges/new/", "/panel/settings/", "/panel/audit/", "/admin/support/ticket/", "/admin/common/auditlog/"], "پنل")
 
     def test_posts_and_announcements_pages(self):
         from posts.models import Post
@@ -2202,6 +2215,177 @@ class AnnouncementTests(Base):
         self.make(status="pending")
         User.objects.create_superuser("boss", password="x12345678")
         self.client.login(username="boss", password="x12345678")
-        r = self.client.get("/staff/")
+        r = self.client.get("/panel/")
         self.assertEqual(r.context["d"]["queues"], {"posts": 0, "announcements": 1})
-        self.assertContains(r, "اطلاعیه‌های منتظر تأیید")
+        self.assertContains(r, "اطلاعیه منتظر تأیید")
+        self.assertEqual(self.client.get("/staff/").status_code, 302)  # آدرس قدیمی به پنل می‌ره
+
+
+class SupportTests(Base):
+    def post(self, **over):
+        data = {"category": "bug", "subject": "دکمه کار نمی‌کنه", "message": "وقتی روی درخواست می‌زنم هیچ اتفاقی نمی‌افته.", "page_url": "/books/1/", "contact": "", "website": ""}
+        data.update(over)
+        return self.client.post(reverse("support:new"), data)
+
+    def test_member_submits_and_sees_status_and_reply(self):
+        from support.models import Ticket
+        self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.get(reverse("support:new")).status_code, 200)
+        self.assertEqual(self.post().status_code, 302)
+        t = Ticket.objects.get()
+        self.assertEqual((t.user, t.status, t.page_url), (self.taker, "new", "/books/1/"))
+        self.assertContains(self.client.get(reverse("support:mine")), "دکمه کار نمی‌کنه")
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.post(reverse("panel:ticket", args=[t.pk]), {"status": "resolved", "reply": "درست شد."})
+        self.assertEqual(r.status_code, 302)
+        t.refresh_from_db()
+        self.assertEqual((t.status, t.handled_by), ("resolved", boss))
+        self.assertTrue(Notification.objects.filter(user=self.taker, kind="report", text__contains="پاسخ داد").exists())
+        self.client.login(username="taker", password="x12345678")
+        self.assertContains(self.client.get(t.get_absolute_url()), "درست شد.")
+
+    def test_guest_can_report_with_contact_but_honeypot_and_short_text_fail(self):
+        from support.models import Ticket
+        self.assertEqual(self.post(contact="a@b.ir").status_code, 302)
+        self.assertEqual(Ticket.objects.get().user, None)
+        self.assertEqual(self.post(website="spam").status_code, 200)
+        self.assertEqual(self.post(message="کوتاه").status_code, 200)
+        self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_only_owner_sees_ticket_and_outside_page_url_dropped(self):
+        from support.models import Ticket
+        self.client.login(username="taker", password="x12345678")
+        self.post(page_url="https://evil.example/x")
+        t = Ticket.objects.get()
+        self.assertEqual(t.page_url, "")
+        self.client.login(username="giver", password="x12345678")
+        self.assertEqual(self.client.get(t.get_absolute_url()).status_code, 404)
+
+    def test_rate_limited(self):
+        self.client.login(username="taker", password="x12345678")
+        for _ in range(5):
+            self.post()
+        self.assertEqual(self.post().status_code, 429)
+
+
+class PanelTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+
+    def test_panel_is_staff_only(self):
+        self.client.logout()
+        self.assertEqual(self.client.get("/panel/").status_code, 302)
+        self.client.login(username="taker", password="x12345678")
+        for url in ("/panel/", "/panel/users/", "/panel/posts/", "/panel/settings/", "/panel/audit/"):
+            self.assertEqual(self.client.get(url).status_code, 302, url)
+        self.assertEqual(self.client.post(f"/panel/users/{self.giver.pk}/action/", {"do": "ban", "note": "x"}).status_code, 302)
+        self.giver.refresh_from_db()
+        self.assertEqual(self.giver.status, "active")
+
+    def test_all_sections_render(self):
+        from support.models import Ticket
+        Ticket.objects.create(user=self.taker, subject="س", message="پیام کافی برای تست")
+        for url in ("/panel/", "/panel/reports/", "/panel/tickets/", "/panel/exchanges/", "/panel/exchanges/?disputed=1", "/panel/users/", f"/panel/users/{self.taker.pk}/",
+                    "/panel/users/?f=banned&q=ta", "/panel/books/", "/panel/books/?status=available&q=x", "/panel/posts/", "/panel/announcements/", "/panel/challenges/",
+                    "/panel/challenges/new/", "/panel/settings/", "/panel/audit/"):
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_user_actions_and_guards(self):
+        url = reverse("panel:user_action", args=[self.taker.pk])
+        self.client.post(url, {"do": "warn", "note": "اخطار تست"})
+        self.client.post(url, {"do": "points", "delta": "3", "note": "جبران"})
+        self.taker.refresh_from_db()
+        self.assertEqual((self.taker.warnings, self.taker.points), (1, 4))
+        self.client.post(url, {"do": "restrict", "note": "بدقولی"})
+        self.taker.refresh_from_db()
+        self.assertTrue(self.taker.is_restricted)
+        self.client.post(url, {"do": "lift"})
+        self.client.post(url, {"do": "ban", "note": "تخلف"})
+        self.taker.refresh_from_db()
+        self.assertEqual((self.taker.status, self.taker.is_active), ("banned", False))
+        self.client.post(url, {"do": "lift"})
+        self.taker.refresh_from_db()
+        self.assertEqual((self.taker.status, self.taker.is_active), ("active", True))
+        self.assertEqual(self.client.post(url, {"do": "ban", "note": ""}).status_code, 302)   # بدون دلیل اعمال نمی‌شه
+        self.taker.refresh_from_db()
+        self.assertEqual(self.taker.status, "active")
+        self.assertGreaterEqual(AuditLog.objects.filter(target="کاربر taker").count(), 5)
+        # خودش و مدیر دیگه محافظت دارن
+        self.client.post(reverse("panel:user_action", args=[self.boss.pk]), {"do": "ban", "note": "x"})
+        self.boss.refresh_from_db()
+        self.assertTrue(self.boss.is_active)
+        staff = User.objects.create_user("stf", password="x12345678", is_staff=True)
+        self.client.login(username="stf", password="x12345678")
+        self.client.post(reverse("panel:user_action", args=[self.boss.pk]), {"do": "ban", "note": "x"})
+        self.boss.refresh_from_db()
+        self.assertTrue(self.boss.is_active)
+        self.assertEqual(staff.pk, User.objects.get(username="stf").pk)
+
+    def test_post_and_announcement_moderation(self):
+        from announcements.models import Announcement
+        from posts.models import Post
+        post = Post.objects.create(author=self.taker, title="معرفی", body="متن " * 60, status="pending")
+        self.client.post(reverse("panel:post_action", args=[post.pk]), {"do": "reject", "note": ""})
+        post.refresh_from_db()
+        self.assertEqual(post.status, "pending")                          # رد بدون دلیل نمی‌شه
+        self.client.post(reverse("panel:post_action", args=[post.pk]), {"do": "reject", "note": "کوتاه"})
+        post.refresh_from_db()
+        self.assertEqual((post.status, post.reject_reason), ("rejected", "کوتاه"))
+        self.client.post(reverse("panel:post_action", args=[post.pk]), {"do": "approve"})
+        self.client.post(reverse("panel:post_action", args=[post.pk]), {"do": "feature"})
+        post.refresh_from_db()
+        self.assertEqual((post.status, post.is_featured), ("published", True))
+        a = Announcement.objects.create(title="رویداد", kind="other", summary="خ", submitted_by=self.taker, status="pending")
+        self.client.post(reverse("panel:announcement_action", args=[a.pk]), {"do": "approve"})
+        a.refresh_from_db()
+        self.assertEqual(a.status, "published")
+        self.client.post(reverse("panel:announcement_action", args=[a.pk]), {"do": "delete"})
+        self.assertFalse(Announcement.objects.exists())
+
+    def test_report_decision_and_challenge_crud(self):
+        from challenges.models import Challenge
+        from trust.models import Report
+        r = Report.objects.create(reporter=self.giver, target_user=self.taker, reason="abuse", description="توهین")
+        self.client.post(reverse("panel:report", args=[r.pk]), {"decision": "warn", "decision_note": ""})
+        r.refresh_from_db()
+        self.assertEqual(r.status, "open")                                # بدون دلیل بسته نمی‌شه
+        self.client.post(reverse("panel:report", args=[r.pk]), {"decision": "warn", "decision_note": "رعایت کن"})
+        r.refresh_from_db(); self.taker.refresh_from_db()
+        self.assertEqual((r.status, r.handled_by, self.taker.warnings), ("closed", self.boss, 1))
+        data = {"title": "چالش تازه", "description": "", "kind": "give", "target": 2, "is_active": "on",
+                "starts_at_0": "1405", "starts_at_1": "7", "starts_at_2": "1", "starts_at_3": "10:00",
+                "ends_at_0": "1405", "ends_at_1": "8", "ends_at_2": "1", "ends_at_3": "10:00"}
+        resp = self.client.post(reverse("panel:challenge_new"), data)
+        self.assertEqual(resp.status_code, 302, getattr(resp, "context", None) and resp.context["form"].errors)
+        c = Challenge.objects.get(title="چالش تازه")
+        self.client.post(reverse("panel:challenge_action", args=[c.pk]))
+        c.refresh_from_db()
+        self.assertFalse(c.is_active)
+        self.client.post(reverse("panel:challenge_action", args=[c.pk]), {"do": "delete"})
+        self.assertFalse(Challenge.objects.filter(title="چالش تازه").exists())
+
+    def test_book_delete_guard_and_settings(self):
+        book = self.book(title="حذفی")
+        ex = services.request_book(book.pk, self.taker)
+        self.client.post(reverse("panel:book_delete", args=[book.pk]), {"note": "x"})
+        self.assertTrue(Book.objects.filter(pk=book.pk).exists())          # مبادله‌ی در جریان دارد
+        services.reject(ex.pk, self.giver)
+        self.client.post(reverse("panel:book_delete", args=[book.pk]), {"note": "نامناسب"})
+        self.assertFalse(Book.objects.filter(pk=book.pk).exists())
+        from common.models import SiteSetting
+        self.addCleanup(lambda: setattr(SiteSetting, "_cache", None))
+        data = {f: getattr(SiteSetting.load(), f) for f in ("tagline", "hero_title", "hero_subtitle", "cta_title", "cta_text", "footer_text")}
+        data["tagline"] = "شعار پنل"
+        self.client.post(reverse("panel:settings"), data)
+        self.assertEqual(SiteSetting.load().tagline, "شعار پنل")
+
+    def test_staff_sees_todo_badge_and_next_redirect_is_safe(self):
+        from support.models import Ticket
+        Ticket.objects.create(subject="س", message="پیام کافی برای تست")
+        self.assertContains(self.client.get("/"), "پنل مدیریت")
+        r = self.client.post(reverse("panel:report_reviewing", args=[1]), {"next": "https://evil.example/"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r["Location"], reverse("panel:reports"))

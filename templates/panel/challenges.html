@@ -1,0 +1,14 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}چالش‌ها{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>چالش‌ها</h1><p>چالش‌های ماهانه و هدف‌های جمعی.</p></div><a class="btn" href="{% url 'panel:challenge_new' %}">{% include "components/icon.html" with name="plus" %} چالش تازه</a></div>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>نوع</th><th>هدف</th><th>بازه</th><th>وضعیت</th><th></th></tr></thead><tbody>
+{% for c in items %}<tr>
+    <td data-label="عنوان"><strong>{{ c.title }}</strong><br><span class="small muted">{{ c.description }}</span></td><td data-label="نوع">{{ c.get_kind_display }}</td><td data-label="هدف">{{ c.target|fa }}</td>
+    <td data-label="بازه">{{ c.starts_at|jdate }} تا {{ c.ends_at|jdate }}</td>
+    <td data-label="وضعیت">{% if c.is_running %}<span class="pill pill-green">در جریان</span>{% elif not c.is_active %}<span class="pill">غیرفعال</span>{% elif c.ends_at < now %}<span class="pill">تمام‌شده</span>{% else %}<span class="pill pill-amber">به‌زودی</span>{% endif %}</td>
+    <td class="acts"><div class="row-act"><a class="btn btn-secondary btn-sm" href="{% url 'panel:challenge_edit' c.pk %}">ویرایش</a>
+        <form method="post" action="{% url 'panel:challenge_action' c.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% if c.is_active %}غیرفعال{% else %}فعال{% endif %}</button></form>
+        <form method="post" action="{% url 'panel:challenge_action' c.pk %}">{% csrf_token %}<input type="hidden" name="do" value="delete"><button class="btn btn-ghost btn-sm" onclick="return confirm('چالش حذف بشه؟')">حذف</button></form></div></td></tr>
+{% empty %}<tr><td colspan="6" class="muted">چالشی نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

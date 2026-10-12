@@ -60,6 +60,8 @@ INSTALLED_APPS = [
     "challenges",
     "posts",
     "announcements",
+    "support",
+    "panel",
 ]
 
 MIDDLEWARE = [

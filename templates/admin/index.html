@@ -1,6 +1,6 @@
 {% extends "admin/index.html" %}
 {% block content %}
-<p><a class="button" href="{% url 'staff_dashboard' %}" style="padding:8px 16px">📊 داشبورد وضعیت هم‌ورق</a>
+<p><a class="button" href="{% url 'panel:index' %}" style="padding:8px 16px">📊 داشبورد وضعیت هم‌ورق</a>
    <a href="{% url 'admin:trust_report_changelist' %}?status__exact=open">گزارش‌های باز</a></p>
 {{ block.super }}
 {% endblock %}

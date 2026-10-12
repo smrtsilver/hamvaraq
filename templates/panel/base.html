@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{% block ptitle %}پنل مدیریت{% endblock %} | پنل هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block content %}
+<div class="panel">
+    <aside class="panel-nav" aria-label="بخش‌های پنل">
+        <p class="panel-brand">{% include "components/icon.html" with name="shield" %} پنل مدیریت</p>
+        <nav>{% for key, label, icon, url in nav %}
+            <a href="{{ url }}"{% if key == active %} aria-current="page"{% endif %}>{% include "components/icon.html" with name=icon %}<span>{{ label }}</span>{% for k, n in nav_counts.items %}{% if k == key and n %}<b class="count">{{ n|fa }}</b>{% endif %}{% endfor %}</a>{% endfor %}
+        </nav>
+        <a class="panel-admin" href="{% url 'admin:index' %}">ابزار پیشرفته (ادمین جنگو)</a>
+    </aside>
+    <section class="panel-main">{% block panel %}{% endblock %}</section>
+</div>
+{% endblock %}

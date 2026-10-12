@@ -1,0 +1,1 @@
+<div class="ptabs" role="tablist">{% for value, label in tabs %}<a href="?{% if q %}q={{ q|urlencode }}&{% endif %}{{ param|default:'status' }}={{ value }}"{% if current == value %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}</div>

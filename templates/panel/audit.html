@@ -1,0 +1,10 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}لاگ مدیریت{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>لاگ مدیریت</h1><p>هر اقدام مدیریتی در پنل اینجا ثبت می‌شود.</p></div></div>
+{% include "panel/_search.html" with placeholder="اقدام، مدیر یا مورد" %}
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>زمان</th><th>مدیر</th><th>اقدام</th><th>روی</th><th>توضیح</th></tr></thead><tbody>
+{% for l in page %}<tr><td data-label="زمان">{{ l.created_at|jdate }}</td><td data-label="مدیر">{{ l.actor.username|default:"—" }}</td><td data-label="اقدام">{{ l.action }}</td><td data-label="روی">{{ l.target }}</td><td data-label="توضیح">{{ l.note }}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">لاگی نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

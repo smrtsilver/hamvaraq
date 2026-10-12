@@ -84,7 +84,7 @@ SITEMAPS = {"posts": PostSitemap, "announcements": AnnouncementSitemap, "static"
 
 # مسیرهای خصوصی: تو robots.txt بسته‌ان و هدر noindex هم می‌گیرن (RobotsHeaderMiddleware)
 PRIVATE_PREFIXES = (
-    "/admin/", "/staff/", "/accounts/", "/exchanges/", "/notifications/", "/trust/",
+    "/admin/", "/staff/", "/panel/", "/support/mine/", "/accounts/", "/exchanges/", "/notifications/", "/trust/",
     "/books/new/", "/books/mine/", "/books/bulk/", "/books/wishlist/", "/books/isbn/", "/books/suggest/", "/books/quick/",
     "/posts/new/", "/posts/mine/", "/posts/preview/", "/announcements/new/", "/announcements/mine/",
 )

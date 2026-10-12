@@ -1,0 +1,12 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}تنظیمات سایت{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>تنظیمات سایت</h1><p>متن لندینگ، فوتر، بنر و شبکه‌های اجتماعی؛ بدون دیپلوی عوض می‌شود.</p></div></div>
+<form method="post" class="card" novalidate>{% csrf_token %}{% include "components/form.html" %}<div class="form-actions"><button class="btn">ذخیره‌ی تنظیمات</button></div></form>
+<h2>داده‌های پایه</h2>
+<ul class="list-clean card">
+    <li><a href="{% url 'admin:books_category_changelist' %}">دسته‌های کتاب</a></li>
+    <li><a href="{% url 'admin:common_meetingpoint_changelist' %}">نقاط تحویل پیشنهادی</a></li>
+    <li><a href="{% url 'admin:common_city_changelist' %}">شهرها</a></li><li><a href="{% url 'admin:common_province_changelist' %}">استان‌ها</a></li>
+    <li><a href="{% url 'admin:accounts_badge_changelist' %}">نشان‌ها</a></li></ul>
+{% endblock %}

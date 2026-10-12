@@ -1,0 +1,18 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}مشکلات کاربران{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>مشکلات کاربران</h1><p>گزارش‌های مشکل و پیشنهاد از فرم «گزارش مشکل».</p></div></div>
+{% include "panel/_status_tabs.html" with current=status tabs=ticket_tabs %}
+<form method="get" class="filterbar" role="search"><input type="hidden" name="status" value="{{ status }}">
+    <div class="field field-wide"><label for="tq">جستجو</label><input id="tq" type="search" name="q" value="{{ q }}" autocomplete="off" placeholder="عنوان، متن یا نام کاربر"></div>
+    <div class="field"><label for="tc">موضوع</label><select id="tc" name="category"><option value="">همه</option>{% for v, l in categories %}<option value="{{ v }}"{% if v == category %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="filterbar-actions"><button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button></div></form>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>موضوع</th><th>کاربر</th><th>زمان</th><th>وضعیت</th><th></th></tr></thead><tbody>
+{% for t in page %}<tr>
+    <td data-label="عنوان"><a href="{% url 'panel:ticket' t.pk %}"><strong>{{ t.subject|truncatechars:60 }}</strong></a></td>
+    <td data-label="موضوع">{{ t.get_category_display }}</td><td data-label="کاربر">{% if t.user %}<a href="{% url 'panel:user' t.user.pk %}">{{ t.user.username }}</a>{% else %}مهمان{% endif %}</td>
+    <td data-label="زمان">{{ t.created_at|jdate }}</td><td data-label="وضعیت"><span class="pill {% if t.status == 'new' %}pill-amber{% elif t.status == 'resolved' %}pill-green{% endif %}">{{ t.get_status_display }}</span></td>
+    <td class="acts"><a class="btn btn-secondary btn-sm" href="{% url 'panel:ticket' t.pk %}">باز کردن</a></td></tr>
+{% empty %}<tr><td colspan="6" class="muted">موردی نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

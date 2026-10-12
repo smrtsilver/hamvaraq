@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}کاربران{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>کاربران</h1><p>جستجو، محدودیت، اخطار، مسدودسازی و تنظیم امتیاز.</p></div></div>
+<div class="ptabs">{% for v, l in user_tabs %}<a href="?{% if q %}q={{ q|urlencode }}&{% endif %}f={{ v }}"{% if f == v %} aria-current="true"{% endif %}>{{ l }}</a>{% endfor %}</div>
+{% include "panel/_search.html" with placeholder="نام کاربری یا ایمیل" keep=keep_f %}
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>کاربر</th><th>شهر</th><th>امتیاز</th><th>کتاب</th><th>وضعیت</th><th>عضویت</th><th></th></tr></thead><tbody>
+{% for u in page %}<tr>
+    <td data-label="کاربر"><a href="{% url 'panel:user' u.pk %}"><strong>{{ u.username }}</strong></a>{% if u.is_staff %} <span class="pill pill-blue">مدیر</span>{% endif %}</td>
+    <td data-label="شهر">{{ u.city.name|default:"—" }}</td><td data-label="امتیاز">{{ u.points|fa }}</td><td data-label="کتاب">{{ u.book_count|fa }}</td>
+    <td data-label="وضعیت"><span class="pill {% if u.status == 'banned' %}pill-red{% elif u.status == 'restricted' %}pill-amber{% else %}pill-green{% endif %}">{{ u.get_status_display }}</span>{% if u.warnings %} <span class="small muted">{{ u.warnings|fa }} اخطار</span>{% endif %}</td>
+    <td data-label="عضویت">{{ u.date_joined|jdate }}</td><td class="acts"><a class="btn btn-secondary btn-sm" href="{% url 'panel:user' u.pk %}">مدیریت</a></td></tr>
+{% empty %}<tr><td colspan="7" class="muted">کاربری پیدا نشد.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

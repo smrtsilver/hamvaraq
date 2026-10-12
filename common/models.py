@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -100,3 +101,21 @@ class SiteSetting(models.Model):
         obj, _ = cls.objects.get_or_create(pk=1)
         cls._cache = (time.monotonic(), obj)
         return obj
+
+
+class AuditLog(models.Model):
+    """ثبت اقدام‌های مدیریتی پنل: چه کسی، چه کاری، روی چی و چرا."""
+
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+", verbose_name="مدیر")
+    action = models.CharField(max_length=80, verbose_name="اقدام")
+    target = models.CharField(max_length=200, blank=True, verbose_name="روی")
+    note = models.CharField(max_length=300, blank=True, verbose_name="توضیح")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="زمان")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "لاگ مدیریت"
+        verbose_name_plural = "لاگ‌های مدیریت"
+
+    def __str__(self):
+        return f"{self.actor}: {self.action} {self.target}"

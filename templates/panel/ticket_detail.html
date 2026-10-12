@@ -1,0 +1,10 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}{{ t.subject }}{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>{{ t.subject }}</h1><p>{{ t.get_category_display }} · {{ t.created_at|jdate }}</p></div><a class="btn btn-ghost btn-sm" href="{% url 'panel:tickets' %}">بازگشت</a></div>
+<div class="split-2"><div class="card"><dl class="kv"><dt>کاربر</dt><dd>{% if t.user %}<a href="{% url 'panel:user' t.user.pk %}">{{ t.user.username }}</a>{% else %}مهمان{% endif %}</dd>
+    {% if t.contact %}<dt>راه تماس</dt><dd dir="ltr" style="text-align:start">{{ t.contact }}</dd>{% endif %}
+    {% if t.page_url %}<dt>صفحه</dt><dd><a href="{{ t.page_url }}" dir="ltr">{{ t.page_url }}</a></dd>{% endif %}</dl>
+    <p style="white-space:pre-line">{{ t.message }}</p></div>
+<form method="post" class="card" novalidate>{% csrf_token %}<h3 style="margin-top:0">رسیدگی</h3>{% include "components/form.html" %}<div class="form-actions"><button class="btn">ذخیره{% if t.user %} و اطلاع به کاربر{% endif %}</button></div></form></div>
+{% endblock %}

@@ -1,0 +1,2 @@
+<form method="get" class="psearch" role="search">{% for k, v in keep.items %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <input type="search" name="q" value="{{ q }}" placeholder="{{ placeholder|default:'جستجو…' }}" aria-label="جستجو" autocomplete="off"><button class="btn btn-secondary btn-sm">{% include "components/icon.html" with name="search" %} جستجو</button></form>

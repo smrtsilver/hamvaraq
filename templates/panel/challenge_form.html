@@ -1,0 +1,6 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}{% if item %}ویرایش چالش{% else %}چالش تازه{% endif %}{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>{% if item %}ویرایش چالش{% else %}چالش تازه{% endif %}</h1></div><a class="btn btn-ghost btn-sm" href="{% url 'panel:challenges' %}">بازگشت</a></div>
+<form method="post" class="card medium" novalidate>{% csrf_token %}{% include "components/form.html" %}<div class="form-actions"><button class="btn">ذخیره</button></div></form>
+{% endblock %}

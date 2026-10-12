@@ -6,7 +6,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
-from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules, staff_dashboard
+from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules
 
 urlpatterns = [
     path("", home, name="home"),
@@ -15,7 +15,7 @@ urlpatterns = [
     path("cities/", city_list, name="cities"),
     path("cities/<int:pk>/", city_detail, name="city"),
     path("provinces/<int:pk>/", province_detail, name="province"),
-    path("staff/", staff_dashboard, name="staff_dashboard"),
+    path("staff/", RedirectView.as_view(pattern_name="panel:index"), name="staff_dashboard"),
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
     path("robots.txt", robots_txt, name="robots"),
     path("sw.js", service_worker, name="sw"),
@@ -31,6 +31,8 @@ urlpatterns = [
     path("posts/", include("posts.urls")),
     path("announcements/", include("announcements.urls")),
     path("notifications/", include("notifications.urls")),
+    path("support/", include("support.urls")),
+    path("panel/", include("panel.urls")),
 ]
 
 handler404 = "common.views.page_not_found"

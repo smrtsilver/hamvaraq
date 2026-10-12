@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}گزارش‌های من | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="medium">
+    <div class="page-head"><div><h1>گزارش‌های من</h1><p>وضعیت مشکلاتی که اطلاع دادی.</p></div><a class="btn" href="{% url 'support:new' %}">{% include "components/icon.html" with name="plus" %} گزارش تازه</a></div>
+    {% if page %}<ul class="list-clean card">{% for t in page %}
+        <li><a href="{{ t.get_absolute_url }}"><strong>{{ t.subject }}</strong><br><span class="small muted">{{ t.get_category_display }} · {{ t.created_at|jdate }}</span></a>
+            <span class="pill {% if t.status == 'resolved' %}pill-green{% elif t.is_open %}pill-amber{% endif %}">{{ t.get_status_display }}</span></li>{% endfor %}</ul>
+    {% include "components/pagination.html" %}
+    {% else %}{% url 'support:new' as new_url %}{% include "components/empty.html" with ill="chat" title="هنوز گزارشی نفرستادی" text="مشکلی دیدی یا پیشنهادی داری؟ برامون بنویس." cta_url=new_url cta_label="گزارش مشکل" %}{% endif %}
+</div>
+{% endblock %}

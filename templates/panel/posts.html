@@ -1,0 +1,16 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}معرفی‌ها{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>معرفی‌ها</h1><p>تأیید، رد یا حذف نوشته‌های کاربران.</p></div></div>
+{% include "panel/_status_tabs.html" with current=status tabs=item_tabs %}
+{% include "panel/_search.html" with placeholder="عنوان یا نام کاربر" keep=keep_status %}
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>ثبت‌کننده</th><th>وضعیت</th><th>زمان</th><th></th></tr></thead><tbody>
+{% for p in page %}<tr>
+    <td data-label="عنوان"><a href="{{ p.get_absolute_url }}"><strong>{{ p.title|truncatechars:50 }}</strong></a>{% if p.is_featured %} <span class="pill pill-amber">ویژه</span>{% endif %}{% if p.reject_reason %}<br><span class="small muted">رد: {{ p.reject_reason }}</span>{% endif %}</td>
+    <td data-label="ثبت‌کننده">{% if p.author %}<a href="{% url 'panel:user' p.author.pk %}">{{ p.author.username }}</a>{% else %}—{% endif %}</td>
+    <td data-label="وضعیت"><span class="pill {% if p.status == 'pending' %}pill-amber{% elif p.status == 'published' %}pill-green{% endif %}">{{ p.get_status_display }}</span></td>
+    <td data-label="زمان">{{ p.created_at|jdate }}</td>
+    <td class="acts">{% include "panel/_content_actions.html" with kind="posts" %}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">موردی نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}گزارش #{{ r.pk }}{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>گزارش #{{ r.pk }}</h1><p>{{ r.target_label }}</p></div><a class="btn btn-ghost btn-sm" href="{% url 'panel:reports' %}">بازگشت</a></div>
+<div class="split-2">
+<div>
+    <div class="card"><dl class="kv">
+        <dt>دلیل</dt><dd>{{ r.get_reason_display }}</dd>
+        <dt>گزارش‌دهنده</dt><dd><a href="{% url 'panel:user' r.reporter.pk %}">{{ r.reporter.username }}</a></dd>
+        <dt>متخلف</dt><dd>{% if accused %}<a href="{% url 'panel:user' accused.pk %}">{{ accused.username }}</a> · {{ accused.get_status_display }} · {{ accused.warnings|fa }} اخطار{% else %}—{% endif %}</dd>
+        <dt>زمان</dt><dd>{{ r.created_at|jdate }}</dd><dt>وضعیت</dt><dd>{{ r.get_status_display }}</dd></dl>
+        {% if r.description %}<p style="white-space:pre-line">{{ r.description }}</p>{% endif %}
+        {% if r.image %}<p><a href="{{ r.image.url }}" target="_blank" rel="noopener"><img src="{{ r.image.url }}" alt="تصویر پیوست گزارش" style="max-width:260px;border-radius:12px"></a></p>{% endif %}
+        {% if r.target_book_id %}<p><a href="{{ r.target_book.get_absolute_url }}">دیدن کتاب</a></p>{% endif %}
+        {% if r.target_post_id %}<p><a href="{{ r.target_post.get_absolute_url }}">دیدن معرفی</a></p>{% endif %}
+        {% if r.target_announcement_id %}<p><a href="{{ r.target_announcement.get_absolute_url }}">دیدن اطلاعیه</a></p>{% endif %}
+    </div>
+    {% if chat %}<div class="card" style="margin-top:16px"><h3 style="margin-top:0">گفتگوی مربوط</h3>{% for m in chat %}<p><strong>{{ m.sender.username }}:</strong> {{ m.text }}</p>{% endfor %}</div>{% endif %}
+    {% if history %}<div class="card" style="margin-top:16px"><h3 style="margin-top:0">مبادله‌های اخیر متخلف</h3><ul class="list-clean">{% for ex in history %}<li><span>#{{ ex.pk }} {{ ex.book.title }}</span><span class="pill">{{ ex.get_status_display }}</span></li>{% endfor %}</ul></div>{% endif %}
+</div>
+<div>
+{% if r.status == 'closed' %}
+    <div class="callout good">{% include "components/icon.html" with name="check" %}<div><strong>بسته شده: {{ r.get_decision_display }}</strong><p style="margin:6px 0 0">{{ r.decision_note }}</p><p class="small muted" style="margin:6px 0 0">{{ r.handled_by.username|default:"—" }} · {{ r.closed_at|jdate }}</p></div></div>
+{% else %}
+    <form method="post" class="card" novalidate>{% csrf_token %}<h3 style="margin-top:0">تصمیم</h3>{% include "components/form.html" %}
+        <div class="form-actions"><button class="btn">ثبت تصمیم</button></div></form>
+    {% if r.status == 'open' %}<form method="post" action="{% url 'panel:report_reviewing' r.pk %}" style="margin-top:12px">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm">علامت «در بررسی»</button></form>{% endif %}
+{% endif %}
+</div></div>
+{% endblock %}
