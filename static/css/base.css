@@ -40,3 +40,6 @@ blockquote{margin:8px 0;padding:8px 14px;border-inline-start:4px solid var(--g);
 .msg{padding:6px 10px;margin:6px 0;border-radius:8px;background:var(--bg)}.msg.mine{background:#c6f6d533}
 .pager{display:flex;gap:14px;justify-content:center;margin:20px 0}
 .foot{padding:30px 16px;color:var(--mu);text-align:center}
+.bulk-row{border:1px solid var(--bd);border-radius:10px;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.bulk-row legend{padding:0 6px;color:var(--mu)}
+.bulk-row>div{display:flex;flex-direction:column}

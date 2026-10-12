@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ثبت دسته‌ای کتاب</h1>
+<p class="muted">شهر و وضعیت برای همه‌ی ردیف‌ها یکسانه. ردیف‌های خالی نادیده گرفته می‌شن. با وارد کردن شابک، عنوان و نویسنده خودکار پر می‌شه (اگه پیدا بشه).</p>
+<form method="post" class="card form">{% csrf_token %}
+    {{ common.as_div }}
+    {{ rows.management_form }}
+    {{ rows.non_form_errors }}
+    {% for f in rows %}
+    <fieldset class="bulk-row" data-isbn-scope>
+        <legend>کتاب {{ forloop.counter }}</legend>
+        {{ f.non_field_errors }}
+        {{ f.as_div }}
+    </fieldset>
+    {% endfor %}
+    <button class="btn">ثبت همه</button>
+</form>
+{% endblock %}

@@ -18,6 +18,7 @@
             <a href="{% url 'books:list' %}">کتاب‌ها</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'books:create' %}">ثبت کتاب</a>
+                <a href="{% url 'books:bulk' %}">ثبت دسته‌ای</a>
                 <a href="{% url 'exchanges:list' %}">مبادله‌ها</a>
                 <a href="{% url 'books:wishlist' %}">آرزوها</a>
                 <a href="{% url 'notifications:list' %}">اعلان‌ها{% if unread_notifications %} <span class="pill">{{ unread_notifications }}</span>{% endif %}</a>
@@ -35,5 +36,6 @@
     {% block content %}{% endblock %}
 </main>
 <footer class="container foot">هم‌ورق — کتاب بده، کتاب بگیر؛ بدون پول.</footer>
+<script src="{% static 'js/isbn.js' %}" defer></script>
 </body>
 </html>

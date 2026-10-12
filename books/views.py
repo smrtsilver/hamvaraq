@@ -1,14 +1,18 @@
 from django.contrib import messages
+from django.forms import formset_factory
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Q
 
 from accounts.badges import check_badges
 from exchanges.models import Exchange
 
-from .forms import BookFilterForm, BookForm
+from . import isbn as isbn_lookup
+from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm
 from .models import Book, Wishlist
 from .services import notify_wishlists
 
@@ -126,3 +130,38 @@ def wishlist(request):
 def wishlist_delete(request, pk):
     get_object_or_404(Wishlist, pk=pk, user=request.user).delete()
     return redirect("books:wishlist")
+
+
+BULK_ROWS = 8
+
+
+@login_required
+def book_bulk_create(request):
+    """چند کتاب پشت هم؛ ردیف‌های کاملاً خالی نادیده گرفته می‌شن."""
+    RowSet = formset_factory(BulkRowForm, extra=BULK_ROWS, max_num=BULK_ROWS, validate_max=True)
+    common = BulkCommonForm(request.POST or None, initial={"city": request.user.city_id})
+    rows = RowSet(request.POST or None)
+    if request.method == "POST" and common.is_valid() and rows.is_valid():
+        filled = [f.cleaned_data for f in rows if f.cleaned_data.get("title")]
+        if not filled:
+            messages.error(request, "حداقل یه کتاب وارد کن.")
+        else:
+            with transaction.atomic():
+                books = [Book.objects.create(
+                    owner=request.user, city=common.cleaned_data["city"],
+                    condition=common.cleaned_data["condition"], title=r["title"], author=r["author"],
+                    isbn=r["isbn"], category=r["category"]) for r in filled]
+            for book in books:
+                notify_wishlists(book)
+            check_badges(request.user)
+            messages.success(request, f"{len(books)} کتاب ثبت شد.")
+            return redirect("books:mine")
+    return render(request, "books/bulk.html", {"common": common, "rows": rows})
+
+
+@login_required
+def isbn_view(request):
+    result = isbn_lookup.lookup(request.GET.get("isbn", ""))
+    if not result:
+        return JsonResponse({"error": "not_found"}, status=404)
+    return JsonResponse(result)

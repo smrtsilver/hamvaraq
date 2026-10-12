@@ -241,3 +241,79 @@ class BookTests(Base):
         self.assertEqual(r.status_code, 302)
         u = User.objects.get(username="newuser")
         self.assertEqual(u.points, 0)
+
+
+class IsbnAndBulkTests(Base):
+    def test_normalize(self):
+        from books.isbn import normalize
+        self.assertEqual(normalize("978-964-6194-48-5"), "9789646194485")
+        self.assertEqual(normalize("۹۷۸۹۶۴۶۱۹۴۴۸۵"), "9789646194485")
+        self.assertEqual(normalize("0-306-40615-X".replace("X", "2")), "0306406152")
+        self.assertIsNone(normalize("12345"))
+
+    def test_lookup_parses_and_caches(self):
+        import io, json
+        from unittest import mock
+        from django.core.cache import cache
+        from books import isbn
+        cache.clear()
+        body = json.dumps({"ISBN:9780140328721": {"title": "Fantastic Mr Fox", "authors": [{"name": "Roald Dahl"}]}})
+        with mock.patch("urllib.request.urlopen", return_value=io.BytesIO(body.encode())) as m:
+            r = isbn.lookup("978-0-14-032872-1")
+            isbn.lookup("9780140328721")
+        self.assertEqual(r, {"isbn": "9780140328721", "title": "Fantastic Mr Fox", "author": "Roald Dahl"})
+        self.assertEqual(m.call_count, 1)
+
+    def test_lookup_network_error_is_none(self):
+        import urllib.error
+        from unittest import mock
+        from django.core.cache import cache
+        from books import isbn
+        cache.clear()
+        with mock.patch("urllib.request.urlopen", side_effect=urllib.error.URLError("x")):
+            self.assertIsNone(isbn.lookup("9780140328721"))
+
+    def test_isbn_view_requires_login_and_404s(self):
+        from unittest import mock
+        url = reverse("books:isbn")
+        self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).status_code, 302)
+        self.client.login(username="giver", password="x12345678")
+        with mock.patch("books.isbn.lookup", return_value=None):
+            self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).status_code, 404)
+        with mock.patch("books.isbn.lookup", return_value={"isbn": "1", "title": "T", "author": "A"}):
+            self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).json()["title"], "T")
+
+    def _bulk_data(self, rows):
+        data = {"city": self.isfahan.pk, "condition": "used", "form-TOTAL_FORMS": 8, "form-INITIAL_FORMS": 0,
+                "form-MIN_NUM_FORMS": 0, "form-MAX_NUM_FORMS": 8}
+        for i in range(8):
+            row = rows[i] if i < len(rows) else {}
+            for k in ("isbn", "title", "author", "category"):
+                data[f"form-{i}-{k}"] = row.get(k, "")
+        return data
+
+    def test_bulk_creates_filled_rows_only(self):
+        Wishlist.objects.create(user=self.taker, text="هدایت")
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.post(reverse("books:bulk"), self._bulk_data([
+            {"title": "الف", "author": "ن۱", "isbn": "978-0-14-032872-1"},
+            {"title": "ب", "author": "ن۲", "category": self.cat.pk},
+        ]))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Book.objects.filter(owner=self.giver).count(), 2)
+        self.assertEqual(Book.objects.get(title="الف").isbn, "9780140328721")
+        self.assertEqual(Book.objects.get(title="ب").city, self.isfahan)
+
+    def test_bulk_half_filled_row_rejected_atomically(self):
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.post(reverse("books:bulk"), self._bulk_data([
+            {"title": "الف", "author": "ن"}, {"title": "بدون نویسنده"}]))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Book.objects.exists())
+
+    def test_bulk_empty_and_bad_isbn(self):
+        self.client.login(username="giver", password="x12345678")
+        self.assertEqual(self.client.post(reverse("books:bulk"), self._bulk_data([])).status_code, 200)
+        r = self.client.post(reverse("books:bulk"), self._bulk_data([{"title": "x", "author": "y", "isbn": "12"}]))
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Book.objects.exists())
