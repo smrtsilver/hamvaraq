@@ -15,6 +15,21 @@ python manage.py runserver
 python manage.py test
 ```
 
+## داکر
+
+```bash
+cp .env.example .env
+docker compose up --build            # توسعه: http://localhost:8000 با پستگرس
+```
+
+پروداکشن (`.env` با `SECRET_KEY`، `ALLOWED_HOSTS`، `CSRF_TRUSTED_ORIGINS` و `DB_PASSWORD` واقعی):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+nginx روی سرور با `deploy/hamvaraq.nginx.conf.example` جلوی پورت `127.0.0.1:8000` قرار می‌گیره.
+`python manage.py createsuperuser` رو داخل کانتینر `web` اجرا کن.
+
 ## ساختار
 
 | اپ | کار |

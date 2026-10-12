@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.shortcuts import render
 
 from books.models import Book
@@ -15,3 +16,7 @@ def home(request):
 
 def page_not_found(request, exception=None):
     return render(request, "404.html", status=404)
+
+
+def healthz(request):
+    return HttpResponse("ok")

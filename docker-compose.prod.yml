@@ -1,0 +1,43 @@
+# پروداکشن: gunicorn + پستگرس. nginx روی خود سرور جلوش می‌شینه (deploy/hamvaraq.nginx.conf.example)
+services:
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hamvaraq}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD رو تو .env ست کن}
+    volumes:
+      - hamvaraq_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: always
+    command: sh docker/entrypoint.prod.sh
+    ports:
+      - "127.0.0.1:8000:8000"  # فقط لوکال؛ nginx پروکسی می‌کنه
+    volumes:
+      - ./media:/app/media     # nginx مستقیم از این پوشه عکس کتاب‌ها رو سرو می‌کنه
+      - ./staticfiles:/app/staticfiles
+    environment:
+      DEBUG: "False"
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-hamvaraq}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/', timeout=5)"]
+      interval: 30s
+      timeout: 7s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  hamvaraq_pgdata:
