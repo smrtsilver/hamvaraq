@@ -10,7 +10,7 @@ pip install -r requirements.txt
 cp .env.example .env
 python manage.py createcachetable   # کش مشترک (محدودیت نرخ)
 python manage.py migrate
-python manage.py seed_basics        # شهرها و دسته‌ها
+python manage.py seed_basics        # استان‌ها، شهرها، دسته‌ها، تنظیمات سایت
 python manage.py seed_demo          # (اختیاری، فقط DEBUG) کاربر/کتاب/مبادله‌ی نمونه؛ رمز همه demo12345
 python manage.py createsuperuser
 python manage.py runserver

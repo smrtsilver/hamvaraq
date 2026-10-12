@@ -15,14 +15,14 @@ from exchanges.models import Exchange
 
 from . import card as book_card
 from . import isbn as isbn_lookup
-from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, ReviewForm
+from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
 from .services import notify_wishlists, similar_books
 
 
 def book_list(request):
     form = BookFilterForm(request.GET)
-    qs = Book.objects.exclude(status=Book.Status.EXCHANGED).select_related("city", "category", "owner")
+    qs = Book.objects.exclude(status=Book.Status.EXCHANGED).select_related("city__province", "category", "owner")
     if form.is_valid():
         d = form.cleaned_data
         if d["q"]:
@@ -31,6 +31,8 @@ def book_list(request):
                 qs = qs.filter(search_text__contains=word)
         if d["city"]:
             qs = qs.filter(city=d["city"])
+        elif d["province"]:
+            qs = qs.filter(city__province=d["province"])
         if d["category"]:
             qs = qs.filter(category=d["category"])
         if d["condition"]:
@@ -68,11 +70,18 @@ def book_detail(request, pk):
     return render(request, "books/detail.html", ctx)
 
 
+def _default_city(user):
+    """شهر پیش‌فرض ثبت کتاب: شهر پروفایل، وگرنه شهر آخرین کتابی که ثبت کرده."""
+    if user.city_id:
+        return user.city
+    last = user.books.select_related("city__province").order_by("-created_at").first()
+    return last.city if last else None
+
+
 @login_required
 @throttle("bookcreate", 40, 3600, by="user")
 def book_create(request):
-    initial = {"city": request.user.city_id}
-    form = BookForm(request.POST or None, request.FILES or None, initial=initial)
+    form = BookForm(request.POST or None, request.FILES or None, default_city=_default_city(request.user))
     if request.method == "POST" and form.is_valid():
         book = form.save(commit=False)
         book.owner = request.user
@@ -111,18 +120,24 @@ def book_delete(request, pk):
 
 
 @login_required
-@require_POST
 def book_relist(request, pk):
-    """کتابی که تازه گرفتی رو دوباره برای مبادله می‌ذاری."""
+    """کتابی که تازه گرفتی رو دوباره برای مبادله می‌ذاری؛ شهر فعلیت رو تأیید یا عوض می‌کنی."""
     book = get_object_or_404(Book, pk=pk, owner=request.user, status=Book.Status.EXCHANGED)
-    if request.user.city_id:
-        book.city_id = request.user.city_id
-    book.status = Book.Status.AVAILABLE
-    book.save(update_fields=["status", "city"])
-    notify_wishlists(book)
-    check_badges(request.user)
-    messages.success(request, "کتاب دوباره تو قفسه‌ی مبادله قرار گرفت.")
-    return redirect("books:detail", pk)
+    form = RelistForm(request.POST or None, default_city=request.user.city or book.city)
+    if request.method == "POST" and form.is_valid():
+        city = form.cleaned_data["city"]
+        book.city, book.status = city, Book.Status.AVAILABLE
+        book.save(update_fields=["status", "city"])
+        # قدم آخر «مسیر کتاب» اگه مقصدش نامعلوم مونده بود، حالا معلومه
+        step = book.journey.order_by("-date").first()
+        if step and step.to_city_id is None:
+            step.to_city = city
+            step.save(update_fields=["to_city"])
+        notify_wishlists(book)
+        check_badges(request.user)
+        messages.success(request, "کتاب دوباره تو قفسه‌ی مبادله قرار گرفت.")
+        return redirect("books:detail", pk)
+    return render(request, "books/relist.html", {"book": book, "form": form})
 
 
 @login_required
@@ -156,7 +171,7 @@ BULK_ROWS = 8
 def book_bulk_create(request):
     """چند کتاب پشت هم؛ ردیف‌های کاملاً خالی نادیده گرفته می‌شن."""
     RowSet = formset_factory(BulkRowForm, extra=BULK_ROWS, max_num=BULK_ROWS, validate_max=True)
-    common = BulkCommonForm(request.POST or None, initial={"city": request.user.city_id})
+    common = BulkCommonForm(request.POST or None, default_city=_default_city(request.user))
     rows = RowSet(request.POST or None)
     if request.method == "POST" and common.is_valid() and rows.is_valid():
         filled = [f.cleaned_data for f in rows if f.cleaned_data.get("title")]
@@ -242,3 +257,27 @@ def photo_delete(request, pk):
     photo.delete()
     messages.success(request, "عکس حذف شد.")
     return redirect("books:edit", book_pk)
+
+
+@throttle("suggest", 90, 60, by="auto", methods=("GET",), json=True)
+def suggest(request):
+    """پیشنهاد عنوان یا نویسنده هنگام تایپ، از کتاب‌های موجود تو سایت (kind=title|author)."""
+    kind = request.GET.get("kind", "title")
+    ws = words(request.GET.get("q", ""))
+    if not ws or sum(len(w) for w in ws) < 2:
+        return JsonResponse({"items": []})
+    qs = Book.objects.all()
+    for w in ws:
+        qs = qs.filter(search_text__contains=w)
+    if kind == "author":
+        rows = qs.order_by("author").values_list("author", flat=True).distinct()[:8]
+        return JsonResponse({"items": [{"author": a} for a in rows]})
+    seen, items = set(), []
+    for title, author, isbn in qs.order_by("-created_at").values_list("title", "author", "isbn")[:60]:
+        if (title, author) in seen:
+            continue
+        seen.add((title, author))
+        items.append({"title": title, "author": author, "isbn": isbn})
+        if len(items) == 8:
+            break
+    return JsonResponse({"items": items})

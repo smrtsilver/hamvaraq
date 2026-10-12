@@ -9,6 +9,7 @@ urlpatterns = [
     path("new/", views.book_create, name="create"),
     path("bulk/", views.book_bulk_create, name="bulk"),
     path("isbn/", views.isbn_view, name="isbn"),
+    path("suggest/", views.suggest, name="suggest"),
     path("mine/", views.my_books, name="mine"),
     path("wishlist/", views.wishlist, name="wishlist"),
     path("wishlist/<int:pk>/delete/", views.wishlist_delete, name="wishlist_delete"),

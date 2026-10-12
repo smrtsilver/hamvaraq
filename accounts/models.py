@@ -19,8 +19,8 @@ class User(AbstractUser):
     restricted_until = models.DateTimeField(null=True, blank=True, verbose_name="محدودیت تا")
     warnings = models.PositiveIntegerField(default=0, verbose_name="تعداد اخطار")
     # کنترل سوءاستفاده از امتیاز اولیه؛ هش آی‌پی (نه خود آی‌پی)، accounts/ip.py
-    signup_ip_hash = models.CharField(max_length=64, blank=True, db_index=True, editable=False)
-    last_ip_hash = models.CharField(max_length=64, blank=True, editable=False)
+    signup_ip_hash = models.CharField(max_length=64, blank=True, db_index=True, editable=False, verbose_name="هش شبکه‌ی ثبت‌نام")
+    last_ip_hash = models.CharField(max_length=64, blank=True, editable=False, verbose_name="هش شبکه‌ی آخرین ورود")
     welcome_granted = models.BooleanField(default=False, verbose_name="امتیاز خوش‌آمد گرفته")
 
     class Meta:
@@ -46,7 +46,7 @@ class User(AbstractUser):
 
 
 class Badge(models.Model):
-    code = models.SlugField(unique=True)
+    code = models.SlugField(unique=True, verbose_name="کد")
     name = models.CharField(max_length=60, verbose_name="نام")
     description = models.CharField(max_length=200, verbose_name="توضیح")
 
@@ -59,9 +59,9 @@ class Badge(models.Model):
 
 
 class UserBadge(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_badges")
-    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="user_badges")
-    awarded_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_badges", verbose_name="کاربر")
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name="user_badges", verbose_name="نشان")
+    awarded_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان دریافت")
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "badge"], name="uniq_user_badge")]

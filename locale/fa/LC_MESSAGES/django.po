@@ -1,0 +1,415 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hamvaraq\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Select this object for an action - {}"
+msgstr "انتخاب این مورد برای اجرای عملیات - {}"
+
+msgid "The app \"%s\" could not be found."
+msgstr "برنامه‌ی «%s» پیدا نشد."
+
+msgid "%(count)s %(name)s was changed successfully."
+msgid_plural "%(count)s %(name)s were changed successfully."
+msgstr[0] "%(count)s %(name)s با موفقیت تغییر کرد."
+msgstr[1] "%(count)s %(name)s با موفقیت تغییر کردند."
+
+msgid "%(total_count)s selected"
+msgid_plural "All %(total_count)s selected"
+msgstr[0] "%(total_count)s مورد انتخاب شد"
+msgstr[1] "همه‌ی %(total_count)s مورد انتخاب شد"
+
+msgid "%(class_name)s %(instance)s"
+msgstr "%(class_name)s %(instance)s"
+
+msgid ", "
+msgstr "، "
+
+msgid "…and %(count)d more object."
+msgid_plural "…and %(count)d more objects."
+msgstr[0] "…و %(count)d مورد دیگر."
+msgstr[1] "…و %(count)d مورد دیگر."
+
+msgid "Run"
+msgstr "اجرا"
+
+msgid "Breadcrumbs"
+msgstr "مسیر صفحه"
+
+msgid "Model name"
+msgstr "نام مدل"
+
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] "لطفاً خطای زیر را اصلاح کنید."
+msgstr[1] "لطفاً خطاهای زیر را اصلاح کنید."
+
+msgid ""
+"This action will <strong>enable</strong> password-based authentication for "
+"this user."
+msgstr "این کار ورود با رمز را برای این کاربر <strong>فعال</strong> می‌کند."
+
+msgid "Filter by %(field_name)s"
+msgstr "فیلتر بر اساس %(field_name)s"
+
+msgid "Pagination %(name)s entries"
+msgstr "صفحه‌بندی %(name)s"
+
+msgid "Pagination %(name)s"
+msgstr "صفحه‌بندی %(name)s"
+
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] "مورد"
+msgstr[1] "مورد"
+
+msgid "Search %(name)s"
+msgstr "جستجو در %(name)s"
+
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "%(counter)s نتیجه"
+msgstr[1] "%(counter)s نتیجه"
+
+msgid "Logout"
+msgstr "خروج"
+
+msgid "In case you’ve forgotten, you are:"
+msgstr "اگر فراموش کرده‌اید، شما این کاربر هستید:"
+
+msgid "Choose %s by selecting them and then select the \"Choose\" arrow button."
+msgstr ""
+"%s را انتخاب کنید و با دکمه‌ی فلش «انتخاب» به لیست انتخاب‌شده‌ها ببرید."
+
+msgid "Choose all %s"
+msgstr "انتخاب همه‌ی %s"
+
+msgid "Choose selected %s"
+msgstr "انتخاب %s برگزیده"
+
+msgid "Remove selected %s"
+msgstr "حذف %s برگزیده"
+
+msgid "Remove %s by selecting them and then select the \"Remove\" arrow button."
+msgstr "%s را انتخاب کنید و با دکمه‌ی فلش «حذف» از لیست بردارید."
+
+msgid "Type into this box to filter down the list of selected %s."
+msgstr "برای فیلتر کردن لیست %s، در این کادر بنویسید."
+
+msgid "(click to clear)"
+msgstr "(برای پاک کردن کلیک کنید)"
+
+msgid "Remove all %s"
+msgstr "حذف همه‌ی %s"
+
+msgid "%s selected option not visible"
+msgid_plural "%s selected options not visible"
+msgstr[0] "%s گزینه‌ی انتخاب‌شده دیده نمی‌شود"
+msgstr[1] "%s گزینه‌ی انتخاب‌شده دیده نمی‌شوند"
+
+msgid "%(sel)s of %(cnt)s selected"
+msgid_plural "%(sel)s of %(cnt)s selected"
+msgstr[0] "%(sel)s از %(cnt)s انتخاب شد"
+msgstr[1] "%(sel)s از %(cnt)s انتخاب شد"
+
+msgid ""
+"You have selected an action, and you haven’t made any changes on individual "
+"fields. You’re probably looking for the Run button rather than the Save "
+"button."
+msgstr ""
+"یک عملیات انتخاب کرده‌اید ولی تغییری در فیلدها نداده‌اید. احتمالاً دکمه‌ی "
+"«اجرا» را می‌خواهید، نه «ذخیره»."
+
+msgid "server"
+msgstr "سرور"
+
+msgid "Today (%(date)s)"
+msgstr "امروز (%(date)s)"
+
+msgid "Yesterday (%(date)s)"
+msgstr "دیروز (%(date)s)"
+
+msgid "Tomorrow (%(date)s)"
+msgstr "فردا (%(date)s)"
+
+msgid "Previous (%(month)s %(year)s)"
+msgstr "قبلی (%(month)s %(year)s)"
+
+msgid "Next (%(month)s %(year)s)"
+msgstr "بعدی (%(month)s %(year)s)"
+
+msgid "Sunday"
+msgstr "یکشنبه"
+
+msgid "Monday"
+msgstr "دوشنبه"
+
+msgid "Tuesday"
+msgstr "سه‌شنبه"
+
+msgid "Wednesday"
+msgstr "چهارشنبه"
+
+msgid "Thursday"
+msgstr "پنجشنبه"
+
+msgid "Friday"
+msgstr "جمعه"
+
+msgid "Saturday"
+msgstr "شنبه"
+
+msgid "Sun"
+msgstr "یک"
+
+msgid "Mon"
+msgstr "دو"
+
+msgid "Tue"
+msgstr "سه"
+
+msgid "Wed"
+msgstr "چهار"
+
+msgid "Thur"
+msgstr "پنج"
+
+msgid "Fri"
+msgstr "جمعه"
+
+msgid "Sat"
+msgstr "شنبه"
+
+msgid "%(month)s %(day)s, %(year)s"
+msgstr "%(day)s %(month)s %(year)s"
+
+msgid "%s (today, current selection)"
+msgstr "%s (امروز، انتخاب فعلی)"
+
+msgid "%s (today)"
+msgstr "%s (امروز)"
+
+msgid "%s (current selection)"
+msgstr "%s (انتخاب فعلی)"
+
+msgid "Conflicting form data submitted. Please try again."
+msgstr "داده‌های ارسالی با هم تداخل دارند. دوباره امتحان کنید."
+
+msgid "Password-based authentication was disabled."
+msgstr "ورود با رمز غیرفعال شد."
+
+msgid "Set password: %s"
+msgstr "تعیین رمز: %s"
+
+msgid "Reset password"
+msgstr "بازنشانی رمز"
+
+msgid "Set password"
+msgstr "تعیین رمز"
+
+msgid ""
+"Whether the user will be able to authenticate using a password or not. If "
+"disabled, they may still be able to authenticate using other backends, such "
+"as Single Sign-On or LDAP."
+msgstr ""
+"آیا کاربر می‌تواند با رمز وارد شود یا نه. اگر غیرفعال باشد شاید از راه‌های "
+"دیگر بتواند وارد شود."
+
+msgid "Password-based authentication"
+msgstr "ورود با رمز"
+
+msgid "Enabled"
+msgstr "فعال"
+
+msgid "Disabled"
+msgstr "غیرفعال"
+
+msgid ""
+"Raw passwords are not stored, so there is no way to see the user’s password."
+msgstr "رمزها به‌صورت خام ذخیره نمی‌شوند و راهی برای دیدن رمز کاربر نیست."
+
+msgid ""
+"Enable password-based authentication for this user by setting a password."
+msgstr "با تعیین رمز، ورود با رمز را برای این کاربر فعال کنید."
+
+msgid "salt"
+msgstr "نمک"
+
+msgid "hash"
+msgstr "هش"
+
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural ""
+"This password is too short. It must contain at least %d characters."
+msgstr[0] "این رمز خیلی کوتاه است؛ حداقل %d نویسه لازم است."
+msgstr[1] "این رمز خیلی کوتاه است؛ حداقل %d نویسه لازم است."
+
+msgid "Your password must contain at least %(min_length)d character."
+msgid_plural "Your password must contain at least %(min_length)d characters."
+msgstr[0] "رمز باید حداقل %(min_length)d نویسه باشد."
+msgstr[1] "رمز باید حداقل %(min_length)d نویسه باشد."
+
+msgid ""
+"Enter a valid username. This value may contain only unaccented lowercase a-z"
+" and uppercase A-Z letters, numbers, and @/./+/-/_ characters."
+msgstr "نام کاربری معتبر وارد کنید؛ فقط حرف، عدد و @ . + - _ مجازند."
+
+msgid "Enter a valid domain name."
+msgstr "نام دامنه‌ی معتبر وارد کنید."
+
+msgid "Enter a valid %(protocol)s address."
+msgstr "نشانی %(protocol)s معتبر وارد کنید."
+
+msgid "Ensure this value is a multiple of step size %(limit_value)s."
+msgstr "این مقدار باید مضرب %(limit_value)s باشد."
+
+msgid ""
+"Ensure this value has at least %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at least %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] ""
+"این مقدار باید حداقل %(limit_value)d نویسه باشد (الان %(show_value)d نویسه "
+"دارد)."
+msgstr[1] ""
+"این مقدار باید حداقل %(limit_value)d نویسه باشد (الان %(show_value)d نویسه "
+"دارد)."
+
+msgid ""
+"Ensure this value has at most %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at most %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] ""
+"این مقدار باید حداکثر %(limit_value)d نویسه باشد (الان %(show_value)d نویسه "
+"دارد)."
+msgstr[1] ""
+"این مقدار باید حداکثر %(limit_value)d نویسه باشد (الان %(show_value)d نویسه "
+"دارد)."
+
+msgid "Ensure that there are no more than %(max)s digit in total."
+msgid_plural "Ensure that there are no more than %(max)s digits in total."
+msgstr[0] "در مجموع حداکثر %(max)s رقم مجاز است."
+msgstr[1] "در مجموع حداکثر %(max)s رقم مجاز است."
+
+msgid "Ensure that there are no more than %(max)s decimal place."
+msgid_plural "Ensure that there are no more than %(max)s decimal places."
+msgstr[0] "حداکثر %(max)s رقم اعشار مجاز است."
+msgstr[1] "حداکثر %(max)s رقم اعشار مجاز است."
+
+msgid ""
+"Ensure that there are no more than %(max)s digit before the decimal point."
+msgid_plural ""
+"Ensure that there are no more than %(max)s digits before the decimal point."
+msgstr[0] "حداکثر %(max)s رقم قبل از ممیز مجاز است."
+msgstr[1] "حداکثر %(max)s رقم قبل از ممیز مجاز است."
+
+msgid "Constraint “%(name)s” is violated."
+msgstr "محدودیت «%(name)s» رعایت نشده است."
+
+msgid "- Select an option -"
+msgstr "انتخاب کنید"
+
+msgid "%(model)s instance with %(field)s %(value)r is not a valid choice."
+msgstr "%(model)s با %(field)s %(value)r گزینه‌ی معتبری نیست."
+
+msgid "Please submit at most %(num)d form."
+msgid_plural "Please submit at most %(num)d forms."
+msgstr[0] "حداکثر %(num)d فرم ارسال کنید."
+msgstr[1] "حداکثر %(num)d فرم ارسال کنید."
+
+msgid "Please submit at least %(num)d form."
+msgid_plural "Please submit at least %(num)d forms."
+msgstr[0] "حداقل %(num)d فرم ارسال کنید."
+msgstr[1] "حداقل %(num)d فرم ارسال کنید."
+
+msgid "No %s matches the given query."
+msgstr "هیچ %s با این جستجو یافت نشد."
+
+msgid "Ready"
+msgstr "آماده"
+
+msgid "Running"
+msgstr "در حال اجرا"
+
+msgid "Failed"
+msgstr "ناموفق"
+
+msgid "Successful"
+msgstr "موفق"
+
+msgid "%(size)d byte"
+msgid_plural "%(size)d bytes"
+msgstr[0] "%(size)d بایت"
+msgstr[1] "%(size)d بایت"
+
+msgid "%s KB"
+msgstr "%s کیلوبایت"
+
+msgid "%s MB"
+msgstr "%s مگابایت"
+
+msgid "%s GB"
+msgstr "%s گیگابایت"
+
+msgid "%s TB"
+msgstr "%s ترابایت"
+
+msgid "%s PB"
+msgstr "%s پتابایت"
+
+msgid "an hour ago"
+msgid_plural "%(count)s hours ago"
+msgstr[0] "یک ساعت پیش"
+msgstr[1] "%(count)s ساعت پیش"
+
+msgid "a minute ago"
+msgid_plural "%(count)s minutes ago"
+msgstr[0] "یک دقیقه پیش"
+msgstr[1] "%(count)s دقیقه پیش"
+
+msgid "%(num)d year"
+msgid_plural "%(num)d years"
+msgstr[0] "%(num)d سال"
+msgstr[1] "%(num)d سال"
+
+msgid "%(num)d month"
+msgid_plural "%(num)d months"
+msgstr[0] "%(num)d ماه"
+msgstr[1] "%(num)d ماه"
+
+msgid "%(num)d week"
+msgid_plural "%(num)d weeks"
+msgstr[0] "%(num)d هفته"
+msgstr[1] "%(num)d هفته"
+
+msgid "%(num)d day"
+msgid_plural "%(num)d days"
+msgstr[0] "%(num)d روز"
+msgstr[1] "%(num)d روز"
+
+msgid "%(num)d hour"
+msgid_plural "%(num)d hours"
+msgstr[0] "%(num)d ساعت"
+msgstr[1] "%(num)d ساعت"
+
+msgid "%(num)d minute"
+msgid_plural "%(num)d minutes"
+msgstr[0] "%(num)d دقیقه"
+msgstr[1] "%(num)d دقیقه"
+
+msgid "…"
+msgstr "…"
+
+msgid "%(truncated_text)s…"
+msgstr "%(truncated_text)s…"
+
+msgid ":"
+msgstr ":"

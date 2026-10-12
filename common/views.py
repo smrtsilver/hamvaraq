@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render
 
 from accounts.models import User
 from books.models import Book, BookJourney
-from common.models import City
+from common.models import City, Province
 from exchanges.models import Exchange
 
 
@@ -30,15 +30,37 @@ def healthz(request):
 
 
 def city_list(request):
-    cities = City.objects.annotate(
-        book_count=Count("books", filter=Q(books__status=Book.Status.AVAILABLE), distinct=True),
-    ).filter(book_count__gt=0).order_by("-book_count", "name")
-    return render(request, "common/city_list.html", {"cities": cities})
+    """استان‌ها با شهرهایی که کتاب موجود دارن (گروه‌بندی‌شده)."""
+    from django.db.models import Prefetch
+
+    live = City.objects.annotate(
+        book_count=Count("books", filter=Q(books__status=Book.Status.AVAILABLE), distinct=True)).filter(book_count__gt=0)
+    provinces = Province.objects.prefetch_related(Prefetch("cities", queryset=live.order_by("-book_count", "name"), to_attr="live_cities"))
+    groups = []
+    for province in provinces:
+        if province.live_cities:
+            groups.append({"province": province, "cities": province.live_cities,
+                           "total": sum(c.book_count for c in province.live_cities)})
+    groups.sort(key=lambda g: (-g["total"], g["province"].name))
+    return render(request, "common/city_list.html", {"groups": groups})
+
+
+def province_detail(request, pk):
+    province = get_object_or_404(Province, pk=pk)
+    available = Book.objects.filter(city__province=province, status=Book.Status.AVAILABLE)
+    cities = City.objects.filter(province=province).annotate(
+        book_count=Count("books", filter=Q(books__status=Book.Status.AVAILABLE), distinct=True)).filter(book_count__gt=0).order_by("-book_count", "name")
+    exchanged = BookJourney.objects.filter(Q(from_city__province=province) | Q(to_city__province=province)).count()
+    return render(request, "common/province_detail.html", {
+        "province": province, "cities": cities, "latest": available.select_related("city__province", "category")[:12],
+        "stats": {"available": available.count(), "exchanged": exchanged,
+                  "users": User.objects.filter(city__province=province, is_active=True).count()},
+    })
 
 
 def city_detail(request, pk):
     """آمار شهر. «دست‌به‌دست‌شده» یعنی مبادله‌ی کامل‌شده‌ای که مبدأ یا مقصدش این شهره."""
-    city = get_object_or_404(City, pk=pk)
+    city = get_object_or_404(City.objects.select_related("province"), pk=pk)
     available = Book.objects.filter(city=city, status=Book.Status.AVAILABLE)
     exchanged = BookJourney.objects.filter(Q(from_city=city) | Q(to_city=city)).count()
     stats = {
@@ -49,7 +71,7 @@ def city_detail(request, pk):
     top_categories = available.exclude(category=None).values("category__name").annotate(n=Count("id")).order_by("-n")[:5]
     return render(request, "common/city_detail.html", {
         "city": city, "stats": stats, "top_categories": top_categories,
-        "latest": available.select_related("city", "category")[:12],
+        "latest": available.select_related("city__province", "category")[:12],
     })
 
 

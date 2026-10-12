@@ -17,24 +17,24 @@ class Exchange(models.Model):
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requested_exchanges", verbose_name="درخواست‌دهنده")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="owned_exchanges", verbose_name="صاحب کتاب")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.REQUESTED, db_index=True, verbose_name="وضعیت")
-    owner_confirmed = models.BooleanField(default=False)
-    requester_confirmed = models.BooleanField(default=False)
+    owner_confirmed = models.BooleanField(default=False, verbose_name="تأیید تحویل توسط صاحب")
+    requester_confirmed = models.BooleanField(default=False, verbose_name="تأیید تحویل توسط گیرنده")
     # نقطه‌ی تحویل: یه نفر پیشنهاد می‌ده، طرف مقابل تأیید می‌کنه
     meeting_point = models.ForeignKey("common.MeetingPoint", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="نقطه‌ی تحویل")
-    meeting_proposed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
-    meeting_agreed = models.BooleanField(default=False)
+    meeting_proposed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="پیشنهاددهنده‌ی نقطه")
+    meeting_agreed = models.BooleanField(default=False, verbose_name="نقطه‌ی تحویل تأیید شد")
     # چرخه‌ی عمر برای یادآوری، انقضا و اختلاف (دستور expire_exchanges)
-    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     first_confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="اولین تأیید تحویل")
-    reminder_count = models.PositiveSmallIntegerField(default=0)
+    reminder_count = models.PositiveSmallIntegerField(default=0, verbose_name="تعداد یادآوری")
     disputed_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان اختلاف")
     resolution_note = models.CharField(max_length=300, blank=True, verbose_name="نتیجه‌ی رسیدگی")
     # آخرین باری که هر طرف چت رو دیده (برای شمارش پیام‌های خوانده‌نشده)
-    owner_read_at = models.DateTimeField(null=True, blank=True)
-    requester_read_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    owner_read_at = models.DateTimeField(null=True, blank=True, verbose_name="آخرین دیدن چت (صاحب)")
+    requester_read_at = models.DateTimeField(null=True, blank=True, verbose_name="آخرین دیدن چت (گیرنده)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین تغییر")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان تکمیل")
 
     class Meta:
         ordering = ["-updated_at"]
@@ -61,10 +61,10 @@ class Exchange(models.Model):
 
 
 class Message(models.Model):
-    exchange = models.ForeignKey(Exchange, on_delete=models.CASCADE, related_name="messages")
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")
+    exchange = models.ForeignKey(Exchange, on_delete=models.CASCADE, related_name="messages", verbose_name="مبادله")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="فرستنده")
     text = models.TextField(max_length=1000, verbose_name="پیام")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
 
     class Meta:
         ordering = ["created_at"]

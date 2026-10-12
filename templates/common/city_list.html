@@ -1,8 +1,12 @@
 {% extends "base.html" %}
-{% block title %}شهرها | هم‌ورق{% endblock %}
+{% block title %}شهرها و استان‌ها | هم‌ورق{% endblock %}
+{% block description %}کتاب‌های موجود برای مبادله در شهرها و استان‌های ایران.{% endblock %}
 {% block content %}
-<h1>شهرها</h1>
-<ul class="list">{% for c in cities %}
-    <li><a href="{% url 'city' c.pk %}">{{ c.name }}</a> <span class="pill">{{ c.book_count|fa }} کتاب موجود</span></li>
-{% empty %}<li class="muted">هنوز کتابی ثبت نشده.</li>{% endfor %}</ul>
+<h1>شهرها و استان‌ها</h1>
+{% for g in groups %}
+<section class="card">
+    <h2><a href="{% url 'province' g.province.pk %}">{{ g.province.name }}</a> <span class="pill">{{ g.total|fa }} کتاب</span></h2>
+    <p>{% for c in g.cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a> {% endfor %}</p>
+</section>
+{% empty %}<p class="muted">هنوز کتابی ثبت نشده.</p>{% endfor %}
 {% endblock %}

@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import UploadedFile
 
 from common.forms import PersianFormMixin
 from common.images import process_upload
-from common.models import City
+from common.location_forms import LocationMixin
 
 from .isbn import normalize as isbn_normalize
 from .models import Book, BookPhoto, Category, Review
@@ -37,21 +37,26 @@ def _check_size(f):
         raise forms.ValidationError("حجم هر عکس باید کمتر از ۵ مگابایت باشه.")
 
 
-class BookForm(PersianFormMixin, forms.ModelForm):
+class BookForm(LocationMixin, PersianFormMixin, forms.ModelForm):
     extra_photos = MultipleImageField(required=False, label="عکس‌های بیشتر",
                                       help_text=f"تا {BookPhoto.MAX_EXTRA} عکس دیگه (پشت جلد، وضعیت داخل کتاب…)")
 
     class Meta:
         model = Book
-        fields = ["title", "author", "isbn", "category", "condition", "city", "cover", "description"]
+        fields = ["title", "author", "isbn", "category", "condition", "cover", "description"]
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, default_city=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_location(city=self.instance.city if self.instance.pk else default_city, after="condition")
+        self.fields["category"].widget.attrs.update({"data-combobox": "", "data-placeholder": "جستجوی دسته…"})
         _isbn_widget(self.fields["isbn"], self.fields["title"], self.fields["author"])
         # تعداد جای خالی با توجه به عکس‌های فعلی (تو ویرایش)
         self.existing_extra = self.instance.photos.count() if self.instance.pk else 0
         self.fields["cover"].help_text = "عکس اصلی؛ بدون اطلاعات مکانی و فشرده ذخیره می‌شه."
+
+    def clean(self):
+        return self.clean_location(super().clean())
 
     def clean_isbn(self):
         return _clean_isbn(self.cleaned_data.get("isbn"))
@@ -73,6 +78,7 @@ class BookForm(PersianFormMixin, forms.ModelForm):
         return [process_upload(p) for p in photos]
 
     def save(self, commit=True):
+        self.instance.city = self.cleaned_data["city"]
         book = super().save(commit=commit)
         if commit:
             self.save_extra_photos(book)
@@ -84,11 +90,30 @@ class BookForm(PersianFormMixin, forms.ModelForm):
             BookPhoto.objects.create(book=book, image=image, position=start + i)
 
 
-class BookFilterForm(PersianFormMixin, forms.Form):
-    q = forms.CharField(required=False, label="جستجو")
-    city = forms.ModelChoiceField(City.objects.all(), required=False, empty_label="همه‌ی شهرها", label="شهر")
-    category = forms.ModelChoiceField(Category.objects.all(), required=False, empty_label="همه‌ی دسته‌ها", label="دسته")
+class BookFilterForm(LocationMixin, PersianFormMixin, forms.Form):
+    location_required = False
+    province_only_ok = True
+    location_empty = "همه"
+
+    q = forms.CharField(required=False, label="جستجو", widget=forms.TextInput(attrs={
+        "placeholder": "عنوان، نویسنده یا شابک", "autocomplete": "off", "enterkeyhint": "search", "type": "search"}))
+    category = forms.ModelChoiceField(Category.objects.all(), required=False, empty_label="همه‌ی دسته‌ها", label="دسته",
+                                      widget=forms.Select(attrs={"data-combobox": "", "data-placeholder": "جستجوی دسته…"}))
     condition = forms.ChoiceField(choices=[("", "همه‌ی وضعیت‌ها"), *Book.Condition.choices], required=False, label="وضعیت")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_location(after="q")
+
+    def clean(self):
+        cleaned = super().clean()
+        city, province = cleaned.get("city"), cleaned.get("province")
+        if city and province and city.province_id != province.pk:
+            cleaned["city"] = None  # لینک قدیمی/دستکاری‌شده: شهر نامربوط رو نادیده بگیر
+            self.errors.pop("city", None)
+        elif city and not province:
+            cleaned["province"] = city.province
+        return cleaned
 
 
 def _isbn_widget(isbn, title, author):
@@ -97,8 +122,9 @@ def _isbn_widget(isbn, title, author):
 
     isbn.widget.attrs["data-isbn-url"] = reverse("books:isbn")
     isbn.widget.attrs["placeholder"] = "اختیاری؛ عنوان و نویسنده خودکار پر می‌شه"
-    title.widget.attrs["data-isbn-title"] = ""
-    author.widget.attrs["data-isbn-author"] = ""
+    title.widget.attrs.update({"data-isbn-title": "", "data-suggest": "title", "autocomplete": "off"})
+    author.widget.attrs.update({"data-isbn-author": "", "data-suggest": "author", "autocomplete": "off"})
+    title.widget.attrs["data-suggest-url"] = author.widget.attrs["data-suggest-url"] = reverse("books:suggest")
 
 
 def _clean_isbn(value):
@@ -111,10 +137,16 @@ def _clean_isbn(value):
     return normalized
 
 
-class BulkCommonForm(PersianFormMixin, forms.Form):
+class BulkCommonForm(LocationMixin, PersianFormMixin, forms.Form):
     """مقدارهای مشترک بین همه‌ی کتاب‌های یه ثبت دسته‌ای."""
 
-    city = forms.ModelChoiceField(City.objects.all(), label="شهر")
+    def __init__(self, *args, default_city=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_location(city=default_city)
+
+    def clean(self):
+        return self.clean_location(super().clean())
+
     condition = forms.ChoiceField(choices=Book.Condition.choices, initial=Book.Condition.USED, label="وضعیت فیزیکی")
 
 
@@ -145,3 +177,14 @@ class ReviewForm(PersianFormMixin, forms.ModelForm):
         model = Review
         fields = ["stars", "text"]
         widgets = {"text": forms.Textarea(attrs={"rows": 3})}
+
+
+class RelistForm(LocationMixin, PersianFormMixin, forms.Form):
+    """ثبت مجدد کتاب گرفته‌شده: فقط شهر فعلی کتاب رو می‌پرسه."""
+
+    def __init__(self, *args, default_city=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_location(city=default_city)
+
+    def clean(self):
+        return self.clean_location(super().clean())

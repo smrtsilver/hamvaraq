@@ -85,6 +85,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "common.context_processors.site",
                 "notifications.context_processors.notifications",
                 "exchanges.context_processors.unread_chat",
             ],
@@ -131,6 +132,8 @@ THROTTLE_ENABLED = env.bool("THROTTLE_ENABLED", default=True)
 TRUST_PROXY_HEADERS = env.bool("TRUST_PROXY_HEADERS", default=False)
 
 LANGUAGE_CODE = "fa-ir"
+# ترجمه‌ی متن‌های ترجمه‌نشده‌ی جنگو (scripts/build_locale.py)
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
 USE_TZ = True

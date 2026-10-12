@@ -6,7 +6,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
-from common.views import city_detail, city_list, healthz, home, how_it_works, rules, staff_dashboard
+from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules, staff_dashboard
 
 urlpatterns = [
     path("", home, name="home"),
@@ -14,6 +14,7 @@ urlpatterns = [
     path("rules/", rules, name="rules"),
     path("cities/", city_list, name="cities"),
     path("cities/<int:pk>/", city_detail, name="city"),
+    path("provinces/<int:pk>/", province_detail, name="province"),
     path("staff/", staff_dashboard, name="staff_dashboard"),
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
     path("robots.txt", robots_txt, name="robots"),

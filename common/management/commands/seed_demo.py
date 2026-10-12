@@ -46,9 +46,10 @@ class Command(BaseCommand):
         if not settings.DEBUG:
             raise CommandError("seed_demo فقط با DEBUG=True اجرا می‌شه.")
         call_command("seed_basics", verbosity=0)
-        for name in {b[3] for b in BOOKS}:
-            City.objects.get_or_create(name=name)
-        cities = {c.name: c for c in City.objects.all()}
+        # نام شهرهای نمونه تو داده‌ی واقعی هستن (اگه نام تکراری بود اولین استان)
+        cities = {}
+        for city in City.objects.select_related("province").order_by("id"):
+            cities.setdefault(city.name, city)
         users = {}
         for name, city in USERS:
             u, created = User.objects.get_or_create(username=name, defaults={"city": cities[city], "points": 2})

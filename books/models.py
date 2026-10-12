@@ -34,13 +34,13 @@ class Book(models.Model):
     condition = models.CharField(max_length=8, choices=Condition.choices, default=Condition.USED, verbose_name="وضعیت فیزیکی")
     city = models.ForeignKey("common.City", on_delete=models.PROTECT, related_name="books", verbose_name="شهر")
     cover = models.ImageField(upload_to="books/%Y/%m/", blank=True, verbose_name="عکس")
-    cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False)
+    cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False, verbose_name="بند‌انگشتی")
     description = models.TextField(blank=True, verbose_name="توضیحات")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
     # فیلدهای کمکی جستجو؛ خودکار از عنوان/نویسنده/شابک ساخته می‌شن
-    search_text = models.TextField(blank=True, editable=False)
-    work_key = models.CharField(max_length=400, blank=True, db_index=True, editable=False)
+    search_text = models.TextField(blank=True, editable=False, verbose_name="متن جستجو")
+    work_key = models.CharField(max_length=400, blank=True, db_index=True, editable=False, verbose_name="کلید کتاب")
 
     class Meta:
         ordering = ["-created_at"]
@@ -84,9 +84,9 @@ class BookPhoto(models.Model):
 
     MAX_EXTRA = 4
 
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="photos")
-    image = models.ImageField(upload_to="books/%Y/%m/")
-    position = models.PositiveSmallIntegerField(default=0)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="photos", verbose_name="کتاب")
+    image = models.ImageField(upload_to="books/%Y/%m/", verbose_name="عکس")
+    position = models.PositiveSmallIntegerField(default=0, verbose_name="ترتیب")
 
     class Meta:
         ordering = ["position", "pk"]
@@ -97,9 +97,9 @@ class BookPhoto(models.Model):
 class Wishlist(models.Model):
     """کاربر عنوان، نویسنده یا شابک کتابی رو که می‌خواد ثبت می‌کنه."""
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wishes")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wishes", verbose_name="کاربر")
     text = models.CharField(max_length=200, verbose_name="عنوان، نویسنده یا شابک")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "text"], name="uniq_wish")]
@@ -114,11 +114,11 @@ class Wishlist(models.Model):
 class BookNote(models.Model):
     """یادداشت صاحب قبلی برای خواننده‌ی بعدی."""
 
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="notes")
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="book_notes")
-    exchange = models.OneToOneField("exchanges.Exchange", null=True, blank=True, on_delete=models.SET_NULL, related_name="note")
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="notes", verbose_name="کتاب")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="book_notes", verbose_name="نویسنده")
+    exchange = models.OneToOneField("exchanges.Exchange", null=True, blank=True, on_delete=models.SET_NULL, related_name="note", verbose_name="مبادله")
     text = models.CharField(max_length=500, verbose_name="یادداشت")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
 
     class Meta:
         ordering = ["-created_at"]
@@ -129,11 +129,11 @@ class BookNote(models.Model):
 class BookJourney(models.Model):
     """هر مبادله‌ی کامل‌شده یه قدم از مسیر کتابه."""
 
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="journey")
-    exchange = models.OneToOneField("exchanges.Exchange", on_delete=models.CASCADE, related_name="journey_step")
-    from_city = models.ForeignKey("common.City", null=True, on_delete=models.SET_NULL, related_name="+")
-    to_city = models.ForeignKey("common.City", null=True, on_delete=models.SET_NULL, related_name="+")
-    date = models.DateTimeField(auto_now_add=True)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="journey", verbose_name="کتاب")
+    exchange = models.OneToOneField("exchanges.Exchange", on_delete=models.CASCADE, related_name="journey_step", verbose_name="مبادله")
+    from_city = models.ForeignKey("common.City", null=True, on_delete=models.SET_NULL, related_name="+", verbose_name="شهر مبدأ")
+    to_city = models.ForeignKey("common.City", null=True, on_delete=models.SET_NULL, related_name="+", verbose_name="شهر مقصد")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ")
 
     class Meta:
         ordering = ["date"]
@@ -144,12 +144,12 @@ class BookJourney(models.Model):
 class Review(models.Model):
     """نقد و ستاره؛ فقط کسی که کتاب رو از طریق یه مبادله‌ی کامل‌شده گرفته می‌تونه بنویسه."""
 
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="reviews")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews")
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="reviews", verbose_name="کتاب")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews", verbose_name="کاربر")
     stars = models.PositiveSmallIntegerField(choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="ستاره")
     text = models.TextField(blank=True, max_length=1500, verbose_name="نقد")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین ویرایش")
 
     class Meta:
         constraints = [

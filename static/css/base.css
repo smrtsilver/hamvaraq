@@ -93,3 +93,16 @@ details.card summary{cursor:pointer;font-weight:700}
 }
 .form div:has(> input[type=checkbox]){flex-direction:row;align-items:center;gap:10px}
 .form input[type=checkbox]{width:20px;height:20px;accent-color:var(--g)}
+
+/* ---- combobox ---- */
+.combo{position:relative}
+.combo-native{position:absolute!important;opacity:0;pointer-events:none;height:1px;width:1px;overflow:hidden}
+.combo-input{width:100%;padding-inline-end:36px}
+.combo-clear{position:absolute;inset-inline-end:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:1.3rem;color:var(--mu);cursor:pointer;line-height:1}
+.combo-list{position:absolute;z-index:30;inset-inline:0;top:calc(100% + 4px);max-height:min(320px,45vh);overflow:auto;margin:0;padding:4px;list-style:none;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 10px 30px #0002}
+.combo-list li{padding:9px 12px;border-radius:8px;cursor:pointer}
+.combo-list li:hover,.combo-list li.is-active{background:#c6f6d555}
+.combo-list li[aria-selected=true]{font-weight:700;color:var(--g)}
+.combo-list .combo-empty{color:var(--mu);cursor:default}
+.chip{display:inline-block;padding:3px 12px;margin:2px;border:1px solid var(--bd);border-radius:999px;background:var(--card);color:var(--tx);font-size:.9rem}
+.chip:hover{border-color:var(--g);text-decoration:none}.chip small{color:var(--mu)}

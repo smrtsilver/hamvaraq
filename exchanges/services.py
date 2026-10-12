@@ -138,7 +138,7 @@ def _complete(ex):
     ex.completed_at = timezone.now()
     ex.save()
     User.objects.filter(pk=giver.pk).update(points=F("points") + 1)
-    BookJourney.objects.create(book=book, exchange=ex, from_city=book.city, to_city=receiver.city or book.city)
+    BookJourney.objects.create(book=book, exchange=ex, from_city=book.city, to_city=receiver.city)
     book.owner = receiver
     book.status = Book.Status.EXCHANGED
     if receiver.city_id:

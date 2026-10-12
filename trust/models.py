@@ -11,14 +11,14 @@ class Vote(models.Model):
         RUDE = "rude", "رفتار نامناسب"
         OTHER = "other", "دلیل دیگر"
 
-    exchange = models.ForeignKey("exchanges.Exchange", on_delete=models.CASCADE, related_name="votes")
-    voter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_given")
-    target = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_received")
+    exchange = models.ForeignKey("exchanges.Exchange", on_delete=models.CASCADE, related_name="votes", verbose_name="مبادله")
+    voter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_given", verbose_name="رأی‌دهنده")
+    target = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_received", verbose_name="رأی‌گیرنده")
     like = models.BooleanField(verbose_name="لایک")
     reason = models.CharField(max_length=14, choices=Reason.choices, blank=True, verbose_name="دلیل")
     comment = models.CharField(max_length=300, blank=True, verbose_name="توضیح")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین ویرایش")
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["exchange", "voter"], name="one_vote_per_side")]
@@ -60,8 +60,8 @@ class Report(models.Model):
     decision = models.CharField(max_length=12, choices=Decision.choices, blank=True, default="", verbose_name="تصمیم")
     decision_note = models.TextField(blank=True, verbose_name="دلیل تصمیم")
     handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="رسیدگی‌کننده")
-    created_at = models.DateTimeField(auto_now_add=True)
-    closed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    closed_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان بسته‌شدن")
 
     class Meta:
         ordering = ["-created_at"]

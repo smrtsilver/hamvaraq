@@ -20,7 +20,7 @@
 
         {% if is_owner %}
             {% if book.status == 'exchanged' %}
-                <form method="post" action="{% url 'books:relist' book.pk %}">{% csrf_token %}<button class="btn">دوباره برای مبادله بذار</button></form>
+                <a class="btn" href="{% url 'books:relist' book.pk %}">دوباره برای مبادله بذار</a>
             {% endif %}
             {% if book.status != 'reserved' %}<a class="btn btn-outline" href="{% url 'books:edit' book.pk %}">ویرایش</a>{% endif %}
             {% if book.status != 'reserved' %}<form method="post" action="{% url 'books:delete' book.pk %}" class="inline" onsubmit="return confirm('حذف بشه؟')">{% csrf_token %}<button class="link">حذف</button></form>{% endif %}

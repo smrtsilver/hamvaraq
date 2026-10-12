@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from books.models import Book
-from common.models import City
+from common.models import City, Province
 
 
 class StaticSitemap(Sitemap):
@@ -41,12 +41,23 @@ class CitySitemap(Sitemap):
         return reverse("city", args=[city.pk])
 
 
-SITEMAPS = {"static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap}
+class ProvinceSitemap(Sitemap):
+    changefreq = "daily"
+    priority = 0.5
+
+    def items(self):
+        return Province.objects.filter(cities__books__status=Book.Status.AVAILABLE).distinct()
+
+    def location(self, province):
+        return reverse("province", args=[province.pk])
+
+
+SITEMAPS = {"static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap, "provinces": ProvinceSitemap}
 
 # مسیرهای خصوصی: تو robots.txt بسته‌ان و هدر noindex هم می‌گیرن (RobotsHeaderMiddleware)
 PRIVATE_PREFIXES = (
     "/admin/", "/staff/", "/accounts/", "/exchanges/", "/notifications/", "/trust/",
-    "/books/new/", "/books/mine/", "/books/bulk/", "/books/wishlist/", "/books/isbn/",
+    "/books/new/", "/books/mine/", "/books/bulk/", "/books/wishlist/", "/books/isbn/", "/books/suggest/",
 )
 
 

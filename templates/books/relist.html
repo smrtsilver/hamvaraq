@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}دوباره بذار برای مبادله | هم‌ورق{% endblock %}
+{% block content %}
+<h1>«{{ book.title }}» رو دوباره بذار</h1>
+<p class="muted">کتاب الان کجاست؟ شهرش رو انتخاب کن تا کسایی که اون‌جان پیداش کنن.</p>
+<form method="post" class="card form" data-location-group>{% csrf_token %}{{ form.as_div }}<button class="btn">بذار تو قفسه‌ی مبادله</button></form>
+{% endblock %}

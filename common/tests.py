@@ -6,7 +6,13 @@ from django.utils import timezone
 
 from accounts.models import User
 from books.models import Book, Category, Wishlist
-from common.models import City
+from common.models import City, Province
+
+
+def make_city(name, province=None):
+    """شهر آزمایشی با استان؛ بدون آرگومان دوم، استان هم‌نام شهر."""
+    prov, _ = Province.objects.get_or_create(name=province or name)
+    return City.objects.get_or_create(province=prov, name=name)[0]
 from exchanges import services
 from exchanges.models import Exchange
 from notifications.models import Notification
@@ -17,8 +23,8 @@ from trust.services import apply_decision, reputation
 class Base(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.isfahan = City.objects.create(name="اصفهان")
-        cls.tehran = City.objects.create(name="تهران")
+        cls.isfahan = make_city("اصفهان")
+        cls.tehran = make_city("تهران")
         cls.cat = Category.objects.create(name="رمان")
         cls.giver = User.objects.create_user("giver", password="x12345678", city=cls.isfahan)
         cls.taker = User.objects.create_user("taker", password="x12345678", city=cls.tehran, points=1)
@@ -224,9 +230,13 @@ class BookTests(Base):
         self.client.post(reverse("exchanges:note", args=[ex.pk]), {"text": "بخون!"})
         self.assertEqual(ex.book.notes.count(), 1)
         self.client.login(username="taker", password="x12345678")
-        self.client.post(reverse("books:relist", args=[ex.book.pk]))
+        url = reverse("books:relist", args=[ex.book.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)       # فرم شهر
+        self.client.post(url, {})                                     # بدون شهر: ثبت نمی‌شه
+        ex.book.refresh_from_db(); self.assertEqual(ex.book.status, Book.Status.EXCHANGED)
+        self.client.post(url, {"province": self.tehran.province_id, "city": self.tehran.pk})
         ex.book.refresh_from_db()
-        self.assertEqual(ex.book.status, Book.Status.AVAILABLE)
+        self.assertEqual((ex.book.status, ex.book.city), (Book.Status.AVAILABLE, self.tehran))
 
     def test_pages_render(self):
         ex = self.complete()
@@ -330,12 +340,14 @@ class CityPageTests(Base):
         self.assertEqual(r.context["stats"]["exchanged"], 1)  # مقصد هم حساب می‌شه
         self.assertEqual(r.context["stats"]["available"], 0)  # کتاب گیرنده هنوز «مبادله‌شده»ست
 
-    def test_city_list_only_with_books(self):
+    def test_city_list_grouped_by_province_only_with_books(self):
         self.book()
         r = self.client.get(reverse("cities"))
-        self.assertEqual([c.name for c in r.context["cities"]], ["اصفهان"])
+        groups = r.context["groups"]
+        self.assertEqual([(g["province"].name, [c.name for c in g["cities"]]) for g in groups], [("اصفهان", ["اصفهان"])])
         self.assertEqual(self.client.get(reverse("city", args=[9999])).status_code, 404)
-
+        self.assertEqual(self.client.get(reverse("province", args=[self.isfahan.province_id])).context["stats"]["available"], 1)
+        self.assertEqual(self.client.get(reverse("province", args=[9999])).status_code, 404)
 
 class ReviewShelfChallengeTests(Base):
     def test_only_receiver_can_review_and_edit(self):
@@ -429,7 +441,7 @@ class MeetingAndCardTests(Base):
         from common.models import MeetingPoint
         self.p1 = MeetingPoint.objects.create(city=self.isfahan, name="میدان امام", kind="metro")
         self.p2 = MeetingPoint.objects.create(city=self.tehran, name="کافه کتاب", kind="cafe")
-        self.far = MeetingPoint.objects.create(city=City.objects.create(name="یزد"), name="دور", kind="cafe")
+        self.far = MeetingPoint.objects.create(city=make_city("یزد"), name="دور", kind="cafe")
         self.off = MeetingPoint.objects.create(city=self.isfahan, name="غیرفعال", kind="cafe", is_active=False)
         self.ex = services.request_book(self.book().pk, self.taker)
 
@@ -1185,3 +1197,222 @@ class PersianFormsTests(Base):
         r = self.client.get("/favicon.ico")
         self.assertEqual(r.status_code, 301)
         self.assertTrue(r["Location"].endswith("/static/favicon.svg"))
+
+
+class LocationTests(Base):
+    def test_clean_locations_rules(self):
+        from common.locations import clean_locations
+        raw = {"تبریز ": ["تبریز", "تبریز1", "تبریز2", "علی  آباد", "بندر عباس", "كاشان", "کاشان", "  "], "": ["x"]}
+        out = clean_locations(raw)
+        self.assertEqual(list(out), ["تبریز"])
+        self.assertEqual(out["تبریز"], sorted(["تبریز", "علی آباد", "بندرعباس", "کاشان"]))
+        self.assertEqual(clean_locations(out), out)  # idempotent
+
+    def test_shipped_data_is_clean_and_complete(self):
+        from common.locations import load_locations
+        data = load_locations()
+        self.assertEqual(len(data), 31)
+        self.assertGreater(sum(len(v) for v in data.values()), 1400)
+        for province, cities in data.items():
+            for name in cities:
+                self.assertNotRegex(name, r"\d")
+                self.assertEqual(name, " ".join(name.split()))
+        for p, c in (("تهران", "تهران"), ("اصفهان", "اصفهان"), ("خراسان رضوی", "مشهد"), ("فارس", "شیراز"), ("هرمزگان", "بندرعباس"),
+                     ("آذربایجان شرقی", "تبریز"), ("قم", "قم"), ("خوزستان", "اهواز")):
+            self.assertIn(c, data[p], (p, c))
+
+    def test_seed_command_idempotent_and_no_duplicates_of_existing(self):
+        from io import StringIO
+        from django.core.management import call_command
+        existing = make_city("بندر عباس", "هرمزگان")  # املای قدیمی
+        out = StringIO()
+        call_command("seed_iran_locations", stdout=out)
+        n = City.objects.count()
+        call_command("seed_iran_locations", stdout=StringIO())
+        self.assertEqual(City.objects.count(), n)
+        self.assertEqual(City.objects.filter(province__name="هرمزگان", name__in=["بندر عباس", "بندرعباس"]).count(), 1)
+        self.assertTrue(City.objects.filter(pk=existing.pk).exists())
+        self.assertEqual(Province.objects.count(), 31)  # استان‌های آزمایشی هم جزو همین ۳۱ تا هستن
+
+
+class LocationFormTests(Base):
+    def book_data(self, **kw):
+        return {"title": "الف", "author": "ب", "condition": "used", **kw}
+
+    def test_signup_has_no_location_fields(self):
+        html = self.client.get(reverse("accounts:signup")).content.decode()
+        self.assertNotIn('name="city"', html)
+        self.assertNotIn('name="province"', html)
+
+    def test_book_form_requires_city_matching_province(self):
+        from books.forms import BookForm
+        self.assertIn("city", BookForm(data=self.book_data()).errors)                      # شهر اجباری
+        bad = BookForm(data=self.book_data(province=self.tehran.province_id, city=self.isfahan.pk))
+        self.assertFalse(bad.is_valid())
+        self.assertIn("city", bad.errors)                                                   # نامربوط
+        ok = BookForm(data=self.book_data(city=self.isfahan.pk))                            # استان از شهر مشخص می‌شه
+        self.assertTrue(ok.is_valid(), ok.errors)
+        self.assertEqual(ok.cleaned_data["province"], self.isfahan.province)
+
+    def test_book_create_view_saves_city_and_defaults_to_profile_or_last_city(self):
+        self.client.login(username="giver", password="x12345678")
+        self.giver.city = None; self.giver.save()
+        page = self.client.get(reverse("books:create"))
+        self.assertIsNone(page.context["form"].initial.get("city"))
+        self.client.post(reverse("books:create"), self.book_data(province=self.tehran.province_id, city=self.tehran.pk))
+        self.assertEqual(Book.objects.get().city, self.tehran)
+        page = self.client.get(reverse("books:create"))
+        self.assertEqual(page.context["form"].initial["city"], self.tehran.pk)              # آخرین شهر
+        self.giver.city = self.isfahan; self.giver.save()
+        page = self.client.get(reverse("books:create"))
+        self.assertEqual(page.context["form"].initial["city"], self.isfahan.pk)            # پروفایل مقدم
+
+    def test_options_carry_province_for_cascade(self):
+        self.client.login(username="giver", password="x12345678")
+        html = self.client.get(reverse("books:create")).content.decode()
+        self.assertIn(f'data-province="{self.tehran.province_id}"', html)
+        self.assertIn('data-location="province"', html)
+        self.assertIn("اصفهان، اصفهان", html)  # بدون JS هم «شهر، استان»
+
+    def test_profile_location_optional_and_validated(self):
+        self.client.login(username="giver", password="x12345678")
+        url = reverse("accounts:settings")
+        self.assertEqual(self.client.post(url, {"email": ""}).status_code, 302)             # هیچ‌کدوم: اوکی
+        r = self.client.post(url, {"province": self.tehran.province_id, "city": ""})
+        self.assertEqual(r.status_code, 200)                                                # استان بی‌شهر: خطا
+        self.client.post(url, {"city": self.tehran.pk})
+        self.giver.refresh_from_db(); self.assertEqual(self.giver.city, self.tehran)
+        self.client.post(url, {"email": ""})
+        self.giver.refresh_from_db(); self.assertIsNone(self.giver.city)                    # پاک شد
+
+    def test_list_filter_by_province_city_and_mismatch(self):
+        a = self.book(title="اصفهانی")
+        Book.objects.create(owner=self.giver, title="تهرانی", author="ن", city=self.tehran)
+        names = lambda r: sorted(b.title for b in r.context["page"])
+        get = lambda **q: self.client.get(reverse("books:list"), q)
+        self.assertEqual(names(get(province=self.tehran.province_id)), ["تهرانی"])
+        self.assertEqual(names(get(city=self.isfahan.pk)), ["اصفهانی"])                     # فقط شهر هم کافیه
+        self.assertEqual(names(get(province=self.tehran.province_id, city=self.tehran.pk)), ["تهرانی"])
+        # لینک دستکاری‌شده: شهر نامربوط نادیده گرفته می‌شه و استان فیلتر می‌کنه
+        self.assertEqual(names(get(province=self.tehran.province_id, city=self.isfahan.pk)), ["تهرانی"])
+        self.assertEqual(a.city.full_name, "اصفهان، اصفهان")
+
+    def test_relist_fills_unknown_journey_destination(self):
+        taker = User.objects.create_user("nocity", password="x12345678", points=1)  # شهر نداره
+        ex = self.complete(self.book(), taker)
+        step = ex.book.journey.get(); self.assertIsNone(step.to_city)
+        self.client.login(username="nocity", password="x12345678")
+        self.client.post(reverse("books:relist", args=[ex.book.pk]), {"city": self.tehran.pk})
+        step.refresh_from_db(); self.assertEqual(step.to_city, self.tehran)
+
+
+def visible_text(html):
+    """متن دیده‌شده‌ی صفحه + مقدار صفات کاربرمحور (placeholder، title، alt، aria-label، value دکمه‌ها)."""
+    import re
+    from html import unescape
+    html = re.sub(r"<(script|style|svg)\b.*?</\1>", " ", html, flags=re.S | re.I)
+    html = re.sub(r"<!--.*?-->", " ", html, flags=re.S)
+    attrs = re.findall(r'\b(?:placeholder|title|alt|aria-label|aria-description)="([^"]*)"', html)
+    attrs += re.findall(r'<input[^>]+type="(?:submit|button)"[^>]*\bvalue="([^"]*)"', html)
+    head_title = re.findall(r"<title>(.*?)</title>", html, flags=re.S)
+    text = re.sub(r"<[^>]+>", " ", html)
+    return unescape(" ".join([text, *attrs, *head_title]))
+
+
+class NoEnglishAuditTests(TestCase):
+    """هیچ کلمه‌ی انگلیسی تو متن دیده‌شده‌ی صفحه‌ها، فرم‌ها و ادمین نباشه (داده‌ی کاربر فارسیه)."""
+
+    ALLOWED = ("hamvaraq.ir",)
+    maxDiff = None
+
+    @classmethod
+    def setUpTestData(cls):
+        import tempfile
+        cls.tehran = make_city("تهران")
+        cls.cat = Category.objects.create(name="رمان")
+        cls.a = User.objects.create_user("سارا", password="x12345678", city=cls.tehran, points=3)
+        cls.b = User.objects.create_user("علی", password="x12345678", city=cls.tehran, points=3)
+        cls.boss = User.objects.create_superuser("مدیر", password="x12345678")
+        cls.book = Book.objects.create(owner=cls.a, title="بوف کور", author="صادق هدایت", city=cls.tehran, category=cls.cat)
+        cls.b2 = Book.objects.create(owner=cls.b, title="کلیدر", author="دولت‌آبادی", city=cls.tehran, category=cls.cat)
+        from common.models import MeetingPoint
+        MeetingPoint.objects.create(city=cls.tehran, name="مترو شریعتی", kind="metro")
+        cls.ex = services.request_book(cls.book.pk, cls.b)
+        services.accept(cls.ex.pk, cls.a)
+        cls.done = None
+        cls._tmp = tempfile.mkdtemp()
+
+    def check(self, urls, label):
+        import re
+        bad = []
+        for url in urls:
+            r = self.client.get(url, follow=True)
+            self.assertLess(r.status_code, 400, url)
+            text = visible_text(r.content.decode())
+            for allowed in self.ALLOWED:
+                text = text.replace(allowed, "")
+            words = re.findall(r"[A-Za-z][A-Za-z'\-]+", text)
+            if words:
+                bad.append((url, sorted(set(words))[:8]))
+        self.assertEqual(bad, [], f"{label}: کلمه‌ی انگلیسی پیدا شد")
+
+    def test_guest_pages(self):
+        self.check(["/", "/books/", "/books/?q=بوف", f"/books/{self.book.pk}/", "/cities/", f"/cities/{self.tehran.pk}/",
+                   f"/provinces/{self.tehran.province_id}/", "/challenges/", "/how-it-works/", "/rules/", "/accounts/login/",
+                   "/accounts/signup/", "/accounts/password-reset/", "/offline/", "/accounts/u/سارا/"], "مهمان")
+
+    def test_member_pages(self):
+        self.client.login(username="علی", password="x12345678")
+        self.check(["/", "/books/new/", "/books/bulk/", "/books/mine/", "/books/wishlist/", "/exchanges/",
+                    f"/exchanges/{self.ex.pk}/", "/notifications/", "/accounts/settings/",
+                    f"/trust/report/book/{self.book.pk}/", f"/trust/report/user/{self.a.pk}/"], "عضو")
+
+    def test_admin_pages(self):
+        self.client.login(username="مدیر", password="x12345678")
+        urls = ["/admin/", "/staff/"]
+        for model in ("accounts/user", "accounts/badge", "accounts/userbadge", "books/book", "books/category", "books/review",
+                      "books/wishlist", "books/booknote", "books/bookjourney", "challenges/challenge", "common/city",
+                      "common/province", "common/meetingpoint", "common/sitesetting", "exchanges/exchange", "notifications/notification",
+                      "trust/report", "trust/vote"):
+            urls += [f"/admin/{model}/"] + ([] if model == "common/sitesetting" else [f"/admin/{model}/add/"])
+        urls.append("/admin/common/sitesetting/1/change/")
+        self.check(urls, "ادمین")
+
+    def test_completed_exchange_and_vote_pages(self):
+        ex = services.request_book(self.b2.pk, self.a)
+        services.accept(ex.pk, self.b); services.confirm(ex.pk, self.b); services.confirm(ex.pk, self.a)
+        self.client.login(username="سارا", password="x12345678")
+        self.check([f"/exchanges/{ex.pk}/", f"/books/{self.b2.pk}/", f"/books/{self.b2.pk}/relist/"], "مبادله‌ی کامل")
+
+
+class SuggestAndSettingsTests(Base):
+    def test_suggest_titles_authors_and_limits(self):
+        self.book(title="بوف کور"); Book.objects.create(owner=self.giver, title="بوف‌کور دوم", author="هدایت", city=self.isfahan)
+        r = self.client.get(reverse("books:suggest"), {"kind": "title", "q": "كور"})  # ک عربی هم کار می‌کنه
+        self.assertEqual(len(r.json()["items"]), 2)
+        self.assertEqual(self.client.get(reverse("books:suggest"), {"q": "ب"}).json(), {"items": []})  # خیلی کوتاه
+        self.assertEqual(self.client.get(reverse("books:suggest"), {"kind": "author", "q": "هدا"}).json(), {"items": [{"author": "هدایت"}]})
+        self.assertEqual(self.client.get(reverse("books:suggest"), {"q": "ناموجود"}).json(), {"items": []})
+
+    def test_form_wires_suggest_attributes(self):
+        self.client.login(username="giver", password="x12345678")
+        html = self.client.get(reverse("books:create")).content.decode()
+        self.assertIn('data-suggest="title"', html)
+        self.assertIn('data-suggest="author"', html)
+        self.assertIn(reverse("books:suggest"), html)
+
+    def test_site_setting_singleton_defaults_and_context(self):
+        from common.models import SiteSetting
+        s = SiteSetting.load()
+        self.assertEqual(s.pk, 1)
+        self.assertIn("بخوان", s.tagline)
+        s2 = SiteSetting(tagline="شعار تازه"); s2.save()
+        self.assertEqual(SiteSetting.objects.count(), 1)
+        self.assertEqual(SiteSetting.load().tagline, "شعار تازه")  # کش بعد از ذخیره پاک می‌شه
+        r = self.client.get("/")
+        self.assertEqual(r.context["site"].tagline, "شعار تازه")
+
+    def test_translations_override_django_english(self):
+        from django.utils.translation import gettext
+        self.assertEqual(gettext("- Select an option -"), "انتخاب کنید")
+        self.assertEqual(gettext("Breadcrumbs"), "مسیر صفحه")

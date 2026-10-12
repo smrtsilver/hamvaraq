@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
 from common.forms import PersianFormMixin
+from common.location_forms import LocationMixin
 
 from .models import User
 
@@ -14,7 +15,7 @@ class SignupForm(PersianFormMixin, UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("username", "email", "city")
+        fields = ("username", "email")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,7 +43,24 @@ class SignupForm(PersianFormMixin, UserCreationForm):
         return ""
 
 
-class ProfileForm(PersianFormMixin, forms.ModelForm):
+class ProfileForm(LocationMixin, PersianFormMixin, forms.ModelForm):
+    """شهر تو پروفایل اختیاریه؛ برای پیشنهاد نقطه‌ی تحویل و پیش‌فرض ثبت کتاب استفاده می‌شه."""
+
+    location_required = False
+
     class Meta:
         model = User
-        fields = ("city", "email")
+        fields = ("email",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_location(city=self.instance.city if self.instance.pk else None)
+        self.fields["email"].widget.attrs["autocomplete"] = "email"
+        self.fields["email"].help_text = "اختیاریه؛ فقط برای بازیابی رمز."
+
+    def clean(self):
+        return self.clean_location(super().clean())
+
+    def save(self, commit=True):
+        self.instance.city = self.cleaned_data.get("city")
+        return super().save(commit=commit)
