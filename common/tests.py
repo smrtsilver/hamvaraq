@@ -393,3 +393,31 @@ class ReviewShelfChallengeTests(Base):
         self.client.login(username="giver", password="x12345678")
         r = self.client.get(reverse("challenges:list"))
         self.assertEqual(r.context["items"][0]["percent"], 0)
+
+
+class SimilarTests(Base):
+    def test_same_work_people_books_and_category_fallback(self):
+        from books.services import same_work, similar_books
+        a = self.book(title="بوف کور")
+        copy = self.book(title="بوف کور", owner=self.taker)       # نسخه‌ی دیگه
+        other = self.book(title="سه قطره خون", owner=self.taker)    # مال کسی که نسخه‌ی دیگه رو داره
+        stranger = User.objects.create_user("s", password="x12345678")
+        unrelated = Book.objects.create(owner=stranger, title="درسی", author="ز", city=self.tehran)
+        same_cat = Book.objects.create(owner=stranger, title="رمان دیگر", author="ز", city=self.tehran, category=self.cat)
+        self.assertIn(copy, same_work(a))
+        got = similar_books(a)
+        self.assertEqual(got[0], other)        # اول هم‌سلیقه
+        self.assertIn(same_cat, got)           # بعد هم‌دسته
+        self.assertNotIn(unrelated, got)
+        self.assertNotIn(copy, got)            # خود کتاب نمی‌آد
+        self.assertNotIn(a, got)
+
+    def test_exchange_participants_count_and_isbn_match(self):
+        from books.services import similar_books
+        a = self.book(isbn="9780140328721")
+        ex = self.complete(a)                  # taker گرفته (a الان مال taker)
+        mine = Book.objects.create(owner=self.giver, title="آخرین", author="ن", city=self.isfahan)
+        c = Book.objects.create(owner=self.taker, title="x", author="y", city=self.tehran, isbn="9780140328721")
+        got = similar_books(c)
+        self.assertIn(mine, got)               # دهنده‌ی نسخه‌ی دیگه
+        self.assertTrue(self.client.get(reverse("books:detail", args=[c.pk])).status_code == 200)

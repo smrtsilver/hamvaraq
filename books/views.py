@@ -15,7 +15,7 @@ from exchanges.models import Exchange
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, ReviewForm
 from .models import Book, Review, Wishlist
-from .services import notify_wishlists
+from .services import notify_wishlists, similar_books
 
 
 def book_list(request):
@@ -51,6 +51,7 @@ def book_detail(request, pk):
         "rating": book.reviews.aggregate(avg=Avg("stars"), n=Count("id")),
         "review_form": ReviewForm(instance=my_review) if can_review else None,
         "my_review": my_review,
+        "similar": similar_books(book),
         "notes": book.notes.select_related("author"),
         "journey": book.journey.select_related("from_city", "to_city"),
         "is_owner": user.is_authenticated and book.owner_id == user.pk,

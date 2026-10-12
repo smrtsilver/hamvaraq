@@ -36,6 +36,8 @@
 {% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}
 {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card form"><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{{ review_form.as_div }}<button class="btn btn-sm">ثبت</button></form>{% endif %}
 
+{% if similar %}<h2>هم‌سلیقه‌ها</h2><p class="muted">کسایی که این کتاب رو داشتن، اینا رو هم دارن</p>{% include "books/_grid.html" with books=similar %}{% endif %}
+
 {% if notes %}<h2>یادداشت صاحبان قبلی</h2>
 {% for n in notes %}<blockquote>«{{ n.text }}» <span class="muted">— {{ n.author.username }}</span></blockquote>{% endfor %}{% endif %}
 
