@@ -1460,6 +1460,20 @@ class SuggestAndSettingsTests(Base):
         self.assertEqual(self.client.get(reverse("books:suggest"), {"kind": "author", "q": "هدا"}).json(), {"items": [{"author": "هدایت"}]})
         self.assertEqual(self.client.get(reverse("books:suggest"), {"q": "ناموجود"}).json(), {"items": []})
 
+    def test_quick_search_books_and_limits(self):
+        self.book(title="بوف کور"); Book.objects.create(owner=self.giver, title="کلیدر", author="دولت‌آبادی", city=self.isfahan)
+        d = self.client.get(reverse("books:quick"), {"q": "كور"}).json()  # ک عربی هم پیدا می‌شه
+        self.assertEqual([b["title"] for b in d["books"]], ["بوف کور"])
+        self.assertEqual(d["total"], 1)
+        self.assertEqual(self.client.get(reverse("books:quick"), {"q": "ب"}).json(), {"books": [], "posts": [], "total": 0})
+        self.assertEqual(self.client.get(reverse("books:quick"), {"q": "ناموجود"}).json()["total"], 0)
+
+    def test_search_dialog_is_in_every_page(self):
+        r = self.client.get("/")
+        self.assertContains(r, 'id="search-dialog"')
+        self.assertContains(r, "data-search-open")
+        self.assertContains(r, reverse("books:quick"))
+
     def test_form_wires_suggest_attributes(self):
         self.client.login(username="giver", password="x12345678")
         html = self.client.get(reverse("books:create")).content.decode()

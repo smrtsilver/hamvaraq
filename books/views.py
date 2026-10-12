@@ -268,6 +268,30 @@ def photo_delete(request, pk):
     return redirect("books:edit", book_pk)
 
 
+@throttle("quick", 90, 60, by="auto", methods=("GET",), json=True)
+def quick_search(request):
+    """نتیجه‌ی زنده‌ی پنجره‌ی جستجو: چند کتاب + چند معرفی‌نامه (عنوان/نویسنده/شابک، متن نرمال‌شده)."""
+    ws = words(request.GET.get("q", ""))
+    if not ws or sum(len(w) for w in ws) < 2:
+        return JsonResponse({"books": [], "posts": [], "total": 0})
+    qs = Book.objects.exclude(status=Book.Status.EXCHANGED)
+    for w in ws:
+        qs = qs.filter(search_text__contains=w)
+    total = qs.count()
+    books = [{
+        "title": b.title, "author": b.author, "city": b.city.name if b.city_id else "",
+        "thumb": b.thumb_url, "url": b.get_absolute_url(),
+        "free": b.status == Book.Status.AVAILABLE,
+    } for b in qs.select_related("city").order_by("-created_at")[:6]]
+    from posts.models import Post
+    pq = Post.objects.filter(status="published", published_at__lte=timezone.now())
+    for w in ws:
+        pq = pq.filter(search_text__contains=w)
+    posts = [{"title": p.title, "by": p.author.username, "url": p.get_absolute_url()}
+             for p in pq.select_related("author").order_by("-published_at")[:3]]
+    return JsonResponse({"books": books, "posts": posts, "total": total})
+
+
 @throttle("suggest", 90, 60, by="auto", methods=("GET",), json=True)
 def suggest(request):
     """پیشنهاد عنوان یا نویسنده هنگام تایپ، از کتاب‌های موجود تو سایت (kind=title|author)."""
