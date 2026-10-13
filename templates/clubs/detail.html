@@ -7,8 +7,8 @@
     <div class="grow"><h1>{{ club.name }}</h1>
         <p class="cc-meta"><span>{% include "components/icon.html" with name="user" %} {{ member_n|fa }} عضو</span><span>{% include "components/icon.html" with name="pin" %} {% if club.is_online %}آنلاین{% elif club.city %}{{ club.city.name }}{% endif %}</span><span>گرداننده: <a href="{% url 'accounts:profile' club.owner.username %}">{{ club.owner.username }}</a></span></p>
         {% if club.description %}<p class="club-desc">{{ club.description|linebreaksbr }}</p>{% endif %}</div>
-    <div class="club-actions">{% if user.is_authenticated %}{% if is_owner %}<a class="btn btn-secondary btn-sm" href="{% url 'clubs:edit' club.slug %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
-        <a class="btn btn-sm" href="{% url 'announcements:create' %}?club={{ club.slug|urlencode }}">{% include "components/icon.html" with name="calendar" %} قرار جلسه</a>
+    <div class="club-actions">{% if user.is_staff %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:create' %}?club={{ club.slug|urlencode }}">{% include "components/icon.html" with name="calendar" %} اعلام جلسه</a>{% endif %}{% if user.is_authenticated %}{% if is_owner %}<a class="btn btn-secondary btn-sm" href="{% url 'clubs:edit' club.slug %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
+
         {% else %}<form method="post" action="{% url 'clubs:join' club.slug %}">{% csrf_token %}<button class="btn{% if is_member %} btn-ghost{% endif %}">{% if is_member %}خروج از باشگاه{% else %}{% include "components/icon.html" with name="plus" %} عضو شو{% endif %}</button></form>{% endif %}
         {% else %}<a class="btn" href="{% url 'accounts:login' %}?next={{ request.path }}">برای عضویت وارد شو</a>{% endif %}</div>
 </section>
@@ -41,7 +41,7 @@
     </section>
     <div class="mt-16"></div>
     <section class="card" aria-labelledby="ev-h"><h2 id="ev-h" class="h3">جلسه‌های پیش‌رو</h2>
-        {% if events %}<div class="stack stack-sm">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div>{% else %}<p class="muted small">جلسه‌ای اعلام نشده.</p>{% endif %}</section>
+        {% if events %}<div class="stack stack-sm">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div>{% else %}<p class="muted small">جلسه‌ای اعلام نشده. جلسه‌ها رو مدیریت سایت اعلام می‌کنه؛ گرداننده می‌تونه تو گفت‌وگو قرار بذاره یا از «گزارش مشکل» درخواست بده.</p>{% endif %}</section>
     <section class="card mt-16" aria-labelledby="mem-h"><h2 id="mem-h" class="h3">عضوها</h2>
         <div class="member-faces">{% for m in members %}<a href="{% url 'accounts:profile' m.user.username %}" title="{{ m.user.username }}">{% include "components/avatar.html" with u=m.user size="sm" %}</a>{% endfor %}</div></section>
 </aside>

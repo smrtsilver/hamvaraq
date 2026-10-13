@@ -31,7 +31,8 @@
     </div>
     {% if item.body %}<section class="prose-card" aria-labelledby="ev-body-h"><h2 id="ev-body-h" class="desc-h">درباره‌ی این رویداد</h2><div class="rich rich-sm" data-collapse{% if item.body|length > 1400 %} data-long{% endif %}>{{ item.body|richtext }}</div></section>{% endif %}
     <div class="cluster mt-20">
-        {% if mine and item.submitted_by == user %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' item.pk %}">ویرایش</a>
+        {% if user.is_staff %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' item.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
+            <form method="post" action="{% url 'announcements:delete' item.pk %}" class="inline" data-confirm="این اطلاعیه برای همیشه حذف بشه؟" data-confirm-tone="danger" data-confirm-label="حذف">{% csrf_token %}<button class="btn btn-ghost btn-sm link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>
         {% elif user.is_authenticated and item.status == 'published' %}<a class="muted small" href="{% url 'trust:report' 'announcement' item.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
     </div>
 </article>

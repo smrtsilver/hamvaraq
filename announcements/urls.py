@@ -9,6 +9,7 @@ urlpatterns = [
     path("new/", views.announcement_create, name="create"),
     path("mine/", views.my_announcements, name="mine"),
     path("<int:pk>/edit/", views.announcement_edit, name="edit"),
+    path("<int:pk>/delete/", views.announcement_delete, name="delete"),
     path("<int:pk>/event.ics", views.announcement_ics, name="ics"),
     path("<int:pk>/bookmark/", views.toggle_bookmark, name="bookmark"),
     path("<int:pk>/<str:slug>/", views.announcement_detail, name="detail"),

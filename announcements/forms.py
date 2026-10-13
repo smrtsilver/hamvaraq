@@ -27,11 +27,11 @@ class AnnouncementForm(LocationMixin, PersianFormMixin, forms.ModelForm):
         self.setup_location(city=self.instance.city if self.instance.pk else None, after="ends_at")
         from clubs.models import Club
 
-        clubs = Club.objects.filter(owner=user, is_active=True) if user is not None else Club.objects.none()
+        clubs = Club.objects.filter(is_active=True) if user is not None and user.is_staff else Club.objects.none()
         if clubs.exists():
             self.fields["club"].queryset = clubs
             self.fields["club"].empty_label = "مربوط به باشگاهی نیست"
-            self.fields["club"].help_text = "جلسه‌ی باشگاه تو؟ انتخابش کن تا تو صفحه‌ی باشگاه هم دیده بشه."
+            self.fields["club"].help_text = "جلسه‌ی یه باشگاه کتابه؟ انتخابش کن تا تو صفحه‌ی همون باشگاه هم دیده بشه."
         else:
             del self.fields["club"]
         self.fields["link"].widget.attrs.update({"dir": "ltr", "placeholder": "نشانی صفحه‌ی ثبت‌نام یا اطلاعات بیشتر", "autocomplete": "off", "inputmode": "url"})

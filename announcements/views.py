@@ -2,7 +2,6 @@ import json
 from datetime import timedelta
 
 from django import forms
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -143,14 +142,24 @@ def toggle_bookmark(request, pk):
     return redirect(item)
 
 
-@login_required
-@throttle("announce", 10, 3600, by="user")
+def staff_only(view):
+    """اطلاعیه فقط کار مدیرهاست: مهمان ← صفحه‌ی ورود، کاربر عادی ← ۴۰۳ (روی خود آدرس، نه فقط پنهان‌کردن دکمه)."""
+    from functools import wraps
+
+    from django.core.exceptions import PermissionDenied
+
+    @wraps(view)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied("فقط مدیرها می‌تونن اطلاعیه ثبت یا ویرایش کنن.")
+        return view(request, *args, **kwargs)
+    return wrapper
+
+
+@staff_only
+@throttle("announce", 60, 3600, by="user")
 def announcement_create(request):
-    since = timezone.now() - timedelta(days=1)
-    if request.method == "POST" and not request.user.is_staff and \
-            Announcement.objects.filter(submitted_by=request.user, created_at__gte=since).count() >= settings.ANNOUNCEMENT_DAILY_LIMIT:
-        messages.error(request, "امروز به سقف تعداد اطلاعیه رسیدی؛ فردا دوباره امتحان کن.")
-        return redirect("announcements:mine")
     form = AnnouncementForm(request.POST or None, request.FILES or None, user=request.user,
                             initial={"city": request.user.city_id, "club": _club_initial(request)})
     if request.method == "POST" and form.is_valid():
@@ -163,17 +172,27 @@ def announcement_create(request):
     return render(request, "announcements/form.html", {"form": form, "title": "ثبت اطلاعیه"})
 
 
-@login_required
+@staff_only
 def announcement_edit(request, pk):
     item = get_object_or_404(Announcement, pk=pk)
-    if item.submitted_by_id != request.user.pk or item.status == Announcement.Status.PUBLISHED and not request.user.is_staff:
-        raise Http404
     form = AnnouncementForm(request.POST or None, request.FILES or None, instance=item, user=request.user)
     if request.method == "POST" and form.is_valid():
-        item = services.submit(form.save(commit=False), request.user)
-        messages.success(request, "تغییرات ذخیره شد و برای تأیید دوباره ارسال شد.")
-        return redirect("announcements:mine")
+        item = form.save()
+        messages.success(request, "تغییرات ذخیره شد.")
+        return redirect(item)
     return render(request, "announcements/form.html", {"form": form, "title": "ویرایش اطلاعیه", "item": item})
+
+
+@staff_only
+@require_POST
+def announcement_delete(request, pk):
+    from common.models import AuditLog
+
+    item = get_object_or_404(Announcement, pk=pk)
+    AuditLog.objects.create(actor=request.user, action="حذف اطلاعیه", target=f"«{item.title}»")
+    item.delete()
+    messages.success(request, "اطلاعیه حذف شد.")
+    return redirect("announcements:list")
 
 
 @login_required
@@ -185,4 +204,4 @@ def _club_initial(request):
     from clubs.models import Club
 
     slug = request.GET.get("club")
-    return Club.objects.filter(slug=slug, owner=request.user).values_list("pk", flat=True).first() if slug else None
+    return Club.objects.filter(slug=slug, is_active=True).values_list("pk", flat=True).first() if slug else None

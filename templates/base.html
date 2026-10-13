@@ -76,7 +76,7 @@
                         <a href="{% url 'support:mine' %}">{% include "components/icon.html" with name="flag" %} گزارش‌های من</a>
                         <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
                         <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
-                        <a href="{% url 'announcements:mine' %}">{% include "components/icon.html" with name="news" %} اطلاعیه‌های من</a>
+                        {% if user.is_staff %}<a href="{% url 'announcements:create' %}">{% include "components/icon.html" with name="news" %} ثبت اطلاعیه</a>{% endif %}
                         <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
                         <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %} تنظیمات اعلان</a>
                         {% if user.is_staff %}<hr><a href="{% url 'panel:index' %}">{% include "components/icon.html" with name="sparkle" %} پنل مدیریت{% if staff_todo %} <span class="pill pill-amber">{{ staff_todo|fa }}</span>{% endif %}</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}

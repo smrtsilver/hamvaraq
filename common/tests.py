@@ -1473,7 +1473,9 @@ class NoEnglishAuditTests(TestCase):
                 "/posts/by/سارا/"]
         self.check(urls, "مهمان محتوا")
         self.client.login(username="سارا", password="x12345678")
-        self.check(urls + ["/posts/new/", f"{post.get_absolute_url()}edit/", "/posts/mine/", "/announcements/new/", "/announcements/mine/"], "عضو محتوا")
+        self.check(urls + ["/posts/new/", f"{post.get_absolute_url()}edit/", "/posts/mine/", "/announcements/mine/"], "عضو محتوا")
+        self.client.force_login(self.boss)
+        self.check(["/announcements/new/"], "مدیر اطلاعیه")
 
     def test_completed_exchange_and_vote_pages(self):
         ex = services.request_book(self.b2.pk, self.a)
@@ -2130,13 +2132,17 @@ class AnnouncementTests(Base):
         news = self.make(kind="news", starts_at=None)
         self.assertEqual(self.client.get(reverse("announcements:ics", args=[news.pk])).status_code, 404)
 
-    def test_submit_form_jalali_pending_and_validation(self):
+    def test_submit_form_jalali_and_validation_staff_only(self):
         from announcements.models import Announcement
         self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.post(reverse("announcements:create"), self.form_data()).status_code, 403)   # کاربر عادی: رد روی خود آدرس
+        self.assertEqual(Announcement.objects.count(), 0)
+        User.objects.create_user("staff1", password="x12345678", is_staff=True)
+        self.client.login(username="staff1", password="x12345678")
         r = self.client.post(reverse("announcements:create"), self.form_data())
-        self.assertRedirects(r, reverse("announcements:mine"))
         a = Announcement.objects.get()
-        self.assertEqual((a.status, a.submitted_by), ("pending", self.taker))
+        self.assertRedirects(r, a.get_absolute_url(), fetch_redirect_response=False)
+        self.assertEqual(a.status, "published")
         local = timezone.localtime(a.starts_at)
         self.assertEqual((local.year, local.month, local.day, local.hour, local.minute), (2026, 12, 1, 17, 30))   # ۱۰ آذر ۱۴۰۵
         bad = lambda **kw: self.client.post(reverse("announcements:create"), self.form_data(**kw)).status_code
@@ -2144,8 +2150,6 @@ class AnnouncementTests(Base):
         self.assertEqual(bad(ends_at_0="1405", ends_at_1="9", ends_at_2="9"), 200)          # پایان قبل از شروع
         self.assertEqual(bad(city="", venue=""), 200)                                       # بدون شهر/محل
         self.assertEqual(Announcement.objects.count(), 1)
-        ok_news = self.client.post(reverse("announcements:create"), self.form_data(kind="news", starts_at_0="", starts_at_1="", starts_at_2="", city="", venue="", title="خبر"))
-        self.assertEqual(ok_news.status_code, 302)
 
     def test_staff_publish_immediately_and_city_notification(self):
         from announcements.models import Announcement
@@ -2178,22 +2182,23 @@ class AnnouncementTests(Base):
         self.client.post("/admin/announcements/announcement/", {"action": "reject_generic", "_selected_action": [r.pk]})
         r.refresh_from_db(); self.assertEqual(r.status, "rejected"); self.assertTrue(r.reject_reason)
 
-    def test_edit_rules_and_daily_limit(self):
+    def test_permission_matrix_edit_delete(self):
         from announcements.models import Announcement
-        item = self.make(status="rejected", submitted_by=self.taker)
-        pub = self.make(title="منتشر", submitted_by=self.taker)
-        self.client.login(username="taker", password="x12345678")
+        item = self.make(submitted_by=self.taker)
+        urls = [("get", reverse("announcements:create")), ("get", reverse("announcements:edit", args=[item.pk])),
+                ("post", reverse("announcements:delete", args=[item.pk]))]
+        for method, url in urls:                                                            # مهمان ← ورود
+            self.assertIn("/accounts/login/", getattr(self.client, method)(url).url)
+        self.client.login(username="taker", password="x12345678")                           # حتی ثبت‌کننده‌ی قبلی
+        for method, url in urls:
+            self.assertEqual(getattr(self.client, method)(url).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("announcements:list")), reverse("announcements:create"))
+        User.objects.create_user("staff2", password="x12345678", is_staff=True)
+        self.client.login(username="staff2", password="x12345678")
         self.assertEqual(self.client.get(reverse("announcements:edit", args=[item.pk])).status_code, 200)
-        self.assertEqual(self.client.get(reverse("announcements:edit", args=[pub.pk])).status_code, 404)    # منتشرشده قابل ویرایش نیست
-        self.client.login(username="giver", password="x12345678")
-        self.assertEqual(self.client.get(reverse("announcements:edit", args=[item.pk])).status_code, 404)   # مال دیگری
-        self.client.login(username="taker", password="x12345678")
-        Announcement.objects.filter(submitted_by=self.taker).delete()
-        for i in range(3):
-            self.client.post(reverse("announcements:create"), self.form_data(title=f"اطلاعیه {i}"))
-        r = self.client.post(reverse("announcements:create"), self.form_data(title="چهارمی"))
-        self.assertRedirects(r, reverse("announcements:mine"))
-        self.assertEqual(Announcement.objects.filter(submitted_by=self.taker).count(), 3)
+        self.assertContains(self.client.get(item.get_absolute_url()), reverse("announcements:delete", args=[item.pk]))
+        self.client.post(reverse("announcements:delete", args=[item.pk]))
+        self.assertFalse(Announcement.objects.filter(pk=item.pk).exists())
 
     def test_bookmark_toggle_and_reminder_command_once(self):
         from io import StringIO
@@ -2723,16 +2728,16 @@ class ClubTests(Base):
         self.assertEqual(len(r.context["events"]), 1)
         self.assertContains(self.client.get("/clubs/"), "همخوانی کلیدر")
 
-    def test_announcement_form_offers_only_owned_clubs(self):
+    def test_announcement_form_offers_clubs_only_to_staff(self):
         from clubs.models import Club
         Club.objects.create(name="باشگاه من", owner=self.giver)
-        Club.objects.create(name="مال دیگری", owner=self.taker)
-        self.client.force_login(self.giver)
+        Club.objects.create(name="غیرفعال", owner=self.taker, is_active=False)
+        User.objects.create_user("staff3", password="x12345678", is_staff=True)
+        self.client.login(username="staff3", password="x12345678")
         form = self.client.get("/announcements/new/").context["form"]
         self.assertEqual([c.name for c in form.fields["club"].queryset], ["باشگاه من"])
-        self.client.force_login(self.taker)
-        self.client.force_login(User.objects.create_user("noclub", password="x12345678"))
-        self.assertNotIn("club", self.client.get("/announcements/new/").context["form"].fields)
+        self.client.force_login(self.giver)                                                 # گرداننده‌ی باشگاه هم مدیر نیست
+        self.assertEqual(self.client.get("/announcements/new/").status_code, 403)
 
 
 class LaterFeatureTests(Base):
