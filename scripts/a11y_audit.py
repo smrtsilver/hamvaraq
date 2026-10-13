@@ -4,7 +4,7 @@
   python scripts/a11y_audit.py          # خروجی «NO VIOLATIONS» یعنی همه‌ی صفحه‌ها تمیزن
 تنظیم: AXE_PATH (پیش‌فرض /tmp/lh/node_modules/axe-core/axe.min.js)، CHROME_PATH، BASE_URL.
 """
-import asyncio, json
+import asyncio
 from playwright.async_api import async_playwright
 import os
 AX=os.environ.get('AXE_PATH','/tmp/lh/node_modules/axe-core/axe.min.js')
