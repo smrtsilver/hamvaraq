@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import shelf, views
 
 app_name = "books"
 
@@ -12,6 +12,10 @@ urlpatterns = [
     path("quick/", views.quick_search, name="quick"),
     path("suggest/", views.suggest, name="suggest"),
     path("mine/", views.my_books, name="mine"),
+    path("shelf/", shelf.my_shelf, name="shelf"),
+    path("shelf/add/", shelf.shelf_add, name="shelf_add"),
+    path("shelf/<int:pk>/", shelf.shelf_edit, name="shelf_edit"),
+    path("shelf/<int:pk>/delete/", shelf.shelf_delete, name="shelf_delete"),
     path("wishlist/", views.wishlist, name="wishlist"),
     path("wishlist/<int:pk>/delete/", views.wishlist_delete, name="wishlist_delete"),
     path("photo/<int:pk>/delete/", views.photo_delete, name="photo_delete"),

@@ -179,6 +179,12 @@ def _complete(ex):
     if receiver.city_id:
         book.city_id = receiver.city_id
     book.save(update_fields=["owner", "status", "city"])
+    # قفسه: کتاب از آگهی‌های دهنده جدا می‌شه (خودِ ردیف و نقدش می‌مونه) و به قفسه‌ی گیرنده اضافه می‌شه
+    from books.models import ShelfEntry
+
+    ShelfEntry.objects.filter(user=giver, book=book).update(book=None)
+    ShelfEntry.objects.get_or_create(user=receiver, book=book, defaults={
+        "title": book.title, "author": book.author, "isbn": book.isbn, "edition": book.edition, "reading_status": ShelfEntry.Reading.WANT})
     notify(giver, f"مبادله‌ی «{book.title}» کامل شد؛ ۱ امتیاز گرفتی. به {receiver.username} رأی بده.", _url(ex))
     notify(receiver, f"کتاب «{book.title}» مال توئه. به {giver.username} رأی بده.", _url(ex))
     check_badges(giver)

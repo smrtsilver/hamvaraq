@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from common.text import first_author, normalize, slugify_fa, work_key
 
@@ -310,3 +312,67 @@ class Review(models.Model):
         ordering = ["-created_at"]
         verbose_name = "نقد"
         verbose_name_plural = "نقدها"
+
+
+class ShelfEntry(models.Model):
+    """کتابخونه‌ی شخصی: هر کتابی که کاربر داره، خونده یا می‌خواد بخونه.
+    به‌طور پیش‌فرض برای معاوضه نیست؛ «قرار دادن برای معاوضه» یه آگهی Book می‌سازه و به book وصل می‌شه."""
+
+    class Reading(models.TextChoices):
+        READ = "read", "خوانده‌شده"
+        READING = "reading", "در حال خواندن"
+        WANT = "want", "می‌خواهم بخوانم"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shelf", verbose_name="کاربر")
+    book = models.ForeignKey(Book, null=True, blank=True, on_delete=models.SET_NULL, related_name="shelf_entries", verbose_name="آگهی معاوضه")
+    edition = models.ForeignKey(Edition, null=True, blank=True, on_delete=models.SET_NULL, related_name="shelf_entries", verbose_name="چاپ")
+    title = models.CharField(max_length=200, verbose_name="عنوان")
+    author = models.CharField(max_length=150, verbose_name="نویسنده")
+    isbn = models.CharField(max_length=20, blank=True, verbose_name="شابک")
+    reading_status = models.CharField(max_length=8, choices=Reading.choices, default=Reading.READ, db_index=True, verbose_name="وضعیت خواندن")
+    rating = models.PositiveSmallIntegerField(null=True, blank=True, choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="امتیاز")
+    review = models.TextField(blank=True, max_length=1500, verbose_name="نقد (عمومی)")
+    note = models.TextField(blank=True, max_length=3000, verbose_name="یادداشت (فقط برای خودت)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان افزودن")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین تغییر")
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "book"], condition=models.Q(book__isnull=False), name="one_entry_per_user_book"),
+            models.CheckConstraint(condition=models.Q(rating__isnull=True) | models.Q(rating__gte=1, rating__lte=5), name="shelf_rating_1_5"),
+        ]
+        indexes = [models.Index(fields=["user", "reading_status"])]
+        verbose_name = "کتاب قفسه"
+        verbose_name_plural = "کتاب‌های قفسه"
+
+    def __str__(self):
+        return f"{self.title} ({self.user})"
+
+    @property
+    def listing(self):
+        """آگهی فعال معاوضه (اگه هست)؛ آگهی حذف‌شده یا رفته به دست نفر بعدی حساب نمی‌شه."""
+        b = self.book
+        if b is None or b.deleted_at or b.owner_id != self.user_id:
+            return None
+        return b
+
+    @property
+    def for_exchange(self):
+        b = self.listing
+        return bool(b and b.status in (Book.Status.AVAILABLE, Book.Status.RESERVED))
+
+    def save(self, *args, **kwargs):
+        from .isbn import normalize_isbn
+
+        if self.isbn and not self.edition_id:
+            self.edition = Edition.objects.filter(isbn13=normalize_isbn(self.isbn) or "-").first()
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Book, weak=False, dispatch_uid="book_to_shelf")
+def _book_to_shelf(sender, instance, created, raw=False, **kwargs):
+    """هر آگهی تازه یه ردیف تو قفسه‌ی صاحبش داره؛ اگه آگهی از روی یه ردیف قفسه ساخته شده، ویو خودش وصلش می‌کنه."""
+    if created and not raw and not getattr(instance, "_from_shelf", False):
+        ShelfEntry.objects.get_or_create(user_id=instance.owner_id, book=instance, defaults={
+            "title": instance.title, "author": instance.author, "isbn": instance.isbn, "edition_id": instance.edition_id})

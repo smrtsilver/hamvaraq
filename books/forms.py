@@ -8,7 +8,7 @@ from common.location_forms import LocationMixin
 
 from .isbn import isbn_error
 from .isbn import normalize_isbn as isbn_normalize
-from .models import Book, BookPhoto, Category, Review
+from .models import Book, BookPhoto, Category, Review, ShelfEntry
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -193,3 +193,33 @@ class RelistForm(LocationMixin, PersianFormMixin, forms.Form):
 
     def clean(self):
         return self.clean_location(super().clean())
+
+
+class ShelfAddForm(PersianFormMixin, forms.ModelForm):
+    """افزودن سریع به قفسه: شابک (اختیاری؛ عنوان و نویسنده خودکار پر می‌شه)، عنوان، نویسنده، وضعیت خواندن."""
+
+    class Meta:
+        model = ShelfEntry
+        fields = ["isbn", "title", "author", "reading_status"]
+        widgets = {"reading_status": forms.RadioSelect}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _isbn_widget(self.fields["isbn"], self.fields["title"], self.fields["author"])
+        self.fields["isbn"].required = False
+
+    def clean_isbn(self):
+        return _clean_isbn(self.cleaned_data.get("isbn"))
+
+
+class ShelfEntryForm(ShelfAddForm):
+    class Meta(ShelfAddForm.Meta):
+        fields = ["reading_status", "rating", "review", "note", "title", "author", "isbn"]
+        widgets = {"reading_status": forms.RadioSelect, "rating": forms.RadioSelect,
+                   "review": forms.Textarea(attrs={"rows": 5, "placeholder": "نظرت درباره‌ی این کتاب؛ روی قفسه‌ات به بقیه نشون داده می‌شه."}),
+                   "note": forms.Textarea(attrs={"rows": 4, "placeholder": "فقط خودت می‌بینی: صفحه‌ای که رسیدی، جمله‌هایی که خوشت اومد…"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["rating"].required = False
+        self.fields["rating"].choices = [("", "بدون امتیاز")] + [(i, "★" * i) for i in range(1, 6)]

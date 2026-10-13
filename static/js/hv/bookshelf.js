@@ -42,18 +42,21 @@
     dlg.replaceChildren();
     var box = el("div", "bd");
     var cover = el("div", "bd-cover");
-    if (d.cover) { var im = document.createElement("img"); im.alt = ""; im.src = d.cover; cover.appendChild(im); } else cover.textContent = d.title;
+    if (d.cover) { var im = document.createElement("img"); im.alt = ""; im.src = d.cover; cover.appendChild(im); } else { cover.textContent = d.title; cover.classList.add("is-text"); }
     var info = el("div");
     var h = el("h2", "", d.title); info.append(h, el("p", "bd-author", d.author));
-    var chips = el("div", "cluster"); [d.status, d.cond, d.city].forEach(function (t) { if (t) chips.appendChild(chip(t)); });
+    var chips = el("div", "cluster");
+    if (d.status) chips.appendChild(chip(d.status));
+    if (d.swap) { var sw = chip("برای معاوضه"); sw.className = "ribbon-chip"; chips.appendChild(sw); }
     info.appendChild(chips);
-    if (d.added) info.appendChild(el("p", "small muted", "ثبت‌شده در " + d.added));
+    if (d.stars) info.appendChild(el("p", "stars bd-stars", "★★★★★".slice(0, +d.stars) + "☆☆☆☆☆".slice(0, 5 - d.stars)));
+    if (d.added) info.appendChild(el("p", "small muted", "تو قفسه از " + d.added));
     box.append(cover, info);
-    if (d.desc) box.appendChild(el("p", "bd-desc", d.desc));
-    var act = el("div", "bd-actions");
-    var go = el("a", "btn", "دیدن کتاب"); go.href = a.href;
+    if (d.desc) { var q = el("blockquote", "bd-desc", d.desc); box.appendChild(q); }
+    var act = el("div", "bd-actions"), go = null;
+    if (d.go && a.getAttribute("href") !== "#") { go = el("a", "btn", d.go); go.href = a.href; }
     var close = el("button", "btn btn-ghost", "بستن"); close.type = "button"; close.addEventListener("click", function () { dlg.close(); });
-    act.append(go, close); box.appendChild(act);
+    if (go) act.appendChild(go); act.appendChild(close); box.appendChild(act);
     dlg.appendChild(box);
     last = a; dlg.showModal();
   }

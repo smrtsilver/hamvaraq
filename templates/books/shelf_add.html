@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}افزودن به قفسه | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="narrow"><div class="page-head"><div><h1>افزودن به قفسه</h1><p>کتابی که داری، خوندی یا می‌خوای بخونی.</p></div></div>
+<div class="card">{% include "books/_shelf_add_form.html" %}</div></div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script>{% endblock %}

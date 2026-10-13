@@ -197,6 +197,14 @@ def story(request):
         book = p.book
         data.update(mode="review", text=p.excerpt, stars=p.rating or 0, user=p.author.username,
                     title=p.display_book_title, author=p.display_book_author)
+    eid = request.GET.get("entry", "")
+    if eid.isdigit() and request.user.is_authenticated:
+        from books.models import ShelfEntry
+
+        e = get_object_or_404(ShelfEntry.objects.select_related("book"), pk=eid, user=request.user)
+        data.update(mode="review", text=e.review, stars=e.rating or 0, user=request.user.username, title=e.title, author=e.author, slug=f"shelf-{e.pk}")
+        if e.listing and e.listing.cover:
+            data["cover"] = e.listing.cover.url
     bid = request.GET.get("book", "")
     if book is None and bid.isdigit():
         book = get_object_or_404(Book, pk=bid)

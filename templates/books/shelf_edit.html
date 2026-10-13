@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ entry.title }} | قفسه‌ی من | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="medium">
+<p class="small"><a href="{% url 'books:shelf' %}">قفسه‌ی من</a></p>
+<div class="entry-head">
+    <span class="eh-spine" aria-hidden="true"><span>{{ entry.title|truncatechars:24 }}</span></span>
+    <div><h1>{{ entry.title }}</h1><p class="muted">{{ entry.author }}</p>
+        <div class="cluster"><span class="pill">{{ entry.get_reading_status_display }}</span>{% if entry.for_exchange %}<span class="ribbon-chip">برای معاوضه</span>{% endif %}<span class="small muted">از {{ entry.created_at|jdate }} تو قفسه</span></div></div>
+</div>
+
+<section class="swap-box{% if entry.for_exchange %} is-on{% endif %}" aria-labelledby="swap-h">
+    <div><h2 id="swap-h">{% if entry.for_exchange %}این کتاب برای معاوضه گذاشته شده{% else %}فقط برای خودت{% endif %}</h2>
+        <p class="small">{% if entry.for_exchange %}بقیه می‌تونن درخواستش بدن. هر وقت خواستی از معاوضه برش دار؛ تو قفسه‌ات می‌مونه.{% else %}هیچ‌کس نمی‌تونه درخواستش بده. اگه دلت خواست کتاب بعدی کس دیگه‌ای باشه، برای معاوضه بذارش.{% endif %}</p></div>
+    {% if entry.for_exchange %}<a class="btn btn-secondary" href="{% url 'books:detail' entry.listing.pk %}">دیدن آگهی</a>
+        {% if entry.listing.status == 'available' %}<form method="post" action="{% url 'books:delete' entry.listing.pk %}" data-confirm="از معاوضه برداشته بشه؟ کتاب تو قفسه‌ات می‌مونه." data-confirm-label="برداشتن">{% csrf_token %}<input type="hidden" name="next" value="shelf"><button class="btn btn-ghost">برداشتن از معاوضه</button></form>{% endif %}
+    {% elif entry.listing and entry.listing.status == 'exchanged' %}<a class="btn" href="{% url 'books:relist' entry.listing.pk %}">{% include "components/icon.html" with name="swap" %} قرار دادن برای معاوضه</a>
+    {% else %}<a class="btn" href="{% url 'books:create' %}?shelf={{ entry.pk }}">{% include "components/icon.html" with name="swap" %} قرار دادن برای معاوضه</a>{% endif %}
+</section>
+
+<form method="post" class="card entry-form" novalidate data-isbn-scope>{% csrf_token %}
+    {% include "components/field.html" with field=form.reading_status %}
+    {% include "components/field.html" with field=form.rating %}
+    {% include "components/field.html" with field=form.review %}
+    {% include "components/field.html" with field=form.note %}
+    <details class="entry-more"><summary>مشخصات کتاب</summary>
+        {% include "components/field.html" with field=form.title %}{% include "components/field.html" with field=form.author %}{% include "components/field.html" with field=form.isbn %}</details>
+    <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ذخیره</button></div>
+</form>
+
+<section class="entry-create" aria-labelledby="create-h"><h2 id="create-h">از این کتاب بساز</h2>
+    <div class="create-grid">
+        {% if entry.review %}<a class="create-tile" href="{% url 'story' %}?entry={{ entry.pk }}">{% include "components/icon.html" with name="sparkle" %}<strong>استوری از نقدت</strong><span>نقدت با قالب‌های آماده</span></a>{% endif %}
+        <a class="create-tile" href="{% url 'story' %}?entry={{ entry.pk }}&amp;mode=quote">{% include "components/icon.html" with name="pen" %}<strong>نقل‌قول</strong><span>جمله‌ای که دوستش داشتی</span></a>
+        <a class="create-tile" href="{% url 'posts:create' %}?book_title={{ entry.title|urlencode }}&amp;book_author={{ entry.author|urlencode }}">{% include "components/icon.html" with name="news" %}<strong>نوشتن معرفی</strong><span>برای بقیه‌ی کتاب‌خوان‌ها</span></a>
+    </div></section>
+
+<form method="post" action="{% url 'books:shelf_delete' entry.pk %}" class="mt-24" data-confirm="این کتاب از قفسه‌ات برداشته بشه؟ نقد و یادداشتش هم پاک می‌شه." data-confirm-tone="danger" data-confirm-label="برداشتن">{% csrf_token %}<button class="btn btn-ghost link-danger btn-sm">{% include "components/icon.html" with name="trash" %} برداشتن از قفسه</button></form>
+</div>
+{% endblock %}

@@ -83,3 +83,16 @@ document.querySelectorAll("[data-share]").forEach((btn) => {
         } catch (_) { /* کاربر انصراف داد */ }
     });
 });
+
+// باز/بسته کردن دیالوگ‌های ساده (مثل برگه‌ی افزودن به قفسه)؛ بدون JS لینک به صفحه‌ی جدا می‌ره
+document.addEventListener("click", (e) => {
+    const open = e.target.closest("[data-open-dialog]");
+    if (open) {
+        const d = document.getElementById(open.dataset.openDialog);
+        if (d && d.showModal) { e.preventDefault(); d.showModal(); const f = d.querySelector("input:not([type=hidden])"); if (f) f.focus(); }
+        return;
+    }
+    const close = e.target.closest("[data-close-dialog]");
+    if (close) close.closest("dialog").close();
+    else if (e.target.matches("dialog.sheet")) e.target.close();
+});

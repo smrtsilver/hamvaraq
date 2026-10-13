@@ -987,3 +987,56 @@ input[aria-invalid=true]{border-color:var(--danger)}
   .story-stage{position:static}.story-canvas{max-width:250px}
   .story-actions .btn-lg{flex:1}
 }
+
+/* روبان معاوضه روی عطف + کارت کتاب قفسه */
+.sp-rib{position:absolute;top:0;inset-inline-start:7px;width:12px;height:38px;background:linear-gradient(#f2c55c,#c8902a);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%);box-shadow:0 2px 3px rgba(0,0,0,.4);z-index:1}
+.sp-swap .sp-b{box-shadow:3px 0 5px rgba(0,0,0,.45),inset 0 3px 0 rgba(255,255,255,.14),0 0 0 2px rgba(242,197,92,.55)}
+.ribbon-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:var(--r-pill);background:linear-gradient(#f6d27a,#e0a43a);color:#3a2600;font-size:var(--fs-xs);font-weight:800;line-height:1.9}
+.book-dialog .bd-stars{margin:4px 0;color:var(--accent);letter-spacing:2px}
+.book-dialog blockquote.bd-desc{margin:0;padding:10px 14px;border-inline-start:3px solid var(--accent);background:var(--accent-soft);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:var(--fs-sm);line-height:2;color:var(--ink)}
+.book-dialog .bd-cover.is-text{background:linear-gradient(145deg,#7a5230,#3b2411);font-size:var(--fs-sm)}
+
+/* ===== قفسه‌ی من (مدیریت) ===== */
+.shelf-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 12px;margin-bottom:6px}
+.shelf-tabs::-webkit-scrollbar{display:none}
+.shelf-tabs a{flex:none;display:inline-flex;gap:6px;align-items:center;padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font-weight:700;font-size:var(--fs-sm);min-height:40px}
+.shelf-tabs a b{font-weight:800;color:var(--ink-3)}.shelf-tabs a:hover{text-decoration:none}
+.shelf-tabs a[aria-current=page]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}.shelf-tabs a[aria-current=page] b{color:inherit;opacity:.8}
+.shelf-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.shelf-row{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-1);color:inherit;transition:transform .15s var(--ease),border-color .15s}
+.shelf-row:hover{text-decoration:none;color:inherit;border-color:var(--primary);transform:translateY(-1px)}
+.shelf-row>.i{color:var(--ink-3);flex:none}
+.sr-spine{position:relative;flex:none;width:16px;height:58px;border-radius:3px;background:linear-gradient(90deg,rgba(0,0,0,.3),rgba(255,255,255,.12) 40%,rgba(0,0,0,.3)),#7a5230;box-shadow:2px 0 3px rgba(0,0,0,.25)}
+.shelf-list li:nth-child(4n+1) .sr-spine{background-color:#1F6F54}.shelf-list li:nth-child(4n+2) .sr-spine{background-color:#7a2e2e}.shelf-list li:nth-child(4n+3) .sr-spine{background-color:#2b4c7e}
+.sr-spine.has-ribbon::after{content:"";position:absolute;top:0;inset-inline-start:3px;width:8px;height:20px;background:#e0a43a;clip-path:polygon(0 0,100% 0,100% 100%,50% 75%,0 100%)}
+.sr-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.sr-main strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}.sr-meta .stars{color:var(--accent);font-size:.85rem}
+.sheet{width:min(560px,100vw)}
+.sheet-in{padding:20px}.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.sheet-head h2{margin:0;font-size:var(--fs-lg)}
+@media (max-width:640px){
+  .sheet{margin:auto 0 0;max-width:100vw;width:100vw;max-height:92dvh;border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+  .sheet[open]{animation:hv-sheet .28s var(--ease)}
+}
+@keyframes hv-sheet{from{transform:translateY(40px);opacity:.4}}
+.entry-head{display:flex;gap:18px;align-items:flex-start;margin-bottom:18px}
+.entry-head h1{margin:0;font-size:var(--fs-4)}.entry-head p{margin:0 0 8px}
+.eh-spine{flex:none;display:grid;place-items:center;width:58px;height:150px;border-radius:4px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.12) 30%,rgba(0,0,0,.35)),#7a5230;color:#f6e7c8;box-shadow:4px 6px 10px rgba(0,0,0,.25)}
+.eh-spine span{writing-mode:vertical-rl;font-weight:800;font-size:12px;max-height:130px;overflow:hidden}
+.swap-box{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;padding:16px 18px;border-radius:var(--r-lg);border:1px dashed var(--line);background:var(--surface-2);margin-bottom:18px}
+.swap-box h2{margin:0 0 4px;font-size:var(--fs)}.swap-box p{margin:0;color:var(--ink-3)}.swap-box>div{flex:1 1 220px}
+.swap-box.is-on{border-style:solid;border-color:#e0a43a;background:linear-gradient(135deg,var(--accent-soft),var(--surface))}
+.swap-box form{margin:0}
+.entry-more{margin-bottom:12px}.entry-more summary{cursor:pointer;font-weight:700;color:var(--ink-2);padding:8px 0}
+.entry-create{margin-top:24px}.entry-create h2{font-size:var(--fs-lg)}
+.create-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.create-tile{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);color:inherit;box-shadow:var(--shadow-1);transition:transform .15s var(--ease)}
+.create-tile:hover{text-decoration:none;color:inherit;transform:translateY(-2px);border-color:var(--primary)}
+.create-tile .i{width:26px;height:26px;color:var(--primary)}.create-tile span{font-size:var(--fs-xs);color:var(--ink-3)}
+.sp-swap .sp-b{padding-top:44px}
+.entry-form .choice-row,.shelf-add-form .choice-row{display:flex;flex-wrap:wrap;gap:8px}
+.entry-form .choice,.shelf-add-form .choice{flex:0 0 auto;min-height:42px;padding:6px 14px;border-radius:var(--r-pill)}
+.entry-form [name=rating]+span{color:var(--accent);letter-spacing:1px}
+.entry-form .choice-row,.shelf-add-form .choice-row{justify-content:flex-start;gap:6px}
+.entry-form .choice,.shelf-add-form .choice{gap:6px;padding:4px 12px;min-height:40px;font-size:var(--fs-sm)}
+.entry-form .choice input,.shelf-add-form .choice input{width:16px;height:16px}
+.entry-form fieldset.field{margin-bottom:14px}

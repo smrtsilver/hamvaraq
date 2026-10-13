@@ -434,10 +434,14 @@ class ReviewShelfChallengeTests(Base):
         self.book(title="موجود")
         self.book(title="رزرو", status=Book.Status.RESERVED)
         r = self.client.get(reverse("accounts:profile", args=["giver"]))
-        self.assertEqual([b.title for b in r.context["books"]], ["موجود"])
+        self.assertEqual(sorted(e.title for e in r.context["books"]), ["رزرو", "موجود"])    # قفسه = همه‌ی کتاب‌های صاحب
         self.complete(self.book(title="رفت"))
         r = self.client.get(reverse("accounts:profile", args=["taker"]))
-        self.assertEqual([b.title for b in r.context["books"]], ["رفت"])  # گرفته و هنوز نذاشته
+        self.assertEqual([e.title for e in r.context["books"]], ["رفت"])   # کتاب گرفته‌شده به قفسه‌ی گیرنده اضافه می‌شه
+        self.assertEqual(r.context["books"][0].reading_status, "want")
+        r = self.client.get(reverse("accounts:profile", args=["giver"]))
+        self.assertIn("رفت", [e.title for e in r.context["books"]])          # دهنده هم نگهش می‌داره، ولی دیگه برای معاوضه نیست
+        self.assertFalse(next(e for e in r.context["books"] if e.title == "رفت").for_exchange)
 
     def _challenge(self, **kw):
         from challenges.models import Challenge
@@ -2546,13 +2550,15 @@ class WoodenShelfTests(Base):
         r = self.client.get(f"/accounts/u/{self.giver.username}/")
         self.assertContains(r, 'class="wshelf"')
         self.assertContains(r, 'data-title="سووشون"')
-        self.assertContains(r, 'data-desc="داستانی از شیراز"')
+        self.assertContains(r, "sp-swap")          # آگهی فعال = روبان معاوضه
         self.assertContains(r, "data-wshelf-more")
 
     def test_profile_shelf_is_capped(self):
-        Book.objects.bulk_create([Book(owner=self.giver, title=f"ک{i}", author="الف", city=self.isfahan) for i in range(130)])
+        from books.models import ShelfEntry
+        ShelfEntry.objects.bulk_create([ShelfEntry(user=self.giver, title=f"ک{i}", author="الف") for i in range(130)])
         r = self.client.get(f"/accounts/u/{self.giver.username}/")
         self.assertEqual(len(r.context["books"]), 120)
+        self.assertEqual(r.context["shelf_count"], 130)
 
 
 class StoryStudioTests(Base):
@@ -2573,3 +2579,50 @@ class StoryStudioTests(Base):
         form = r.context["form"]
         self.assertEqual(form.initial["body"], "> خط اول\n> خط دوم\n\n")
         self.assertEqual(form.initial["title"], "نقل‌قولی از «سووشون»")
+
+
+class PersonalShelfTests(Base):
+    def setUp(self):
+        self.client.force_login(self.giver)
+
+    def test_add_is_personal_not_exchange(self):
+        from books.models import ShelfEntry
+        r = self.client.post("/books/shelf/add/", {"title": "سووشون", "author": "دانشور", "isbn": "", "reading_status": "reading"})
+        e = ShelfEntry.objects.get(user=self.giver, title="سووشون")
+        self.assertRedirects(r, f"/books/shelf/{e.pk}/")
+        self.assertFalse(e.for_exchange)
+        self.assertFalse(Book.objects.filter(title="سووشون").exists())     # تو فهرست معاوضه نیست
+
+    def test_edit_review_note_and_privacy(self):
+        from books.models import ShelfEntry
+        e = ShelfEntry.objects.create(user=self.giver, title="کلیدر", author="دولت‌آبادی")
+        self.client.post(f"/books/shelf/{e.pk}/", {"reading_status": "read", "rating": "5", "review": "شاهکار", "note": "یادداشت خصوصی من", "title": "کلیدر", "author": "دولت‌آبادی", "isbn": ""})
+        e.refresh_from_db()
+        self.assertEqual((e.rating, e.review, e.note), (5, "شاهکار", "یادداشت خصوصی من"))
+        self.client.logout()
+        r = self.client.get("/accounts/u/giver/")
+        self.assertContains(r, "شاهکار")
+        self.assertNotContains(r, "یادداشت خصوصی من")
+        self.client.force_login(self.taker)
+        self.assertEqual(self.client.get(f"/books/shelf/{e.pk}/").status_code, 404)    # فقط صاحب قفسه
+
+    def test_list_for_exchange_links_entry_and_unlist_keeps_it(self):
+        from books.models import ShelfEntry
+        e = ShelfEntry.objects.create(user=self.giver, title="بوف کور", author="هدایت")
+        r = self.client.get(f"/books/new/?shelf={e.pk}")
+        self.assertEqual(r.context["form"].initial["title"], "بوف کور")
+        self.client.post(f"/books/new/?shelf={e.pk}", {"shelf": e.pk, "title": "بوف کور", "author": "هدایت", "isbn": "", "condition": "used",
+                                                         "province": self.isfahan.province_id, "city": self.isfahan.pk, "description": ""})
+        e.refresh_from_db()
+        self.assertTrue(e.for_exchange)
+        self.assertEqual(ShelfEntry.objects.filter(user=self.giver).count(), 1)      # ردیف تکراری ساخته نشد
+        r = self.client.post(f"/books/{e.book_id}/delete/", {"next": "shelf"})
+        self.assertRedirects(r, f"/books/shelf/{e.pk}/")
+        e.refresh_from_db()
+        self.assertFalse(e.for_exchange)
+
+    def test_story_from_entry_review(self):
+        from books.models import ShelfEntry
+        e = ShelfEntry.objects.create(user=self.giver, title="سووشون", author="دانشور", review="خواندنی", rating=4)
+        r = self.client.get(f"/story/?entry={e.pk}")
+        self.assertEqual((r.context["story"]["text"], r.context["story"]["stars"]), ("خواندنی", 4))

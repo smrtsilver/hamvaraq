@@ -1,0 +1,11 @@
+<form method="post" action="{% url 'books:shelf_add' %}" class="shelf-add-form" data-isbn-scope novalidate>{% csrf_token %}
+    {% for e in add_form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
+    <div class="cluster jc-between"><span class="small muted">شابک رو بزن تا عنوان و نویسنده خودکار پر بشه.</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-scan data-scan-target="{{ add_form.isbn.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} اسکن بارکد</button></div>
+    {% include "components/field.html" with field=add_form.isbn %}
+    {% include "components/field.html" with field=add_form.title %}
+    {% include "components/field.html" with field=add_form.author %}
+    {% include "components/field.html" with field=add_form.reading_status %}
+    <p class="hint">این کتاب فقط تو قفسه‌ی تو می‌شینه و برای معاوضه نیست؛ هر وقت خواستی از صفحه‌ی خودش «قرار دادن برای معاوضه» رو بزن.</p>
+    <button class="btn btn-lg btn-block">{% include "components/icon.html" with name="plus" %} افزودن به قفسه</button>
+</form>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Book, BookJourney, BookPhoto, BookNote, Category, Review, Wishlist
+from .models import Book, BookJourney, BookPhoto, BookNote, Category, Review, ShelfEntry, Wishlist
 
 
 class BookPhotoInline(admin.TabularInline):
@@ -44,3 +44,12 @@ class EditionAdmin(admin.ModelAdmin):
             edition.verified = True
             edition.confidence = max(edition.confidence, 90)
             edition.save(update_fields=["verified", "confidence", "updated_at"])
+
+
+@admin.register(ShelfEntry)
+class ShelfEntryAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "user", "reading_status", "rating", "created_at")
+    list_filter = ("reading_status",)
+    search_fields = ("title", "author", "user__username")
+    raw_id_fields = ("user", "book", "edition")
+    exclude = ("note",)          # یادداشت خصوصیه؛ حتی مدیر هم تو فرم نمی‌بینه

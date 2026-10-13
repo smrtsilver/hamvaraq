@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}قفسه‌ی من | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>قفسه‌ی من</h1><p>کتابخونه‌ی شخصیت؛ فقط کتاب‌هایی که خودت بخوای برای معاوضه می‌رن.</p></div>
+    <a class="btn" href="{% url 'books:shelf_add' %}" data-open-dialog="shelf-add-dlg">{% include "components/icon.html" with name="plus" %} افزودن کتاب</a></div>
+<nav class="shelf-tabs" aria-label="فیلتر قفسه">{% for v, label, n in tabs %}<a href="?{% if v %}s={{ v }}{% endif %}"{% if tab == v %} aria-current="page"{% endif %}>{{ label }} <b>{{ n|fa }}</b></a>{% endfor %}<a href="?s=swap"{% if tab == 'swap' %} aria-current="page"{% endif %}>برای معاوضه</a></nav>
+{% if entries %}<ul class="shelf-list">{% for e in entries %}
+    <li><a class="shelf-row" href="{% url 'books:shelf_edit' e.pk %}">
+        <span class="sr-spine{% if e.for_exchange %} has-ribbon{% endif %}" aria-hidden="true"></span>
+        <span class="sr-main"><strong>{{ e.title }}</strong><span class="muted small">{{ e.author }}</span>
+            <span class="sr-meta"><span class="pill pill-{% if e.reading_status == 'read' %}green{% elif e.reading_status == 'reading' %}amber{% else %}blue{% endif %}">{{ e.get_reading_status_display }}</span>{% if e.rating %}<span class="stars" aria-label="{{ e.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= e.rating %}★{% endif %}{% endfor %}</span>{% endif %}{% if e.for_exchange %}<span class="ribbon-chip">برای معاوضه</span>{% endif %}{% if e.review %}<span class="small muted">{% include "components/icon.html" with name="pen" %} نقد</span>{% endif %}</span></span>
+        {% include "components/icon.html" with name="chevron-left" %}</a></li>{% endfor %}</ul>
+{% else %}{% url 'books:shelf_add' as add_url %}{% include "components/empty.html" with ill="books" title="هنوز کتابی اینجا نیست" text="کتاب‌هایی که داری یا خوندی رو اضافه کن تا قفسه‌ات جون بگیره." cta_url=add_url cta_label="افزودن اولین کتاب" %}{% endif %}
+<dialog class="hv-modal sheet" id="shelf-add-dlg" aria-labelledby="shelf-add-h"><div class="sheet-in"><div class="sheet-head"><h2 id="shelf-add-h">افزودن به قفسه</h2><button type="button" class="icon-btn" data-close-dialog aria-label="بستن">{% include "components/icon.html" with name="x" %}</button></div>
+    {% include "books/_shelf_add_form.html" %}</div></dialog>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script>{% endblock %}

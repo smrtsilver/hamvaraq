@@ -124,17 +124,26 @@ def _default_city(user):
 @login_required
 @throttle("bookcreate", 40, 3600, by="user")
 def book_create(request):
-    form = BookForm(request.POST or None, request.FILES or None, default_city=_default_city(request.user))
+    from .models import ShelfEntry
+
+    sid = request.POST.get("shelf") or request.GET.get("shelf") or ""
+    entry = ShelfEntry.objects.filter(pk=sid, user=request.user).first() if sid.isdigit() else None
+    initial = {"title": entry.title, "author": entry.author, "isbn": entry.isbn} if entry and request.method != "POST" else None
+    form = BookForm(request.POST or None, request.FILES or None, default_city=_default_city(request.user), initial=initial)
     if request.method == "POST" and form.is_valid():
         book = form.save(commit=False)
         book.owner = request.user
+        book._from_shelf = bool(entry)       # بدون ردیف قفسه، سیگنال خودش یکی می‌سازه
         book.save()
         form.save_extra_photos(book)
+        if entry:
+            entry.book = book
+            entry.save(update_fields=["book", "updated_at"])
         notify_wishlists(book)
         check_badges(request.user)
         messages.success(request, "کتاب ثبت شد.")
         return redirect("books:detail", book.pk)
-    return render(request, "books/form.html", {"form": form, "title": "ثبت کتاب", "quality_weights": QUALITY_WEIGHTS})
+    return render(request, "books/form.html", {"form": form, "title": "قرار دادن برای معاوضه" if entry else "ثبت کتاب", "quality_weights": QUALITY_WEIGHTS, "shelf_entry": entry})
 
 
 @login_required
@@ -158,7 +167,12 @@ def book_delete(request, pk):
         messages.error(request, "تا درخواست‌های باز بسته نشدن نمی‌شه کتاب رو حذف کرد.")
         return redirect("books:detail", pk)
     book.soft_delete()          # تاریخچه‌ی مبادله، رأی و نقد می‌مونه؛ فقط از سایت پنهان می‌شه
+    entry = book.shelf_entries.filter(user=request.user).first()
+    book.shelf_entries.update(book=None)      # کتاب تو قفسه می‌مونه، فقط دیگه برای معاوضه نیست
     messages.success(request, "کتاب حذف شد.")
+    if entry and request.POST.get("next") == "shelf":
+        messages.success(request, "از معاوضه برداشته شد؛ تو قفسه‌ات هست.")
+        return redirect("books:shelf_edit", entry.pk)
     return redirect("books:mine")
 
 
