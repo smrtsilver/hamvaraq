@@ -371,14 +371,17 @@ def posts_bulk(request):
 @require_POST
 def announcements_bulk(request):
     ids, do = _bulk_ids(request), request.POST.get("do")
-    done = 0
-    for item in Announcement.objects.filter(pk__in=ids):
-        if do == "approve" and item.status != Announcement.Status.PUBLISHED:
-            ann_services.publish(item)
-            done += 1
-    if done:
-        log(request, "تأیید گروهی اطلاعیه", f"{done} اطلاعیه")
-    messages.success(request, f"{done} اطلاعیه تأیید شد.")
+    items = list(Announcement.objects.filter(pk__in=ids))
+    if do == "delete":
+        for item in items:
+            item.delete()
+        log(request, "حذف گروهی اطلاعیه", f"{len(items)} اطلاعیه")
+        messages.success(request, f"{len(items)} اطلاعیه حذف شد.")
+    elif do == "feature":
+        for item in items:
+            item.is_featured = not item.is_featured
+            item.save(update_fields=["is_featured"])
+        messages.success(request, f"وضعیت ویژه‌ی {len(items)} اطلاعیه عوض شد.")
     return back(request, "panel:announcements")
 
 
@@ -478,14 +481,13 @@ def post_action(request, pk):
 # ---------------------------------------------------------------- اطلاعیه‌ها
 @staff_required
 def announcements(request):
-    status = request.GET.get("status", "pending")
+    """اطلاعیه‌ها رو خود مدیرها ثبت می‌کنن؛ اینجا فقط فهرست، ویرایش، ویژه و حذف."""
     qs = Announcement.objects.select_related("submitted_by", "city")
-    if status in Announcement.Status.values:
-        qs = qs.filter(status=status)
-    qs = search_q(qs, request.GET.get("q"), ["title", "submitted_by__username"])
-    return page(request, "panel/announcements.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
-                                                       "qs": _qs(request), "item_tabs": list(Announcement.Status.choices), "keep_status": {"status": status},
-                                                       "bulk_url": reverse("panel:announcements_bulk"), "bulk_opts": [("approve", "تأیید و انتشار")]}, "announcements")
+    qs = search_q(qs, request.GET.get("q"), ["title"])
+    return page(request, "panel/announcements.html", {"page": _paginate(request, qs.order_by("-created_at")), "q": request.GET.get("q", ""),
+                                                       "qs": _qs(request), "keep_status": {},
+                                                       "bulk_url": reverse("panel:announcements_bulk"),
+                                                       "bulk_opts": [("feature", "ویژه / برداشتن ویژه"), ("delete", "حذف")]}, "announcements")
 
 
 @staff_required

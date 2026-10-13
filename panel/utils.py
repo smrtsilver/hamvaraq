@@ -9,27 +9,27 @@ from common.models import AuditLog
 
 staff_required = staff_member_required(login_url=reverse_lazy("accounts:login"))
 
+# (کلید، عنوان، آیکون، گروه)؛ گروه‌ها فقط تو دسکتاپ تیتر دارن
 NAV = [
-    ("index", "نمای کلی", "sparkle"),
-    ("reports", "گزارش‌ها", "flag"),
-    ("tickets", "مشکلات کاربران", "chat"),
-    ("stats", "آمار", "chart"),
-    ("exchanges", "مبادله‌ها", "swap"),
-    ("users", "کاربران", "user"),
-    ("books", "کتاب‌ها", "book"),
-    ("posts", "معرفی‌ها", "pen"),
-    ("announcements", "اطلاعیه‌ها", "news"),
-    ("challenges", "چالش‌ها", "star"),
-    ("clubs", "باشگاه‌های کتاب", "chat"),
-    ("names", "نویسنده و ناشر تکراری", "edit"),
-    ("settings", "تنظیمات سایت", "settings"),
-    ("audit", "لاگ مدیریت", "list"),
+    ("index", "نمای کلی", "sparkle", "رسیدگی"),
+    ("reports", "گزارش‌ها", "flag", "رسیدگی"),
+    ("tickets", "مشکلات کاربران", "chat", "رسیدگی"),
+    ("exchanges", "مبادله‌ها", "swap", "رسیدگی"),
+    ("users", "کاربران", "user", "مدیریت"),
+    ("books", "کتاب‌ها", "book", "مدیریت"),
+    ("posts", "معرفی‌ها", "pen", "مدیریت"),
+    ("announcements", "اطلاعیه‌ها", "news", "مدیریت"),
+    ("clubs", "باشگاه‌ها", "chat", "مدیریت"),
+    ("challenges", "چالش‌ها", "star", "مدیریت"),
+    ("names", "یکی‌کردن نام‌ها", "edit", "مدیریت"),
+    ("stats", "آمار", "chart", "سایت"),
+    ("settings", "تنظیمات سایت", "settings", "سایت"),
+    ("audit", "لاگ مدیریت", "list", "سایت"),
 ]
 
 
 def counts():
     """تعداد موارد منتظر رسیدگی برای نشان کنار منو."""
-    from announcements.models import Announcement
     from exchanges.models import Exchange
     from posts.models import Post
     from support.models import Ticket
@@ -40,12 +40,11 @@ def counts():
         "tickets": Ticket.objects.filter(status__in=[Ticket.Status.NEW, Ticket.Status.IN_PROGRESS]).count(),
         "exchanges": Exchange.objects.filter(status=Exchange.Status.ACCEPTED, disputed_at__isnull=False).count(),
         "posts": Post.objects.filter(status=Post.Status.PENDING).count(),
-        "announcements": Announcement.objects.filter(status=Announcement.Status.PENDING).count(),
     }
 
 
 def page(request, template, ctx, active):
-    ctx = {**ctx, "nav": [(k, label, icon, reverse(f"panel:{k}")) for k, label, icon in NAV], "nav_counts": counts(), "active": active}
+    ctx = {**ctx, "nav": [(k, label, icon, reverse(f"panel:{k}"), group) for k, label, icon, group in NAV], "nav_counts": counts(), "active": active}
     return render(request, template, ctx)
 
 

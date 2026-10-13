@@ -2254,7 +2254,11 @@ class AnnouncementTests(Base):
         self.client.login(username="boss", password="x12345678")
         r = self.client.get("/panel/")
         self.assertEqual(r.context["d"]["queues"], {"posts": 0, "announcements": 1})
-        self.assertContains(r, "اطلاعیه منتظر تأیید")
+        self.assertNotContains(r, "اطلاعیه منتظر تأیید")                     # اطلاعیه رو خود مدیر ثبت می‌کنه؛ صف تأیید نداره
+        self.assertContains(r, "همه‌چیز مرتبه")
+        p = self.client.get("/panel/announcements/").content.decode()
+        self.assertIn(reverse("announcements:create"), p)
+        self.assertNotIn('value="approve"', p)
         self.assertEqual(self.client.get("/staff/").status_code, 302)  # آدرس قدیمی به پنل می‌ره
 
 

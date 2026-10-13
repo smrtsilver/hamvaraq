@@ -1539,5 +1539,30 @@ input[type=range]{accent-color:var(--primary)}
 .menu-panel .menu-logout{color:var(--danger)}
 .set-logout{margin:16px 0}
 .menu-panel button[data-theme-toggle]{width:100%}
-@media (min-width:641px){.menu-panel .only-mobile{display:none}}
-@media (max-width:640px){.menu-panel button.only-mobile{display:flex!important}}
+@media (min-width:981px){.menu-panel .only-mobile{display:none!important}}
+@media (max-width:980px){.menu-panel button.only-mobile{display:flex!important}}
+/* پنل: کارهای منتظر، گروه‌های منو، جدول‌های جمع‌وجور موبایل */
+.p-todos li{padding:0}.p-todos a{display:flex;align-items:center;gap:12px;padding:12px 14px;color:inherit;width:100%}
+.p-todos a:hover{background:var(--surface-2);text-decoration:none}
+.p-todos b{min-width:32px;text-align:center;font-size:var(--fs-lg)}.p-todos span{flex:1;font-weight:700;font-size:var(--fs-sm)}.p-todos .i{width:16px;height:16px;color:var(--ink-3)}
+.pn-group{display:block;margin:14px 12px 4px;font-size:11px;font-weight:800;color:var(--ink-3)}
+.pn-group:first-child{margin-top:4px}
+@media (max-width:980px){
+  .pn-group{display:none}
+  .panel-nav{padding:8px!important}
+  .panel-brand{display:none}
+}
+@media (max-width:640px){
+  .ptable thead{display:none}
+  .ptable,.ptable tbody{display:block}
+  .ptable tr{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:10px 12px!important;margin:0 0 8px!important;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:none!important}
+  .ptable td{display:inline-flex!important;width:auto!important;align-items:center;gap:4px;padding:0!important;border:0!important;font-size:var(--fs-xs);color:var(--ink-2);min-height:0;text-align:start}
+  .ptable td::before{content:attr(data-label) ":"!important;font-size:11px;color:var(--ink-3)}
+  .ptable td:nth-child(2)::before,.ptable td.sel::before,.ptable td.acts::before,.ptable td[colspan]::before{content:none!important}
+  .ptable td:nth-child(2){flex:1 1 calc(100% - 40px);font-size:var(--fs-sm);color:var(--ink)}
+  .ptable:not(:has(td.sel)) td:first-child{flex:1 1 100%;font-size:var(--fs-sm);color:var(--ink)}
+  .ptable:not(:has(td.sel)) td:first-child::before{content:none!important}
+  .ptable td.sel{order:-1}
+  .ptable td.acts{flex:1 1 100%;margin-top:4px}
+  .ptable td.acts .btn{min-height:32px;padding:0 12px}
+}

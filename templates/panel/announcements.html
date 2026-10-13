@@ -1,17 +1,19 @@
 {% extends "panel/base.html" %}
 {% block ptitle %}اطلاعیه‌ها{% endblock %}
 {% block panel %}
-<div class="page-head"><div><h1>اطلاعیه‌ها</h1><p>تأیید رویدادها و خبرهای فرهنگی.</p></div></div>
-{% include "panel/_status_tabs.html" with current=status tabs=item_tabs %}
-{% include "panel/_search.html" with placeholder="عنوان یا نام کاربر" keep=keep_status %}
+<div class="page-head"><div><h1>اطلاعیه‌ها</h1><p>رویدادها و خبرهای فرهنگی که مدیریت منتشر می‌کنه.</p></div>
+    <div class="cluster"><a class="btn" href="{% url 'announcements:create' %}">{% include "components/icon.html" with name="plus" %} ثبت اطلاعیه</a></div></div>
+{% include "panel/_search.html" with placeholder="عنوان اطلاعیه" keep=keep_status %}
 {% include "panel/_bulk_bar.html" with action=bulk_url options=bulk_opts %}
-<div class="ptable-wrap"><table class="table ptable" data-ptable><thead><tr><th class="sel"><input type="checkbox" data-select-all aria-label="انتخاب همه"></th><th>عنوان</th><th>ثبت‌کننده</th><th>وضعیت</th><th>زمان</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
+<div class="ptable-wrap"><table class="table ptable" data-ptable><thead><tr><th class="sel"><input type="checkbox" data-select-all aria-label="انتخاب همه"></th><th>عنوان</th><th>ثبت‌کننده</th><th>تاریخ رویداد</th><th>زمان</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
 {% for p in page %}<tr><td class="sel" data-label="انتخاب"><input type="checkbox" name="ids" value="{{ p.pk }}" form="bulk-form" aria-label="انتخاب"></td>
     <td data-label="عنوان"><a href="{{ p.get_absolute_url }}"><strong>{{ p.title|truncatechars:50 }}</strong></a>{% if p.is_featured %} <span class="pill pill-amber">ویژه</span>{% endif %}{% if p.reject_reason %}<br><span class="small muted">رد: {{ p.reject_reason }}</span>{% endif %}</td>
     <td data-label="ثبت‌کننده">{% if p.submitted_by %}<a href="{% url 'panel:user' p.submitted_by.pk %}">{{ p.submitted_by.username }}</a>{% else %}—{% endif %}</td>
-    <td data-label="وضعیت"><span class="pill {% if p.status == 'pending' %}pill-amber{% elif p.status == 'published' %}pill-green{% endif %}">{{ p.get_status_display }}</span></td>
+    <td data-label="تاریخ رویداد">{% if p.starts_at %}{{ p.starts_at|jdate }}{% else %}—{% endif %}</td>
     <td data-label="زمان">{{ p.created_at|jdate }}</td>
-    <td class="acts">{% include "panel/_content_actions.html" with kind="announcements" %}</td></tr>
+    <td class="acts"><div class="row-act"><a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' p.pk %}">ویرایش</a>
+        <form method="post" action="{% url 'panel:announcement_action' p.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm" name="do" value="feature">{% if p.is_featured %}برداشتن ویژه{% else %}ویژه{% endif %}</button></form>
+        <form method="post" action="{% url 'panel:announcement_action' p.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm link-danger" name="do" value="delete" data-confirm="این اطلاعیه حذف بشه؟">حذف</button></form></div></td></tr>
 {% empty %}<tr><td colspan="6" class="muted">موردی نیست.</td></tr>{% endfor %}</tbody></table></div>
 {% include "components/pagination.html" %}
 {% endblock %}
