@@ -5,7 +5,7 @@
 {% load static %}
 <div class="form-layout">
     <div class="page-head"><div><h1>{{ title }}</h1><p>اطلاعات دقیق و عکس خوب شانس مبادله رو بیشتر می‌کنه.</p></div></div>
-    <form method="post" enctype="multipart/form-data" class="card" data-location-group data-isbn-scope data-preview data-stepper{% if existing_cover %} data-existing-cover="1"{% endif %} novalidate>{% csrf_token %}
+    <form method="post" enctype="multipart/form-data" class="card"{% if not form.instance.pk %} data-draft="book"{% endif %} data-location-group data-isbn-scope data-preview data-stepper{% if existing_cover %} data-existing-cover="1"{% endif %} novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
         <div class="form-section reset-box"><div class="cluster jc-between"><h2 class="h3">۱. کدوم کتاب؟</h2>
                 <button type="button" class="btn btn-secondary btn-sm" data-scan data-scan-target="{{ form.isbn.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} اسکن بارکد</button></div>

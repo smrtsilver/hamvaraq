@@ -782,3 +782,4 @@ input[aria-invalid=true]{border-color:var(--danger)}
 @keyframes hv-shimmer{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.hv-card--skeleton .cover,.hv-card--skeleton i{animation:none}}
 .msg-sending{opacity:.6}.msg-failed{opacity:1;outline:2px solid var(--danger,#B3261E);outline-offset:2px}
+.draft-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}.draft-bar p{margin:0;flex:1 1 200px}

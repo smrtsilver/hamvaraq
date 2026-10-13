@@ -6,7 +6,7 @@
 <div class="medium">
     <div class="page-head"><div><h1>گزارش مشکل</h1><p>خطای سایت، مشکل حساب یا مبادله، یا یه پیشنهاد؛ هر چی هست برامون بنویس.</p></div>
         {% if user.is_authenticated %}<a class="btn btn-secondary btn-sm" href="{% url 'support:mine' %}">گزارش‌های من</a>{% endif %}</div>
-    <form method="post" class="card" novalidate>{% csrf_token %}{% include "components/form.html" %}
+    <form method="post" class="card" data-draft="support" novalidate>{% csrf_token %}{% include "components/form.html" %}
         <div class="form-actions"><button class="btn">ارسال گزارش</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div></form>
     <p class="hint">برای گزارش رفتار یه کاربر یا کتاب مشخص، از دکمه‌ی «گزارش» تو صفحه‌ی همون کاربر یا کتاب استفاده کن تا سریع‌تر رسیدگی بشه.</p>
 </div>

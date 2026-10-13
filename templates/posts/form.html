@@ -5,7 +5,7 @@
 {% block content %}
 <div class="medium">
     <div class="page-head"><div><h1>{{ title }}</h1><p>تجربه‌ات رو برای کسی که هنوز نخونده بنویس؛ لازم نیست نقد حرفه‌ای باشه.</p></div></div>
-    <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}
+    <form method="post" enctype="multipart/form-data" class="card" data-draft="post" novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
         {% include "components/field.html" with field=form.title %}
         <div class="form-grid"><div>{% include "components/field.html" with field=form.book %}</div><div>{% include "components/field.html" with field=form.rating %}</div>

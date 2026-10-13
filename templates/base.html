@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body{% if user.is_authenticated %} data-uid="{{ user.pk }}"{% endif %}>
 {% include "components/_sprite.html" %}
 <a class="skip" href="#main">رفتن به محتوای اصلی</a>
 {% with ns=request.resolver_match.namespace name=request.resolver_match.url_name %}
@@ -151,6 +151,7 @@
 <script src="{% static 'js/hv/modal.js' %}" defer></script>
 <script src="{% static 'js/app.js' %}" defer></script>
 <script src="{% static 'js/hv/stats.js' %}" defer></script>
+<script src="{% static 'js/hv/draft.js' %}" defer></script>
 <script src="{% static 'js/hv/shelf.js' %}" defer></script>
 <script src="{% static 'js/isbn.js' %}" defer></script>
 <script src="{% static 'js/forms.js' %}" defer></script>
