@@ -769,3 +769,15 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .lp-link{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--primary);padding:10px 4px}
 .lp-link:hover{text-decoration:underline}
 .lp-zero{font-size:var(--fs-md)!important;line-height:2.4!important}
+/* قفسه‌ی افقی (خانه) */
+.hv-shelf-track{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 2px 14px;scrollbar-width:thin;overscroll-behavior-x:contain}
+.hv-shelf-item{flex:0 0 clamp(150px,42vw,200px);scroll-snap-align:start}
+.shelf-nav{display:flex;align-items:center;gap:6px}.shelf-nav.no-scroll button{display:none}
+.shelf-nav button{min-width:40px;min-height:40px}
+/* کارت: سایه‌ی عطف و skeleton */
+.cover::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:8px;background:linear-gradient(90deg,rgba(0,0,0,.18),transparent);z-index:1;pointer-events:none}
+.book-card:hover{transform:translateY(-2px)}
+.hv-card--skeleton .cover,.hv-card--skeleton i{background:linear-gradient(100deg,var(--surface-2) 30%,var(--line) 50%,var(--surface-2) 70%) 0 0/200% 100%;animation:hv-shimmer 1.3s linear infinite}
+.hv-card--skeleton i{display:block;height:14px;border-radius:6px;margin-top:10px}
+@keyframes hv-shimmer{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.hv-card--skeleton .cover,.hv-card--skeleton i{animation:none}}

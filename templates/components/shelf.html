@@ -1,0 +1,5 @@
+<section class="section-sm hv-shelf" data-shelf aria-labelledby="shelf-{{ forloop.counter }}">
+    <div class="section-head"><div><h2 id="shelf-{{ forloop.counter }}">{{ s.title }}</h2><p>{{ s.sub }}</p></div>
+        <div class="shelf-nav"><button type="button" class="btn btn-ghost btn-sm" data-shelf-next aria-label="قبلی">{% include "components/icon.html" with name="chevron-right" %}</button><button type="button" class="btn btn-ghost btn-sm" data-shelf-prev aria-label="بعدی">{% include "components/icon.html" with name="chevron-left" %}</button><a href="{{ s.more }}">همه</a></div></div>
+    <div class="hv-shelf-track" tabindex="0" role="list" aria-label="{{ s.title }}">{% for b in s.books %}<div class="hv-shelf-item" role="listitem">{% include "components/book_card.html" with priority=False %}</div>{% endfor %}</div>
+</section>

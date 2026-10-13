@@ -21,8 +21,8 @@
 
 {% if matches %}<section class="section-sm"><div class="section-head"><div><h2>از لیست آرزوهات</h2><p>کتاب‌هایی که دنبالشون بودی ثبت شدن</p></div><a href="{% url 'books:wishlist' %}">لیست آرزو</a></div>{% include "components/book_grid.html" with books=matches %}</section>{% endif %}
 
-<section class="section-sm"><div class="section-head"><div><h2>{% if local_is_city %}تازه‌های {{ user.city.name }}{% else %}تازه‌رسیده‌ها{% endif %}</h2>{% if not user.city %}<p><a href="{% url 'accounts:settings' %}">شهرت رو انتخاب کن</a> تا کتاب‌های نزدیک خودت رو اول ببینی</p>{% endif %}</div><a href="{% url 'books:list' %}">همه</a></div>
-    {% include "components/book_grid.html" with books=local %}</section>
+{% if not user.city %}<p class="small"><a href="{% url 'accounts:settings' %}">شهرت رو انتخاب کن</a> تا کتاب‌های نزدیک خودت رو اول ببینی</p>{% endif %}
+{% for s in shelves %}{% include "components/shelf.html" %}{% endfor %}
 
 {% if events %}<section class="section-sm"><div class="section-head"><div><h2>اتفاق‌های فرهنگی{% if user.city %} <small class="muted">({{ user.city.name }} و آنلاین)</small>{% endif %}</h2></div><a href="{% url 'announcements:list' %}">همه</a></div><div class="event-list">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div></section>{% endif %}
 

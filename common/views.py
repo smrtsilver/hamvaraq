@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 
 from accounts.models import User
 from books.models import Book, BookJourney
@@ -75,11 +76,25 @@ def _member_home(request):
                 matches.append(b)
             if len(matches) == 6:
                 break
+    from datetime import timedelta
+
+    from books.listing import decorate_cards
+
+    since = timezone.now() - timedelta(days=30)
+    demand = base.annotate(n_req=Count("exchanges", filter=Q(exchanges__created_at__gte=since))).filter(n_req__gt=0).order_by("-n_req", "-created_at")[:10]
+    shelves = []
+    new_books = decorate_cards(base[:10], user)
+    if local:
+        shelves.append({"title": "در شهر " + user.city.name, "sub": "کتاب‌های هم‌شهری‌هات", "books": decorate_cards(local, user), "more": reverse("books:list") + "?city=%d" % user.city_id})
+    shelves.append({"title": "تازه‌ها", "sub": "تازه‌ترین کتاب‌های ثبت‌شده", "books": new_books, "more": reverse("books:list")})
+    hot = decorate_cards(demand, user)
+    if hot:
+        shelves.append({"title": "پرتقاضاها", "sub": "این ماه بیشتر درخواست شدن", "books": hot, "more": reverse("books:list")})
     now = timezone.now()
     challenges = [{"c": c, "done": min(c.progress(user), c.target)} for c in Challenge.objects.filter(is_active=True, starts_at__lte=now, ends_at__gte=now)[:2]]
     done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
     return render(request, "home.html", {
-        "onboarding": progress(user), "waiting": waiting, "active": active, "local": local or list(base[:8]), "local_is_city": bool(local),
+        "onboarding": progress(user), "waiting": waiting, "active": active, "shelves": shelves,
         "matches": matches, "challenges": challenges, "events": _upcoming_events(3, user.city), "posts": _latest_posts(3),
         "given": done.filter(owner=user).count(), "received": done.filter(requester=user).count(),
     })

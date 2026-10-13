@@ -1573,18 +1573,26 @@ class LandingAndHomeTests(Base):
         self.assertTemplateUsed(r, "home.html")
         self.assertEqual([e.pk for e in r.context["waiting"]], [ex.pk])
         self.assertEqual([b.title for b in r.context["matches"]], ["کلیدر"])
-        self.assertTrue(r.context["local_is_city"])                 # giver شهر داره (اصفهان)
+        self.assertEqual(r.context["shelves"][0]["title"], "در شهر اصفهان")   # giver شهر داره
         self.assertEqual(len(r.context["challenges"]), 1)
         self.assertContains(r, "کتاب من")
         self.assertNotContains(r, "تو کدوم شهری؟")
+
+    def test_member_home_has_demand_shelf(self):
+        b = self.book(owner=self.taker, title="پرطرفدار")
+        Exchange.objects.create(book=b, owner=self.taker, requester=self.giver)
+        self.client.login(username="giver", password="x12345678")
+        r = self.client.get("/")
+        hot = [s for s in r.context["shelves"] if s["title"] == "پرتقاضاها"]
+        self.assertEqual([x.title for x in hot[0]["books"]], ["پرطرفدار"])
 
     def test_member_home_without_city_falls_back_to_latest(self):
         User.objects.filter(pk=self.giver.pk).update(city=None)
         self.book(owner=self.taker, title="دیگران")
         self.client.login(username="giver", password="x12345678")
         r = self.client.get("/")
-        self.assertFalse(r.context["local_is_city"])
-        self.assertEqual([b.title for b in r.context["local"]], ["دیگران"])
+        self.assertEqual([s["title"] for s in r.context["shelves"]], ["تازه‌ها"])
+        self.assertEqual([b.title for b in r.context["shelves"][0]["books"]], ["دیگران"])
         self.assertContains(r, "شهرت رو انتخاب کن")
 
 
