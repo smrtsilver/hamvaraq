@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ facet_name }} | کتاب‌های موجود برای مبادله | هم‌ورق{% endblock %}
+{% block description %}{{ desc }}{% endblock %}
+{% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
+{% block content %}
+<nav class="small muted mb-18" aria-label="مسیر"><a href="{% if kind == 'authors' %}{% url 'authors' %}{% else %}{% url 'publishers' %}{% endif %}">{% if kind == 'authors' %}نویسنده‌ها{% else %}ناشران{% endif %}</a> / {{ facet_name }}</nav>
+<div class="page-head"><div><h1>{{ facet_name }}</h1><p>{{ count|fa }} کتاب تو هم‌ورق{% if kind == 'authors' %} از این نویسنده{% else %} از این ناشر{% endif %}.</p></div></div>
+{% include "components/book_grid.html" with books=page %}
+{% include "components/pagination.html" %}
+{% endblock %}

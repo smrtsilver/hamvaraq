@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | هم‌ورق{% endblock %}
+{% block description %}{{ intro }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ title }}</h1><p>{{ intro }}</p></div></div>
+{% if items %}<ul class="facet-grid">{% for i in items %}<li><a class="card card-hover facet-item" href="{% if kind == 'authors' %}{% url 'author' i.slug %}{% else %}{% url 'publisher' i.slug %}{% endif %}"><strong>{{ i.name }}</strong><span class="pill pill-green">{{ i.n|fa }} کتاب</span></a></li>{% endfor %}</ul>
+{% include "components/pagination.html" %}
+{% else %}{% include "components/empty.html" with ill="books" title="هنوز موردی نیست" text="با ثبت کتاب‌های بیشتر، این فهرست پر می‌شه." %}{% endif %}
+{% endblock %}

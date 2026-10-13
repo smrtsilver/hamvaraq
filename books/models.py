@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from common.text import normalize, work_key
+from common.text import first_author, normalize, slugify_fa, work_key
 
 
 class Category(models.Model):
@@ -31,6 +31,7 @@ class Edition(models.Model):
     authors = models.JSONField(default=list, blank=True, verbose_name="نویسنده‌ها")
     translators = models.JSONField(default=list, blank=True, verbose_name="مترجم‌ها")
     publisher = models.CharField(max_length=200, blank=True, verbose_name="ناشر")
+    publisher_slug = models.CharField(max_length=120, blank=True, db_index=True, editable=False, verbose_name="نشانی ناشر")
     year = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="سال انتشار")
     year_calendar = models.CharField(max_length=10, blank=True, choices=[("jalali", "شمسی"), ("gregorian", "میلادی")], verbose_name="تقویم سال")
     edition_no = models.CharField(max_length=50, blank=True, verbose_name="نوبت چاپ")
@@ -55,6 +56,13 @@ class Edition(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        self.publisher_slug = slugify_fa(self.publisher)
+        fields = kwargs.get("update_fields")
+        if fields is not None and "publisher" in fields:
+            kwargs["update_fields"] = {*fields, "publisher_slug"}
+        super().save(*args, **kwargs)
 
     @property
     def author_line(self):
@@ -110,6 +118,7 @@ class Book(models.Model):
     # فیلدهای کمکی جستجو؛ خودکار از عنوان/نویسنده/شابک ساخته می‌شن
     search_text = models.TextField(blank=True, editable=False, verbose_name="متن جستجو")
     work_key = models.CharField(max_length=400, blank=True, db_index=True, editable=False, verbose_name="کلید کتاب")
+    author_slug = models.CharField(max_length=120, blank=True, db_index=True, editable=False, verbose_name="نشانی نویسنده")
 
     objects = VisibleBookManager()
     all_objects = models.Manager()
@@ -180,9 +189,10 @@ class Book(models.Model):
             self.cover_lqip = ""
         self.search_text = normalize(f"{self.title} {self.author} {self.isbn}")
         self.work_key = work_key(self.title, self.author)
+        self.author_slug = slugify_fa(first_author(self.author))
         fields = kwargs.get("update_fields")
         if fields is not None and ({"title", "author", "isbn"} & set(fields)):
-            kwargs["update_fields"] = {*fields, "search_text", "work_key"}
+            kwargs["update_fields"] = {*fields, "search_text", "work_key", "author_slug"}
         super().save(*args, **kwargs)
         if self.isbn and not self.edition_id:
             from .catalog import attach_edition

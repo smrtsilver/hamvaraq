@@ -12,7 +12,7 @@ class StaticSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return ["home", "books:list", "posts:list", "announcements:list", "cities", "challenges:list", "how_it_works", "rules"]
+        return ["home", "books:list", "posts:list", "announcements:list", "cities", "authors", "publishers", "challenges:list", "how_it_works", "rules"]
 
     def location(self, name):
         return reverse(name)
@@ -80,7 +80,29 @@ class AnnouncementSitemap(Sitemap):
         return obj.published_at
 
 
-SITEMAPS = {"posts": PostSitemap, "announcements": AnnouncementSitemap, "static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap, "provinces": ProvinceSitemap}
+class AuthorSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.5
+
+    def items(self):
+        return list(Book.objects.filter(status=Book.Status.AVAILABLE).exclude(author_slug="").values_list("author_slug", flat=True).distinct())
+
+    def location(self, slug):
+        return reverse("author", args=[slug])
+
+
+class PublisherSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.4
+
+    def items(self):
+        return list(Book.objects.filter(status=Book.Status.AVAILABLE, edition__publisher_slug__gt="").values_list("edition__publisher_slug", flat=True).distinct())
+
+    def location(self, slug):
+        return reverse("publisher", args=[slug])
+
+
+SITEMAPS = {"authors": AuthorSitemap, "publishers": PublisherSitemap, "posts": PostSitemap, "announcements": AnnouncementSitemap, "static": StaticSitemap, "books": BookSitemap, "cities": CitySitemap, "provinces": ProvinceSitemap}
 
 # مسیرهای خصوصی: تو robots.txt بسته‌ان و هدر noindex هم می‌گیرن (RobotsHeaderMiddleware)
 PRIVATE_PREFIXES = (

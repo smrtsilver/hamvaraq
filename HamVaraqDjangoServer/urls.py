@@ -6,6 +6,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
+from books import facets
 from common.csp import report as csp_report
 from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules
 
@@ -13,6 +14,10 @@ urlpatterns = [
     path("", home, name="home"),
     path("how-it-works/", how_it_works, name="how_it_works"),
     path("rules/", rules, name="rules"),
+    path("authors/", facets.author_list, name="authors"),
+    path("authors/<str:slug>/", facets.author_detail, name="author"),
+    path("publishers/", facets.publisher_list, name="publishers"),
+    path("publishers/<str:slug>/", facets.publisher_detail, name="publisher"),
     path("cities/", city_list, name="cities"),
     path("cities/<int:pk>/", city_detail, name="city"),
     path("provinces/<int:pk>/", province_detail, name="province"),

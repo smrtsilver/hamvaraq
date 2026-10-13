@@ -1424,7 +1424,7 @@ class NoEnglishAuditTests(TestCase):
 
     def test_guest_pages(self):
         self.check(["/", "/books/", "/books/?q=بوف", f"/books/{self.book.pk}/", "/cities/", f"/cities/{self.tehran.pk}/",
-                   f"/provinces/{self.tehran.province_id}/", "/challenges/", "/how-it-works/", "/rules/", "/accounts/login/",
+                   f"/provinces/{self.tehran.province_id}/", "/authors/", "/authors/%D8%B5%D8%A7%D8%AF%D9%82-%D9%87%D8%AF%D8%A7%DB%8C%D8%AA/", "/publishers/", "/challenges/", "/how-it-works/", "/rules/", "/accounts/login/",
                    "/accounts/signup/", "/accounts/password-reset/", "/offline/", "/accounts/u/سارا/"], "مهمان")
 
     def test_member_pages(self):

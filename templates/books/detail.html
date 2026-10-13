@@ -24,10 +24,10 @@
             <span class="chip">{{ book.get_condition_display }}</span>
         </div>
         <h1 class="fs-3xl mb-4">{{ book.title }}</h1>
-        <p class="muted fs-lg">{{ book.author }}</p>
+        <p class="muted fs-lg">{% if book.author_slug %}<a class="c-inherit" href="{% url 'author' book.author_slug %}">{{ book.author }}</a>{% else %}{{ book.author }}{% endif %}</p>
         {% if demand %}<p class="demand-line">{% include "components/icon.html" with name="heart" %} {{ demand|fa }} نفر دنبال این کتاب بوده‌ن</p>{% endif %}
         {% with ed=book.edition %}{% if ed and ed.is_source_backed %}<dl class="biblio" aria-label="مشخصات چاپ">
-            {% if ed.publisher %}<div><dt>ناشر</dt><dd>{{ ed.publisher }}</dd></div>{% endif %}
+            {% if ed.publisher %}<div><dt>ناشر</dt><dd>{% if ed.publisher_slug %}<a href="{% url 'publisher' ed.publisher_slug %}">{{ ed.publisher }}</a>{% else %}{{ ed.publisher }}{% endif %}</dd></div>{% endif %}
             {% if ed.translators %}<div><dt>مترجم</dt><dd>{{ ed.translators|join:"، " }}</dd></div>{% endif %}
             {% if ed.year %}<div><dt>سال انتشار</dt><dd>{{ ed.year|fa }}{% if ed.year_calendar == 'jalali' %} (شمسی){% elif ed.year_calendar == 'gregorian' %} (میلادی){% endif %}</dd></div>{% endif %}
             {% if ed.edition_no %}<div><dt>نوبت چاپ</dt><dd>{{ ed.edition_no }}</dd></div>{% endif %}

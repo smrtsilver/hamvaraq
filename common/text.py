@@ -40,3 +40,15 @@ def significant_words(text):
 def work_key(title, author):
     """کلید «همین کتاب»: عنوان و نویسنده‌ی نرمال‌شده بدون فاصله."""
     return f"{normalize(title).replace(' ', '')}|{normalize(author).replace(' ', '')}"
+
+
+def first_author(raw):
+    """از «الف، ب» یا «الف و ب» اولین نویسنده."""
+    parts = re.split(r"[،,؛;/]| و ", str(raw or ""))
+    return next((p.strip() for p in parts if p.strip()), "")
+
+
+def slugify_fa(text, max_len=120):
+    """slug یونیکد برای نشانی صفحه‌ی نویسنده/ناشر: نرمال‌شده، بدون نشانه‌گذاری، فاصله ← خط‌تیره."""
+    t = re.sub(r"[^\w\s-]", " ", normalize(text))
+    return re.sub(r"[\s_-]+", "-", t).strip("-")[:max_len]
