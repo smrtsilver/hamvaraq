@@ -445,7 +445,7 @@ details.faq[open] p{animation:hv-faq .25s var(--ease)}@keyframes hv-faq{from{opa
 .cta-band .btn{position:relative}.cta-band .btn-accent:hover{color:#2A1D00}
 .faq-wrap{max-width:780px;margin-inline:auto}
 @media (max-width:980px){
-  .lp-hero{padding-block:32px 24px}.lp-hero-in{grid-template-columns:1fr}.lp-hero-art{order:-1;max-width:380px;margin-inline:auto}
+  .lp-hero{padding-block:32px 24px}.lp-hero-in{grid-template-columns:1fr}.lp-hero-art{order:-1;max-width:260px;margin-inline:auto}
   .lp-stats{grid-template-columns:repeat(2,1fr)}.lp-stats>div:nth-child(3){border-inline-start:0}.lp-stats>div:nth-child(n+3){border-top:1px solid var(--line)}
   .how{grid-template-columns:1fr;gap:32px}.lp-section{padding-block:44px}.cta-band{padding:40px 22px}.cta-band h2{font-size:var(--fs-2xl)}
 }
@@ -693,7 +693,7 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .form-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start;max-width:1000px;margin-inline:auto}
 .form-layout>.page-head{grid-column:1/-1}.form-layout>form{min-width:0}
 .listing-preview{position:sticky;inset-block-start:calc(var(--header-h) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-1)}
-.lp-title{margin:0 0 10px;font-weight:800;font-size:var(--fs-sm);color:var(--ink-3)}
+.lpv-title{margin:0 0 10px;font-weight:800;font-size:var(--fs-sm);color:var(--ink-3)}
 .lp-card{display:grid;gap:4px}.lp-cover{aspect-ratio:3/4;border-radius:var(--r);background:var(--bg-soft);display:grid;place-items:center;overflow:hidden;color:var(--ink-3);margin-bottom:8px}
 .lp-cover img{width:100%;height:100%;object-fit:cover}.lp-cover .i{width:44px;height:44px}.lp-meta{display:flex;gap:6px;flex-wrap:wrap}.lp-meta .chip:empty{display:none}
 .lp-quality{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.lp-quality p{margin:6px 0 0;font-weight:700;font-size:var(--fs-sm)}
@@ -790,3 +790,6 @@ input[aria-invalid=true]{border-color:var(--danger)}
 
 @media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}}
 :root[data-reduced-motion] *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+@media (max-width:640px){.eq{gap:6px}.eq .term{padding:8px 12px;font-size:var(--fs-sm)}.eq .op{display:none}.eq{flex-direction:column}}
+.section-head{align-items:center}
+@media (min-width:900px){.lp-alt .book-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
