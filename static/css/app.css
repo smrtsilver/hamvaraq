@@ -852,3 +852,18 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .filter-fold>summary::after{content:"";width:9px;height:9px;border:solid var(--primary);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .25s var(--ease)}
 .filter-fold[open]>summary::after{transform:rotate(-135deg)}
 .filter-fold>.filterbar{border:0;box-shadow:none;margin:0;padding:0 16px 16px}
+@media (pointer:coarse){
+  .site-footer a,footer a,.breadcrumb a,.link,.btn-link,.c-inherit,.small>a{display:inline-flex;align-items:center;min-height:40px}
+  footer li{margin:0}
+  .site-footer a{padding-block:2px}
+}
+/* ===== پاس موبایل: جلد کوچک‌تر، چیپ‌های فشرده، پیش‌نمایش جمع‌وجور ===== */
+@media (max-width:640px){
+  .gallery .cover{max-width:210px}
+  .book-meta{gap:4px}
+  .book-meta .chip{padding:0 8px;font-size:.72rem;line-height:1.8}
+  .book-meta .chip .i{width:12px;height:12px}
+  .listing-preview{padding:12px}
+  .listing-preview .lp-cover{display:none}
+}
+@media (max-width:359px){.header-in{gap:4px}.header-in .btn{padding:0 10px;min-height:34px}.brand{font-size:1.25rem}.brand svg{width:26px;height:26px}.header-in .icon-btn{min-width:36px;padding:0}}
