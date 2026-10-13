@@ -382,6 +382,31 @@ def announcements_bulk(request):
     return back(request, "panel:announcements")
 
 
+# ---------------------------------------------------------------- نویسنده/ناشر تکراری
+@staff_required
+def names(request):
+    from books.authors import duplicate_pairs
+
+    kind = "publisher" if request.GET.get("kind") == "publisher" else "author"
+    return page(request, "panel/names.html", {"kind": kind, "pairs": duplicate_pairs(kind)}, "names")
+
+
+@staff_required
+@require_POST
+def names_merge(request):
+    from books.authors import merge
+
+    kind = "publisher" if request.POST.get("kind") == "publisher" else "author"
+    drop, keep = request.POST.get("drop", "").strip(), request.POST.get("keep", "").strip()
+    if not drop or not keep:
+        fail(request, "ادغام ناقصه.")
+    else:
+        n = merge(kind, drop, keep)
+        log(request, "ادغام " + ("ناشر" if kind == "publisher" else "نویسنده"), f"«{drop}» ← «{keep}»", f"{n} ردیف")
+        messages.success(request, f"ادغام شد؛ {n} ردیف به «{keep}» تغییر کرد.")
+    return redirect(reverse("panel:names") + ("?kind=publisher" if kind == "publisher" else ""))
+
+
 # ---------------------------------------------------------------- باشگاه‌ها
 @staff_required
 def clubs(request):

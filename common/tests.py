@@ -2897,3 +2897,56 @@ class NextIdeasTests(Base):
         self.client.force_login(self.giver)
         r = self.client.get("/accounts/feed/")
         self.assertEqual([b.title for b in r.context["recs"]], ["جزیره سرگردانی"])
+
+
+class DedupTests(Base):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_persian_variants_are_exact_and_canonicalized(self):
+        from books.authors import match
+        self.book(title="بوف کور")                                             # نویسنده: «هدایت»
+        Book.objects.create(owner=self.giver, title="سه قطره خون", author="صادق هدایت", city=self.isfahan)
+        self.assertEqual(match("صادق هدايت"), ("exact", "صادق هدایت"))           # ی عربی
+        self.assertEqual(match("صادق  هدایت "), ("exact", "صادق هدایت"))
+        self.client.force_login(self.taker)
+        self.client.post("/books/shelf/add/", {"title": "علویه خانم", "author": "صادق هدايت", "isbn": "", "reading_status": "read"})
+        from books.models import ShelfEntry
+        self.assertEqual(ShelfEntry.objects.get(title="علویه خانم").author, "صادق هدایت")
+
+    def test_fuzzy_asks_then_pick_or_confirm(self):
+        from books.models import ShelfEntry
+        Book.objects.create(owner=self.giver, title="کلیدر", author="محمود دولت‌آبادی", city=self.isfahan)
+        self.client.force_login(self.taker)
+        from books.authors import match
+        self.assertEqual(match("محمود دولت ابادی"), ("exact", "محمود دولت‌آبادی"))        # نیم‌فاصله و آ/ا: همون نویسنده
+        data = {"title": "جای خالی سلوچ", "author": "محمد دولت‌آبادی", "isbn": "", "reading_status": "read"}   # غلط تایپی
+        r = self.client.post("/books/shelf/add/", data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(list(r.context["add_form"].author_suggestions), ["محمود دولت‌آبادی"])
+        self.assertContains(r, 'name="author_pick"')
+        self.client.post("/books/shelf/add/", {**data, "author_pick": "محمود دولت‌آبادی"})
+        self.assertEqual(ShelfEntry.objects.get(title="جای خالی سلوچ").author, "محمود دولت‌آبادی")
+        self.client.post("/books/shelf/add/", {**data, "title": "کتاب دیگر", "author": "محمود دولت آباذی", "author_ok": "1"})
+        self.assertEqual(ShelfEntry.objects.get(title="کتاب دیگر").author, "محمود دولت آباذی")   # تأیید: نویسنده‌ی جدا
+
+    def test_admin_merge_and_staff_only(self):
+        from books.authors import duplicate_pairs
+        from books.models import Edition
+        Book.objects.create(owner=self.giver, title="الف", author="سیمین دانشور", city=self.isfahan)
+        Book.objects.create(owner=self.giver, title="ب", author="سیمین دانشور", city=self.isfahan)
+        Book.objects.create(owner=self.taker, title="ج", author="سیمین دانشوار", city=self.isfahan)
+        pairs = duplicate_pairs()
+        self.assertEqual((pairs[0]["keep"][1], pairs[0]["drop"][1]), ("سیمین دانشور", "سیمین دانشوار"))
+        self.client.force_login(self.giver)
+        self.assertEqual(self.client.post("/panel/names/merge/", {"kind": "author", "drop": pairs[0]["drop"][0], "keep": "سیمین دانشور"}).status_code, 302)
+        self.assertTrue(Book.objects.filter(author="سیمین دانشوار").exists())                # غیرمدیر: هیچ تغییری
+        staff = User.objects.create_user("ed", password="x12345678", is_staff=True)
+        self.client.force_login(staff)
+        self.client.post("/panel/names/merge/", {"kind": "author", "drop": pairs[0]["drop"][0], "keep": "سیمین دانشور"})
+        self.assertFalse(Book.objects.filter(author="سیمین دانشوار").exists())
+        self.assertEqual(Book.objects.filter(author_slug="سیمین-دانشور").count(), 3)
+        Edition.objects.create(isbn13="9786007547717", title="ت", publisher="نشر ققنوس")
+        Edition.objects.create(isbn13="9789643112402", title="ث", publisher="نشر قُقنوس")       # اعراب
+        self.assertEqual(Edition.objects.values("publisher_slug").distinct().count(), 1)      # همون یه صفحه‌ی ناشر

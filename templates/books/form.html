@@ -11,6 +11,7 @@
                 <button type="button" class="btn btn-secondary btn-sm" data-scan data-scan-target="{{ form.isbn.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} اسکن بارکد</button></div>
             {% include "components/field.html" with field=form.isbn %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.title %}</div><div>{% include "components/field.html" with field=form.author %}</div></div>
+            {% include "books/_author_suggest.html" %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.category %}</div><div>{% include "components/field.html" with field=form.condition %}</div></div>
         </div>
         <div class="form-section"><h2 class="h3">۲. کتاب کجاست؟</h2>

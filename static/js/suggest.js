@@ -41,7 +41,7 @@
                     list.replaceChildren(...items.map((item) => {
                         const li = document.createElement("li");
                         li.setAttribute("role", "option");
-                        li.textContent = kind === "title" ? `${item.title} — ${item.author}${item.publisher ? " · " + item.publisher : ""}${item.year ? " (" + String(item.year).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]) + ")" : ""}` : item.author;
+                        li.textContent = kind === "title" ? `${item.title} — ${item.author}${item.publisher ? " · " + item.publisher : ""}${item.year ? " (" + String(item.year).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]) + ")" : ""}` : `${item.author}${item.count ? " · " + String(item.count).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]) + " کتاب" : ""}`;
                         li.addEventListener("mousedown", (e) => { e.preventDefault(); pick(item); });
                         return li;
                     }));

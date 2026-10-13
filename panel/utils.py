@@ -21,6 +21,7 @@ NAV = [
     ("announcements", "اطلاعیه‌ها", "news"),
     ("challenges", "چالش‌ها", "star"),
     ("clubs", "باشگاه‌های کتاب", "chat"),
+    ("names", "نویسنده و ناشر تکراری", "edit"),
     ("settings", "تنظیمات سایت", "settings"),
     ("audit", "لاگ مدیریت", "list"),
 ]

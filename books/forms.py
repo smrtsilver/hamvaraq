@@ -38,7 +38,28 @@ def _check_size(f):
         raise forms.ValidationError("حجم هر عکس باید کمتر از ۵ مگابایت باشه.")
 
 
-class BookForm(LocationMixin, PersianFormMixin, forms.ModelForm):
+class AuthorDedupMixin:
+    """نویسنده‌ی تکراری نساز: نوشتار دیگه‌ی یه نویسنده‌ی موجود ← همون نویسنده؛ نزدیک ولی نه دقیق ← «منظورت این بود؟»."""
+
+    author_suggestions = ()
+
+    def clean_author(self):
+        from .authors import canonicalize, match
+
+        raw = " ".join((self.cleaned_data.get("author") or "").split())
+        pick = (self.data.get("author_pick") or "").strip()
+        if pick:
+            return pick[:150]
+        kind, value = match(raw)
+        if kind == "exact":
+            return canonicalize(raw)
+        if kind == "fuzzy" and not self.data.get("author_ok"):
+            self.author_suggestions = value
+            raise forms.ValidationError("این نام خیلی شبیه نویسنده‌ایه که از قبل تو هم‌ورق هست؛ یکی از پیشنهادها رو بزن یا تأیید کن که نویسنده‌ی دیگه‌ایه.")
+        return raw
+
+
+class BookForm(AuthorDedupMixin, LocationMixin, PersianFormMixin, forms.ModelForm):
     extra_photos = MultipleImageField(required=False, label="عکس‌های بیشتر",
                                       help_text=f"تا {BookPhoto.MAX_EXTRA} عکس دیگه (پشت جلد، وضعیت داخل کتاب…)")
 
@@ -195,7 +216,7 @@ class RelistForm(LocationMixin, PersianFormMixin, forms.Form):
         return self.clean_location(super().clean())
 
 
-class ShelfAddForm(PersianFormMixin, forms.ModelForm):
+class ShelfAddForm(AuthorDedupMixin, PersianFormMixin, forms.ModelForm):
     """افزودن سریع به قفسه: شابک (اختیاری؛ عنوان و نویسنده خودکار پر می‌شه)، عنوان، نویسنده، وضعیت خواندن."""
 
     class Meta:

@@ -437,3 +437,12 @@ class ReadingDay(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "day"], name="one_reading_day")]
         ordering = ["-day"]
+
+
+@receiver(post_save, sender=Book, weak=False, dispatch_uid="book_author_names")
+def _remember_author(sender, instance, raw=False, **kwargs):
+    if not raw and instance.author_slug:
+        from .authors import remember
+        from common.text import first_author
+
+        remember(instance.author_slug, " ".join(first_author(instance.author).split()))

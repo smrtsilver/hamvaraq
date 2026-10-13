@@ -1,0 +1,5 @@
+{% if form.author_suggestions %}<div class="dedup-box" role="group" aria-labelledby="dd-h">
+    <p id="dd-h" class="dedup-h">{% include "components/icon.html" with name="info" %} منظورت یکی از این‌ها بود؟</p>
+    <div class="dedup-picks">{% for s in form.author_suggestions %}<button class="chip dedup-pick" name="author_pick" value="{{ s }}">{{ s }}</button>{% endfor %}</div>
+    <label class="check dedup-ok"><input type="checkbox" name="author_ok" value="1"><span>نه، «{{ form.author.value }}» نویسنده‌ی دیگه‌ایه (بعد از تیک، دوباره ذخیره کن)</span></label>
+</div>{% endif %}

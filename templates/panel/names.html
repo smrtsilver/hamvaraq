@@ -1,0 +1,13 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}نویسنده و ناشر تکراری{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>نویسنده و ناشر تکراری</h1><p>نام‌هایی که با «ی/ي، ک/ك، آ/ا، نیم‌فاصله» یا یه غلط تایپی کوچیک با هم فرق دارن. ادغام همه‌ی نوشتارها رو به نسخه‌ی رایج‌تر برمی‌گردونه.</p></div></div>
+<div class="ptabs"><a href="?"{% if kind == 'author' %} aria-current="true"{% endif %}>نویسنده‌ها</a><a href="?kind=publisher"{% if kind == 'publisher' %} aria-current="true"{% endif %}>ناشرها</a></div>
+{% if pairs %}<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>نگه‌داشتن</th><th>ادغام‌شونده</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
+{% for p in pairs %}<tr><td data-label="نگه‌داشتن"><strong>{{ p.keep.1 }}</strong> <span class="small muted">{{ p.keep.2|fa }} ردیف</span></td>
+    <td data-label="ادغام‌شونده">{{ p.drop.1 }} <span class="small muted">{{ p.drop.2|fa }} ردیف</span></td>
+    <td class="acts"><form method="post" action="{% url 'panel:names_merge' %}" class="row-act" data-confirm="همه‌ی «{{ p.drop.1 }}»ها بشن «{{ p.keep.1 }}»؟">{% csrf_token %}<input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="drop" value="{{ p.drop.0 }}">
+        <label class="visually-hidden" for="keep-{{ forloop.counter }}">نام نهایی</label><input id="keep-{{ forloop.counter }}" name="keep" value="{{ p.keep.1 }}" autocomplete="off"><button class="btn btn-sm">ادغام</button></form></td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}{% include "components/empty.html" with ill="books" title="تکراری‌ای پیدا نشد" text="همه‌ی نام‌ها یکتان." %}{% endif %}
+{% endblock %}

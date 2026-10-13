@@ -26,7 +26,7 @@
     {% include "components/field.html" with field=form.note %}
     {% include "components/field.html" with field=form.cover %}
     <details class="entry-more"><summary>مشخصات کتاب</summary>
-        {% include "components/field.html" with field=form.title %}{% include "components/field.html" with field=form.author %}{% include "components/field.html" with field=form.isbn %}</details>
+        {% include "components/field.html" with field=form.title %}{% include "components/field.html" with field=form.author %}{% include "books/_author_suggest.html" %}{% include "components/field.html" with field=form.isbn %}</details>
     <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ذخیره</button></div>
 </form>
 

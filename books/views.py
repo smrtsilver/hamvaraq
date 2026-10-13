@@ -400,8 +400,12 @@ def suggest(request):
     for w in ws:
         qs = qs.filter(search_text__contains=w)
     if kind == "author":
-        rows = qs.order_by("author").values_list("author", flat=True).distinct()[:8]
-        return JsonResponse({"items": [{"author": a} for a in rows]})
+        # از فهرست یکتای نویسنده‌ها (کش‌شده)؛ هر نویسنده فقط یه بار، با رایج‌ترین نوشتار و تعداد کتاب
+        from .authors import known
+
+        hits = [(n, d) for s, d, n in known("author") if all(w in s.replace("-", " ") for w in ws)]
+        hits.sort(key=lambda t: -t[0])
+        return JsonResponse({"items": [{"author": d, "count": n} for n, d in hits[:8]]})
     seen, items = set(), []
     # اول کاتالوگ (چاپ‌های ثبت‌شده با شابک و ناشر)، بعد آگهی‌های سایت
     from .models import Edition
