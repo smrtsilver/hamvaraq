@@ -3009,3 +3009,12 @@ class CoverDesignAlbumTests(Base):
         self.assertEqual(html.count("data-lb-src"), 2)
         other = Book.objects.create(owner=self.giver, title="بی‌عکس", author="ن", city=self.isfahan)
         self.assertNotContains(self.client.get(other.get_absolute_url()), 'class="album"')   # بدون عکس: بدون جعبه‌ی خالی
+
+
+class ForbiddenPageTests(Base):
+    def test_403_is_persian(self):
+        self.client.force_login(self.taker)
+        r = self.client.get("/announcements/new/")
+        self.assertEqual(r.status_code, 403)
+        self.assertContains(r, "مخصوص مدیریت سایته", status_code=403)
+        self.assertNotContains(r, "Forbidden", status_code=403)

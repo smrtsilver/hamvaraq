@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}دسترسی نداری | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}<div class="page-404"><span class="ph-badge" aria-hidden="true">{% include "components/icon.html" with name="shield" %}</span><h1>این بخش مخصوص مدیریت سایته</h1><p class="muted">اگه فکر می‌کنی اشتباهی پیش اومده یا خبری داری که باید اعلام بشه، از «گزارش مشکل» به ما بگو.</p>
+<div class="cluster jc-center"><a class="btn" href="{% url 'home' %}">خانه</a><a class="btn btn-secondary" href="{% url 'support:new' %}">گزارش مشکل</a></div></div>{% endblock %}
