@@ -718,3 +718,11 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .pad-soon{padding:40px 24px}.pad-8-16{padding:8px 16px}.pad-faq{padding:0 20px 20px}.btn-compact{font-size:var(--fs-sm);padding:6px 18px}
 .soon-text{max-width:420px;margin:0 auto 20px}.soon-ico{margin:0 auto 16px;width:56px;height:56px}.img-260{max-width:260px;border-radius:12px}
 .menu-flat{padding:8px 14px 8px 8px;border:0;background:none;box-shadow:none}.sticky-top{position:sticky;top:calc(var(--header-h) + 12px)}
+
+/* ---------- فهرست کتاب: چیپ فیلتر فعال، نوار نتیجه، نشان‌های کارت ---------- */
+.active-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-8px 0 14px}
+.chip-x{gap:6px;text-decoration:none;border-color:var(--primary);background:var(--primary-soft);color:var(--primary-ink)}.chip-x .i{width:14px;height:14px}
+.chip-x:hover{background:var(--surface);text-decoration:none}
+.result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.result-bar .result-count{margin:0}
+.status-hot{background:var(--accent);color:#2b1c00}.status-hot .i{width:14px;height:14px}
+.chip-near{background:var(--info-soft);color:var(--info);border-color:transparent}.chip-trust{background:var(--primary-soft);color:var(--primary-ink);border-color:transparent}.chip-trust .i{width:13px;height:13px}

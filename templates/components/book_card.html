@@ -1,11 +1,11 @@
 <a class="book-card" href="{% url 'books:detail' b.pk %}">
     <div class="cover">
-        {% if b.status != 'available' %}<span class="pill status status-{{ b.status }}">{{ b.get_status_display }}</span>{% endif %}
+        {% if b.status != 'available' %}<span class="pill status status-{{ b.status }}">{{ b.get_status_display }}</span>{% elif b.hot %}<span class="pill status status-hot">{% include "components/icon.html" with name="heart" %} پرتقاضا</span>{% endif %}
         {% if b.cover %}<img src="{{ b.thumb_url }}" alt="جلد کتاب «{{ b.title }}»" loading="lazy" width="420" height="560">
         {% else %}<span class="cover-fallback">{{ b.title|truncatechars:34 }}</span>{% endif %}
     </div>
     <p class="book-title">{{ b.title }}</p>
     <p class="book-author">{{ b.author }}</p>
-    <div class="book-meta"><span class="chip">{% include "components/icon.html" with name="pin" %}{{ b.city.name }}</span><span class="chip">{{ b.get_condition_display }}</span></div>
+    <div class="book-meta"><span class="chip">{% include "components/icon.html" with name="pin" %}{{ b.city.name }}</span><span class="chip">{{ b.get_condition_display }}</span>{% if b.distance %}<span class="chip chip-near">{{ b.distance }}</span>{% endif %}{% if b.trusted %}<span class="chip chip-trust" title="مبادله‌دهنده‌ی معتبر">{% include "components/icon.html" with name="shield" %} معتبر</span>{% endif %}</div>
     {% if show_quality and b.quality %}<div class="q-line" title="کیفیت آگهی"><span class="meter" role="img" aria-label="کیفیت آگهی {{ b.quality.score|fa }} درصد"><i data-w="{{ b.quality.score }}"></i></span><small>{{ b.quality.score|fa }}٪ · {{ b.quality.label }}</small></div>{% endif %}
 </a>

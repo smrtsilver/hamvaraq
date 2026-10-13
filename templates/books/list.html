@@ -10,7 +10,9 @@
     {% for field in form %}{% include "components/field.html" %}{% endfor %}
     <div class="filterbar-actions"><button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button></div>
 </form>
-<p class="result-count">{{ page.paginator.count|fa }} کتاب پیدا شد</p>
+{% if chips %}<div class="active-chips" aria-label="فیلترهای فعال">{% for label, url in chips %}<a class="chip chip-x" href="{{ url }}" aria-label="حذف فیلتر {{ label }}">{{ label }} {% include "components/icon.html" with name="x" %}</a>{% endfor %}<a class="small" href="{% url 'books:list' %}">پاک کردن همه</a></div>{% endif %}
+<div class="result-bar"><p class="result-count" aria-live="polite">{{ page.paginator.count|fa }} کتاب پیدا شد</p>
+    {% if can_save_search %}<form method="post" action="{% url 'books:wishlist' %}">{% csrf_token %}<input type="hidden" name="text" value="{{ form.cleaned_data.q }}"><button class="btn btn-ghost btn-sm">{% include "components/icon.html" with name="heart" %} این جستجو رو به لیست آرزو اضافه کن</button></form>{% endif %}</div>
 {% with books=page empty_title="کتابی با این مشخصات پیدا نشد" empty_text="فیلترها رو کم کن یا شهر دیگه‌ای رو امتحان کن." %}
     {% include "components/book_grid.html" %}
 {% endwith %}

@@ -101,6 +101,9 @@ class BookFilterForm(LocationMixin, PersianFormMixin, forms.Form):
     category = forms.ModelChoiceField(Category.objects.all(), required=False, empty_label="همه‌ی دسته‌ها", label="دسته",
                                       widget=forms.Select(attrs={"data-combobox": "", "data-placeholder": "همه‌ی دسته‌ها"}))
     condition = forms.ChoiceField(choices=[("", "همه‌ی وضعیت‌ها"), *Book.Condition.choices], required=False, label="وضعیت")
+    SORTS = [("new", "جدیدترین"), ("near", "نزدیک‌ترین به من"), ("wanted", "پرتقاضاترین")]
+    sort = forms.ChoiceField(choices=SORTS, required=False, label="مرتب‌سازی")
+    all = forms.BooleanField(required=False, label="رزروشده‌ها هم نشون بده")     # پیش‌فرض: فقط موجودها
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

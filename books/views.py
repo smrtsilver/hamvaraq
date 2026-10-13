@@ -23,6 +23,7 @@ from . import catalog
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
+from .listing import active_chips, decorate_cards
 from .quality import WEIGHTS as QUALITY_WEIGHTS
 from .quality import listing_quality
 from .services import add_wish, demand_for, notify_wishlists, similar_books
@@ -30,9 +31,13 @@ from .services import add_wish, demand_for, notify_wishlists, similar_books
 
 def book_list(request):
     form = BookFilterForm(request.GET)
-    qs = Book.objects.exclude(status=Book.Status.EXCHANGED).select_related("city__province", "category", "owner")
+    qs = Book.objects.select_related("city__province", "category", "owner")
+    chips, clear_url = [], ""
+    d = {}
     if form.is_valid():
         d = form.cleaned_data
+        # پیش‌فرض فقط کتاب‌های «موجود»؛ با گزینه‌ی «رزروشده‌ها هم» رزروها هم می‌آن (مبادله‌شده‌ها هیچ‌وقت)
+        qs = qs.exclude(status=Book.Status.EXCHANGED) if d.get("all") else qs.filter(status=Book.Status.AVAILABLE)
         if d["q"]:
             # هر کلمه‌ی جستجو باید جایی تو عنوان/نویسنده/شابک باشه (متن نرمال‌شده)
             for word in words(d["q"]):
@@ -45,10 +50,33 @@ def book_list(request):
             qs = qs.filter(category=d["category"])
         if d["condition"]:
             qs = qs.filter(condition=d["condition"])
+        qs = _sorted(qs, d.get("sort"), request.user)
+        chips, clear_url = active_chips(request, {**d, "_condition_choices": form.fields["condition"].choices, "_sort_choices": form.SORTS})
+    else:
+        qs = qs.filter(status=Book.Status.AVAILABLE)
     page = Paginator(qs, 12).get_page(request.GET.get("page"))
+    page.object_list = decorate_cards(page.object_list, request.user)
     params = request.GET.copy()
     params.pop("page", None)
-    return render(request, "books/list.html", {"form": form, "page": page, "qs": params.urlencode()})
+    return render(request, "books/list.html", {
+        "form": form, "page": page, "qs": params.urlencode(), "chips": chips, "clear_url": clear_url,
+        "can_save_search": settings.WISHLIST_ENABLED and request.user.is_authenticated and bool(d.get("q"))})
+
+
+def _sorted(qs, sort, user):
+    """جدیدترین (پیش‌فرض)، نزدیک‌ترین (هم‌شهری ← هم‌استان ← بقیه؛ بدون شهر مثل جدیدترین)، پرتقاضاترین (درخواست‌های ۹۰ روز اخیر)."""
+    from datetime import timedelta
+
+    from django.db.models import Case, Count, IntegerField, Q, Value, When
+    from django.utils import timezone
+
+    if sort == "wanted":
+        since = timezone.now() - timedelta(days=90)
+        return qs.annotate(req_count=Count("exchanges", filter=Q(exchanges__created_at__gte=since))).order_by("-req_count", "-created_at")
+    if sort == "near" and user.is_authenticated and user.city_id:
+        rank = Case(When(city_id=user.city_id, then=Value(0)), When(city__province_id=user.city.province_id, then=Value(1)), default=Value(2), output_field=IntegerField())
+        return qs.annotate(near_rank=rank).order_by("near_rank", "-created_at")
+    return qs.order_by("-created_at")
 
 
 def book_detail(request, pk):
