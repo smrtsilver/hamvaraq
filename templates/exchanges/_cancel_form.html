@@ -1,4 +1,4 @@
-<form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="cancel-form" data-confirm="مبادله لغو بشه؟">{% csrf_token %}
+<form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="cancel-form" data-confirm="مبادله لغو بشه؟" data-confirm-label="لغو مبادله" data-cancel-label="بازگشت">{% csrf_token %}
     <label class="visually-hidden" for="cr-{{ ex.pk }}">دلیل لغو</label>
     <select id="cr-{{ ex.pk }}" name="reason"><option value="">دلیل لغو (اختیاری)</option><option>دیگه کتاب رو ندارم</option><option>نیازم نیست</option><option>طرف مقابل جواب نمی‌ده</option><option>نتونستیم هماهنگ کنیم</option><option>سایر</option></select>
     <button class="btn btn-ghost link-danger">{{ label }}</button></form>

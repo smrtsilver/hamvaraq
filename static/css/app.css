@@ -758,3 +758,14 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .c-plus{color:var(--primary)}.c-minus{color:var(--danger)}
 .cancel-form{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}.cancel-form select{min-height:40px;width:auto;max-width:220px;padding-block:6px}
 .postal-form{margin:12px 0}.postal-form .cluster{flex-wrap:nowrap}.postal-form input{max-width:300px}
+
+/* ---------- مودال hv ---------- */
+.hv-modal{border:0;padding:0;border-radius:var(--r-lg);background:var(--surface);color:var(--ink);width:min(460px,calc(100vw - 32px));box-shadow:var(--shadow-3)}
+.hv-modal::backdrop{background:rgba(14,23,19,.6);backdrop-filter:blur(2px)}
+.hv-modal-box{padding:24px;display:grid;gap:12px}.hv-modal-title{margin:0;font-size:var(--fs-lg)}.hv-modal-msg{margin:0;color:var(--ink-2);line-height:1.9}
+.hv-modal--danger .hv-modal-title{color:var(--danger)}
+.hv-modal-actions{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:6px}
+.hv-modal[open]{animation:hv-pop .18s var(--ease)}
+@keyframes hv-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hv-modal[open]{animation:none}}
+.toast-out{opacity:0;transition:opacity .25s}

@@ -57,7 +57,7 @@
             method: "POST", body: data, credentials: "same-origin",
             headers: {"X-Requested-With": "XMLHttpRequest"},
         });
-        if (r.status === 429) { alert("پیام‌هات زیاد بود؛ چند دقیقه صبر کن."); return; }
+        if (r.status === 429) { window.HV.announce("پیام‌هات زیاد بود؛ چند دقیقه صبر کن.", "error"); return; }
         if (r.ok) { input.value = ""; poll(); }
     });
 

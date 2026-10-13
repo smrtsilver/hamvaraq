@@ -63,18 +63,8 @@
 })();
 
 
-// عرض/ارتفاع درصدی از data-w / data-h (بدون style درون‌خطی؛ سازگار با CSP)
-document.querySelectorAll("[data-w]").forEach((el) => { el.style.width = el.dataset.w + "%"; });
-document.querySelectorAll("[data-h]").forEach((el) => { el.style.height = el.dataset.h + "%"; });
-
-// تأیید پیش از اقدام خطرناک (به‌جای onclick/onsubmit)، دکمه‌ی بازگشت و تازه‌سازی (به‌جای javascript:)
-document.addEventListener("submit", (e) => {
-    const msg = e.target.dataset && e.target.dataset.confirm;
-    if (msg && !confirm(msg)) e.preventDefault();
-});
+// دکمه‌ی بازگشت و تازه‌سازی (به‌جای javascript:)؛ تأیید اقدام خطرناک تو hv/modal.js
 document.addEventListener("click", (e) => {
-    const guarded = e.target.closest("button[data-confirm], a[data-confirm]");
-    if (guarded && !confirm(guarded.dataset.confirm)) { e.preventDefault(); e.stopPropagation(); return; }
     const back = e.target.closest("[data-back]");
     if (back) { e.preventDefault(); if (history.length > 1) history.back(); else location.href = back.getAttribute("href") || "/"; return; }
     if (e.target.closest("[data-reload]")) location.reload();
@@ -91,11 +81,4 @@ document.querySelectorAll("[data-share]").forEach((btn) => {
             else { await navigator.clipboard.writeText(data.url); const old = btn.textContent; btn.textContent = "لینک کپی شد"; setTimeout(() => { btn.textContent = old; }, 2000); }
         } catch (_) { /* کاربر انصراف داد */ }
     });
-});
-
-
-// LQIP: رنگ و فرم مات جلد تا قبل از لود شدن عکس (با CSSOM؛ سازگار با CSP)
-document.querySelectorAll("img[data-lqip]").forEach((img) => {
-    const apply = () => { img.parentElement.closest(".cover, .gallery .cover") && (img.parentElement.closest(".cover").style.backgroundImage = `url("${img.dataset.lqip}")`); };
-    apply();
 });
