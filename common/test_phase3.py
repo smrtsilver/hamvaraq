@@ -103,7 +103,7 @@ class BookDetailTests(Base):
 
     def test_no_points_blocked_and_owner_and_unavailable_views_render(self):
         book = self.book()
-        poor = User.objects.create_user("poor", password="x12345678")
+        User.objects.create_user("poor", password="x12345678")
         self.client.login(username="poor", password="x12345678")
         page = self.client.get(book.get_absolute_url()).content.decode()
         self.assertTrue("امتیاز نداری" in page and "چطور نگه داشته می‌شه" not in page)
