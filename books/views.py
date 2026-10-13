@@ -236,11 +236,34 @@ def review_save(request, pk):
 
 
 def book_card_png(request, pk):
+    """
+    کارت استوری. رندر Pillow سنگینه؛ بار اول رو دیسک (media/cards/<pk>-<نسخه>.png) ذخیره می‌شه و بعدش
+    هیچ رندری نیست. پشت nginx با CARD_X_ACCEL_PREFIX خود nginx فایل رو می‌ده و gunicorn فقط هدر می‌فرسته.
+    """
+    from django.http import FileResponse
+    from django.utils.http import quote_etag
+
+    from common.throttle import client_ip, hit
+
     book = get_object_or_404(Book.objects.select_related("city"), pk=pk)
-    resp = HttpResponse(book_card.render_card(book), content_type="image/png")
+    path = book_card.cached_card_path(book)
+    etag = quote_etag(path.stem.split("-", 1)[1])
+    if request.META.get("HTTP_IF_NONE_MATCH") == etag and path.exists():
+        return HttpResponse(status=304, headers={"ETag": etag})
+    if not path.exists():
+        if not hit("cardrender", client_ip(request), 20, 60):     # رندر نو فقط با سقف نرخ
+            return HttpResponse("زیادی درخواست دادی؛ کمی بعد دوباره امتحان کن.", status=429)
+        path = book_card.render_to_disk(book)
+    prefix = getattr(settings, "CARD_X_ACCEL_PREFIX", "")
+    if prefix:
+        resp = HttpResponse(content_type="image/png")
+        resp["X-Accel-Redirect"] = f"{prefix.rstrip('/')}/{path.name}"
+    else:
+        resp = FileResponse(open(path, "rb"), content_type="image/png")
     if request.GET.get("download"):
         resp["Content-Disposition"] = f'attachment; filename="hamvaraq-book-{book.pk}.png"'
     resp["Cache-Control"] = "public, max-age=300"
+    resp["ETag"] = etag
     return resp
 
 

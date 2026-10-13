@@ -232,6 +232,8 @@ WELCOME_WINDOW_DAYS = 30
 # ---- اعلان بیرون از سایت (Web Push) ----
 # بدون این کلیدها فقط اعلان داخل سایت کار می‌کنه. ساختن: python manage.py generate_vapid_keys
 WISHLIST_ENABLED = env.bool("WISHLIST_ENABLED", default=False)  # فعلاً «به‌زودی»؛ اطلاعات کتاب (شابک و ...) کامل بشه، روشنش می‌کنیم
+# کارت استوری از nginx سرو بشه: مثلاً /_cards/ (و location internal تو nginx؛ deploy/hamvaraq.nginx.conf.example)
+CARD_X_ACCEL_PREFIX = env("CARD_X_ACCEL_PREFIX", default="")
 ISBN_BUDGET = env.float("ISBN_BUDGET", default=3.0)                    # ثانیه؛ کل زمانی که یه استعلام شابک می‌تونه request رو نگه داره
 ISBN_BREAKER_FAILS = env.int("ISBN_BREAKER_FAILS", default=3)
 ISBN_BREAKER_COOLDOWN = env.int("ISBN_BREAKER_COOLDOWN", default=300)  # ثانیه

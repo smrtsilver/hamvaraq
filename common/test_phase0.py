@@ -255,3 +255,65 @@ class IsbnBudgetTests(Base):
         src = pathlib.Path("docker/entrypoint.prod.sh").read_text(encoding="utf-8")
         self.assertIn("--worker-class gthread", src)
         self.assertEqual(settings.ISBN_BUDGET, 3.0)
+
+
+class CardCacheTests(Base):
+    def setUp(self):
+        import shutil
+        from django.conf import settings
+        from pathlib import Path
+        self.book_obj = self.book(title="بوف کور")
+        self.addCleanup(lambda: shutil.rmtree(Path(settings.MEDIA_ROOT) / "cards", ignore_errors=True))
+
+    def get(self, **kw):
+        return self.client.get(reverse("books:card", args=[self.book_obj.pk]), **kw)
+
+    def test_second_request_is_served_from_disk_without_rendering(self):
+        from unittest import mock
+        from books import card
+        with mock.patch.object(card, "render_card", wraps=card.render_card) as render:
+            r1 = self.get()
+            body1 = b"".join(r1.streaming_content)
+            r2 = self.get()
+            body2 = b"".join(r2.streaming_content)
+        self.assertEqual((r1.status_code, r1["Content-Type"]), (200, "image/png"))
+        self.assertEqual(render.call_count, 1)
+        self.assertEqual(body1, body2)
+        self.assertTrue(body1.startswith(b"\x89PNG"))
+
+    def test_content_change_creates_new_version_and_removes_old_file(self):
+        from books import card
+        self.get()
+        old = card.cached_card_path(self.book_obj)
+        self.assertTrue(old.exists())
+        self.book_obj.title = "بوف کور (چاپ تازه)"
+        self.book_obj.save()
+        self.get()
+        new = card.cached_card_path(self.book_obj)
+        self.assertNotEqual(old.name, new.name)
+        self.assertTrue(new.exists())
+        self.assertFalse(old.exists())
+
+    def test_etag_304_download_header_and_hidden_book_404(self):
+        r = self.get()
+        etag = r["ETag"]
+        self.assertEqual(self.get(HTTP_IF_NONE_MATCH=etag).status_code, 304)
+        self.assertIn("attachment", self.client.get(reverse("books:card", args=[self.book_obj.pk]), {"download": 1})["Content-Disposition"])
+        self.book_obj.soft_delete()
+        self.assertEqual(self.get().status_code, 404)
+
+    def test_x_accel_redirect_mode_sends_header_only(self):
+        from django.test import override_settings
+        with override_settings(CARD_X_ACCEL_PREFIX="/_cards/"):
+            r = self.get()
+        self.assertEqual(r.content, b"")
+        self.assertRegex(r["X-Accel-Redirect"], rf"^/_cards/{self.book_obj.pk}-[0-9a-f]{{12}}\.png$")
+
+    def test_render_rate_limited_only_on_cache_miss(self):
+        from unittest import mock
+        self.get()                                           # کش می‌شه
+        with mock.patch("common.throttle.hit", return_value=False):
+            self.assertEqual(self.get().status_code, 200)     # از کش: بدون شمارش نرخ
+            other = self.book(title="کتاب دیگر")
+            r = self.client.get(reverse("books:card", args=[other.pk]))
+        self.assertEqual(r.status_code, 429)

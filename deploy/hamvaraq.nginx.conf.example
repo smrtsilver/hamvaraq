@@ -32,6 +32,14 @@ server {
         alias /home/ubuntu/hamvaraq/media/;
     }
 
+    # کارت‌های استوری: Django بعد از اولین رندر فقط هدر X-Accel-Redirect می‌فرسته و nginx فایل رو می‌ده.
+    # تو .env بذار: CARD_X_ACCEL_PREFIX=/_cards/
+    location /_cards/ {
+        internal;
+        alias /home/ubuntu/hamvaraq/media/cards/;
+        expires 5m;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;

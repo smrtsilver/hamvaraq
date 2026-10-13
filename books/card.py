@@ -1,6 +1,8 @@
 """کارت اشتراک‌گذاری کتاب برای استوری (PNG عمودی ۱۰۸۰×۱۹۲۰) با Pillow."""
 
+import hashlib
 import io
+import os
 from pathlib import Path
 
 import arabic_reshaper
@@ -95,3 +97,35 @@ def render_card(book, site_url=None):
     out = io.BytesIO()
     img.save(out, "PNG", optimize=True)
     return out.getvalue()
+
+
+CARD_TEMPLATE_VERSION = "1"      # طراحی کارت عوض شد این رو بالا ببر تا همه‌ی کارت‌های کش‌شده دوباره ساخته بشن
+
+
+def card_version(book, site_url=None):
+    """اثر انگشت محتوای کارت؛ هر چیزی که روی تصویر اثر داره تو آن هست (نه زمان)."""
+    site_url = site_url or getattr(settings, "SITE_URL", "hamvaraq.ir")
+    raw = "|".join([CARD_TEMPLATE_VERSION, book.title, book.author, str(book.city), book.get_condition_display(), book.cover.name or "", book.cover_thumb.name or "", site_url])
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+
+
+def cards_dir():
+    path = Path(settings.MEDIA_ROOT) / "cards"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def cached_card_path(book):
+    return cards_dir() / f"{book.pk}-{card_version(book)}.png"
+
+
+def render_to_disk(book):
+    """کارت رو می‌سازه و اتمیک روی دیسک می‌نویسه (تلاش هم‌زمان دو درخواست فایل نیمه‌کاره نمی‌سازه)؛ نسخه‌های قدیمی همین کتاب پاک می‌شن."""
+    path = cached_card_path(book)
+    tmp = path.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_bytes(render_card(book))
+    os.replace(tmp, path)
+    for old in path.parent.glob(f"{book.pk}-*.png"):
+        if old != path:
+            old.unlink(missing_ok=True)
+    return path
