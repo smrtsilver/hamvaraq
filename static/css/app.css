@@ -1566,3 +1566,8 @@ input[type=range]{accent-color:var(--primary)}
   .ptable td.acts{flex:1 1 100%;margin-top:4px}
   .ptable td.acts .btn{min-height:32px;padding:0 12px}
 }
+.bulk-bar.is-ready:not(.is-active){display:none}
+.bulk-bar.is-active{position:sticky;bottom:calc(var(--nav-h,0px) + 12px);z-index:30;box-shadow:var(--shadow-3)}
+.ptabs{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}
+.ptabs::-webkit-scrollbar{display:none}.ptabs a{flex:none}
+@media (max-width:640px){.ptools{display:none!important}}

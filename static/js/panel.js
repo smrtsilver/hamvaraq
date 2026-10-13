@@ -15,6 +15,7 @@
       var n = boxes().filter(function (b) { return b.checked; }).length;
       count.textContent = HV.formatFaNumber(n) + " انتخاب";
       bar.classList.toggle("is-active", n > 0);
+      bar.classList.add("is-ready");
       boxes().forEach(function (b) { b.closest("tr").classList.toggle("is-selected", b.checked); });
     };
     document.addEventListener("change", function (e) {
