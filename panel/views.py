@@ -238,6 +238,28 @@ def user_action(request, pk):
     return redirect("panel:user", pk)
 
 
+@staff_required
+@require_POST
+def user_reset_link(request, pk):
+    """
+    ایمیل اختیاریه و بازیابی رمز با ایمیل برای خیلی‌ها کار نمی‌کنه؛ مدیر بعد از احراز هویت کاربر (مثلاً از کانال پشتیبانی)
+    یه لینک یک‌بارمصرف می‌سازه و خودش برای کاربر می‌فرسته. لینک با تغییر رمز یا بعد از PASSWORD_RESET_TIMEOUT (پیش‌فرض ۳ روز) باطل می‌شه.
+    """
+    from django.contrib.auth.tokens import default_token_generator
+    from django.urls import reverse
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    u = get_object_or_404(User, pk=pk)
+    if not can_manage(request.user, u) or u.is_deleted or not u.is_active:
+        fail(request, "برای این حساب نمی‌شه لینک بازیابی ساخت.")
+        return redirect("panel:user", pk)
+    url = request.build_absolute_uri(reverse("accounts:password_reset_confirm", args=[urlsafe_base64_encode(force_bytes(u.pk)), default_token_generator.make_token(u)]))
+    log(request, "ساخت لینک بازیابی رمز", f"کاربر {u.username}")
+    messages.success(request, f"لینک بازیابی (۳ روز اعتبار؛ فقط برای خود کاربر بفرست): {url}")
+    return redirect("panel:user", pk)
+
+
 # ---------------------------------------------------------------- کتاب‌ها
 @staff_required
 def books(request):

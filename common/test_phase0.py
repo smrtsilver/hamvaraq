@@ -453,3 +453,33 @@ class CspAndTemplateHygieneTests(Base):
         self.assertNotIn("Content-Security-Policy-Report-Only", r)
         self.assertEqual(self.client.post("/csp-report/", data='{"csp-report":{"violated-directive":"script-src"}}', content_type="application/csp-report").status_code, 204)
         self.assertEqual(self.client.get("/csp-report/").status_code, 405)
+
+
+class PasswordResetLinkTests(Base):
+    def test_staff_makes_one_time_reset_link_that_works_once(self):
+        import re
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        r = self.client.post(reverse("panel:user_reset_link", args=[self.taker.pk]), follow=True)
+        text = " ".join(str(m) for m in r.context["messages"])
+        url = re.search(r"http://testserver(/accounts/reset/[^\s]+)", text).group(1)
+        from common.models import AuditLog
+        self.assertTrue(AuditLog.objects.filter(action="ساخت لینک بازیابی رمز", actor=boss).exists())
+        self.client.logout()
+        page = self.client.get(url, follow=True)                     # توکن به آدرس set-password منتقل می‌شه
+        post_url = page.redirect_chain[-1][0] if page.redirect_chain else url
+        resp = self.client.post(post_url, {"new_password1": "Br4nd-new-pass-77", "new_password2": "Br4nd-new-pass-77"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(self.client.login(username="taker", password="Br4nd-new-pass-77"))
+        self.client.logout()
+        self.assertEqual(self.client.get(url, follow=True).context["validlink"], False)      # دوباره قابل‌استفاده نیست
+
+    def test_not_for_other_staff_deleted_or_non_staff(self):
+        staff = User.objects.create_user("stf", password="x12345678", is_staff=True)
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="stf", password="x12345678")
+        r = self.client.post(reverse("panel:user_reset_link", args=[User.objects.get(username="boss").pk]), follow=True)
+        self.assertNotIn("/accounts/reset/", " ".join(str(m) for m in r.context["messages"]))
+        self.client.login(username="taker", password="x12345678")
+        self.assertEqual(self.client.post(reverse("panel:user_reset_link", args=[self.giver.pk])).status_code, 302)
+        self.assertEqual(staff.pk, User.objects.get(username="stf").pk)

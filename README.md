@@ -71,6 +71,9 @@ nginx روی سرور با `deploy/hamvaraq.nginx.conf.example` جلوی پور�
 - **پنل مدیریت:** `/panel/` (فقط staff؛ آدرس قدیمی `/staff/` به آن می‌رود): نمای کلی، گزارش‌ها (تصمیم)، مشکلات کاربران، مبادله‌ها و حل اختلاف، کاربران (اخطار/محدودیت/مسدودسازی/امتیاز)، کتاب‌ها، معرفی‌ها، اطلاعیه‌ها، چالش‌ها، تنظیمات سایت و لاگ اقدام‌ها. ابزار پیشرفته همان `/admin/` است.
 - **گزارش مشکل:** `/support/` (کاربر و مهمان؛ سقف ۵ در ساعت)؛ پاسخ مدیریت به کاربر اعلان می‌شود.
 - **آمار بازدید:** `analytics/` — فقط بازدید یکتا (هر بازدیدکننده برای هر مورد یک‌بار). صفحه توکن امضاشده می‌دهد و جاوااسکریپت پس از ۴ ثانیه حضور و یک تعامل آن را برمی‌گرداند؛ ربات/مدیر/صاحب محتوا شمرده نمی‌شوند. مهمان = هش یک‌طرفه‌ی (آی‌پی + مرورگر). نمایش: `/panel/stats/` و `/accounts/stats/`.
+- **طرح بهبود (`docs/IMPROVEMENT_PLAN.md`):** فاز ۰ تا ۴ انجام شده (به‌جز بخش‌های منتظر تصمیم)؛ برای هر فاز راهنمای استقرار/برگشت/تأیید در `docs/phaseN-verification.md`.
+  دستورهای تازه: `backfill_editions`، `isbn_coverage <فایل>`، `generate_image_variants`، `check_points_ledger [--fix]`؛ تنظیم‌های تازه در `.env.example` (`ISBN_BUDGET`, `CARD_X_ACCEL_PREFIX`, `CSP_ENFORCE`, `RELIST_REMIND_DAYS`, `CANCEL_AFTER_ACCEPT_FLAG`).
+  ابزار کیفیت: `scripts/a11y_audit.py` (axe) و `scripts/lighthouse_check.sh`. **توجه:** `DEBUG` پیش‌فرض اکنون `False` است؛ برای توسعه `.env.example` را کپی کنید.
 - **بکاپ:** `python manage.py backup_db --media` (خروجی `backups/`، نگه‌داشتن `BACKUP_KEEP` تا). بازیابی Postgres: `pg_restore -c -d <db> backups/db-….dump`.
 - **خطا و لاگ:** `SENTRY_DSN` اختیاری؛ لاگ‌ها در خروجی استاندارد.
 - **CI:** `.github/workflows/ci.yml` (ruff، check، مهاجرت‌ها، تست روی SQLite و Postgres، داکر). توسعه: `pip install -r requirements-dev.txt && ruff check .`

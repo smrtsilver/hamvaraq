@@ -12,6 +12,8 @@
 {% if manageable %}
 <div class="card mt-20"><h2 class="mt-0">اقدام</h2>
     <div class="act-grid">
+        <form method="post" action="{% url 'panel:user_reset_link' u.pk %}" class="act-form">{% csrf_token %}<span class="small muted">کاربر رمزش رو فراموش کرده و ایمیل نداره؟ بعد از احراز هویت، لینک یک‌بارمصرف بساز و برای خودش بفرست.</span>
+            <button class="btn btn-secondary btn-sm">ساخت لینک بازیابی رمز</button></form>
         {% for do, label, cls in actions %}
         <form method="post" action="{% url 'panel:user_action' u.pk %}" class="act-form">{% csrf_token %}<input type="hidden" name="do" value="{{ do }}">
             <input name="note" placeholder="{% if do == 'lift' %}توضیح (اختیاری){% else %}دلیل (لازم){% endif %}" autocomplete="off"{% if do != 'lift' %} required{% endif %} aria-label="دلیل {{ label }}">

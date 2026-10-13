@@ -16,6 +16,7 @@ urlpatterns = [
     path("users/", views.users, name="users"),
     path("users/<int:pk>/", views.user_detail, name="user"),
     path("users/<int:pk>/action/", views.user_action, name="user_action"),
+    path("users/<int:pk>/reset-link/", views.user_reset_link, name="user_reset_link"),
     path("books/", views.books, name="books"),
     path("books/<int:pk>/delete/", views.book_delete, name="book_delete"),
     path("books/<int:pk>/restore/", views.book_restore, name="book_restore"),
