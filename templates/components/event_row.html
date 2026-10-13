@@ -1,0 +1,5 @@
+<li><a class="ev-row" href="{{ a.get_absolute_url }}">
+    {% if a.starts_at and not a.is_news %}<span class="ev-date{% if a.is_past %} past{% endif %}"><b>{{ a.starts_at|jday }}</b><small>{{ a.starts_at|jmonth }}</small></span>
+    {% else %}<span class="ev-date news">{% include "components/icon.html" with name="news" %}</span>{% endif %}
+    <span class="ev-main"><strong>{{ a.title }}</strong><small>{{ a.get_kind_display }}{% if a.is_online %} · آنلاین{% elif a.place_label %} · {{ a.place_label }}{% endif %}{% if a.starts_at and not a.is_news %} · {{ a.starts_at|jtime }}{% endif %}</small></span>
+    {% include "components/icon.html" with name="chevron-left" %}</a></li>

@@ -3,15 +3,15 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <section class="me-hero">
-    <div><h1>سلام {{ user.public_name }} 👋</h1><p>{% if waiting %}{{ waiting|length|fa }} درخواست منتظر جواب توئه.{% elif active %}چند مبادله در جریانه.{% else %}امروز چه کتابی می‌خوای؟{% endif %}</p></div>
-    <div class="cluster">
-        <div class="me-points">{% include "components/icon.html" with name="star" class="i" %}<div><strong>{{ user.points|fa }}</strong><span>امتیاز</span></div></div>
+    <div class="me-top"><div><h1>سلام {{ user.public_name }} 👋</h1><p>{% if waiting %}{{ waiting|length|fa }} درخواست منتظر جواب توئه.{% elif active %}چند مبادله در جریانه.{% else %}امروز چه کتابی می‌خوای؟{% endif %}</p></div>
+        <a class="me-pts" href="{% url 'accounts:points' %}" aria-label="{{ user.points|fa }} امتیاز">{% include "components/icon.html" with name="star" %}<b>{{ user.points|fa }}</b><small>امتیاز</small></a></div>
+    <div class="me-actions">
         <a class="btn" href="{% url 'books:create' %}">{% include "components/icon.html" with name="plus" %} ثبت کتاب</a>
-        <a class="btn btn-secondary" href="{% url 'books:list' %}">پیدا کردن کتاب</a>
+        <a class="btn btn-secondary" href="{% url 'books:list' %}">{% include "components/icon.html" with name="search" %} پیدا کردن کتاب</a>
     </div>
 </section>
 
-{% if waiting or active or unread_messages %}<div class="todo-grid">
+{% if waiting or active or unread_messages %}<div class="todo-grid me-todos">
     {% for e in waiting %}<a class="todo warn" href="{% url 'exchanges:detail' e.pk %}"><span class="ico">{% include "components/icon.html" with name="swap" %}</span><span><strong>{{ e.requester.public_name }} «{{ e.book.title|truncatechars:24 }}» رو می‌خواد</strong><small>برای تأیید یا رد بزن</small></span></a>{% endfor %}
     {% for e in active %}<a class="todo" href="{% url 'exchanges:detail' e.pk %}"><span class="ico">{% include "components/icon.html" with name="pin" %}</span><span><strong>«{{ e.book.title|truncatechars:26 }}» در جریانه</strong><small>{% if e.owner == user %}با {{ e.requester.public_name }}{% else %}با {{ e.owner.public_name }}{% endif %} · هماهنگ و تحویل بده</small></span></a>{% endfor %}
     {% if unread_messages %}<a class="todo warn" href="{% url 'exchanges:list' %}"><span class="ico">{% include "components/icon.html" with name="chat" %}</span><span><strong>{{ unread_messages|fa }} پیام خوانده‌نشده</strong><small>به چت‌هات سر بزن</small></span></a>{% endif %}
@@ -24,7 +24,7 @@
 {% if not user.city %}<p class="small"><a href="{% url 'accounts:settings' %}">شهرت رو انتخاب کن</a> تا کتاب‌های نزدیک خودت رو اول ببینی</p>{% endif %}
 {% for s in shelves %}{% include "components/shelf.html" %}{% endfor %}
 
-{% if events %}<section class="section-sm"><div class="section-head"><div><h2>اتفاق‌های فرهنگی{% if user.city %} <small class="muted">({{ user.city.name }} و آنلاین)</small>{% endif %}</h2></div><a href="{% url 'announcements:list' %}">همه</a></div><div class="event-list">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div></section>{% endif %}
+{% if events %}<section class="section-sm"><div class="section-head"><div><h2>اتفاق‌های فرهنگی{% if user.city %} <small class="muted">({{ user.city.name }} و آنلاین)</small>{% endif %}</h2></div><a href="{% url 'announcements:list' %}">همه</a></div><ul class="ev-rows">{% for a in events|slice:":4" %}{% include "components/event_row.html" %}{% endfor %}</ul></section>{% endif %}
 
 {% if posts %}<section class="section-sm"><div class="section-head"><h2>معرفی‌های تازه</h2><a href="{% url 'posts:list' %}">همه</a></div><div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div></section>{% endif %}
 

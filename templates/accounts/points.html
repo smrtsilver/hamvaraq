@@ -3,11 +3,11 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>امتیاز من</h1><p>موجودی فعلی <strong>{{ user.points|fa }}</strong> امتیاز. هر تغییر اینجا ثبت می‌شه.</p></div></div>
-<div class="callout">{% include "components/icon.html" with name="info" %}<div>با درخواست کتاب، ۱ امتیاز <strong>نگه داشته</strong> می‌شه و با رد، لغو یا انقضا برمی‌گرده. بعد از تحویل موفق، امتیاز به صاحب کتاب می‌رسه.</div></div>
-{% if page %}<div class="ptable-wrap mt-16"><table class="table ptable"><thead><tr><th>زمان</th><th>دلیل</th><th>تغییر</th><th>موجودی</th></tr></thead><tbody>
-{% for e in page %}<tr><td data-label="زمان">{{ e.created_at|jdate }}</td>
-    <td data-label="دلیل">{{ e.get_reason_display }}{% if e.exchange %} — <a href="{% url 'exchanges:detail' e.exchange.pk %}">{{ e.exchange.book.title|truncatechars:30 }}</a>{% elif e.note %} <span class="small muted">{{ e.note }}</span>{% endif %}</td>
-    <td data-label="تغییر"><strong dir="ltr" class="{% if e.delta > 0 %}c-plus{% elif e.delta < 0 %}c-minus{% endif %}">{{ e.delta|stringformat:"+d" }}</strong></td><td data-label="موجودی">{{ e.balance_after|fa }}</td></tr>{% endfor %}</tbody></table></div>
+<details class="callout-mini"><summary>{% include "components/icon.html" with name="info" %} امتیاز چطور کار می‌کنه؟</summary><p>با درخواست کتاب، ۱ امتیاز <strong>نگه داشته</strong> می‌شه و با رد، لغو یا انقضا برمی‌گرده. بعد از تحویل موفق، امتیاز به صاحب کتاب می‌رسه.</p></details>
+{% if page %}<ul class="pt-rows mt-16">{% for e in page %}<li>
+    <b class="pt-delta {% if e.delta > 0 %}c-plus{% elif e.delta < 0 %}c-minus{% endif %}" dir="ltr">{{ e.delta|stringformat:"+d"|fa }}</b>
+    <span class="pt-main"><strong>{{ e.get_reason_display }}</strong><small>{% if e.exchange %}<a href="{% url 'exchanges:detail' e.exchange.pk %}">{{ e.exchange.book.title|truncatechars:30 }}</a> · {% elif e.note %}{{ e.note|truncatechars:40 }} · {% endif %}{{ e.created_at|jdate }}</small></span>
+    <span class="pt-bal" aria-label="موجودی بعد">{{ e.balance_after|fa }}</span></li>{% endfor %}</ul>
 {% include "components/pagination.html" %}
 {% else %}<p class="muted mt-16">هنوز تغییری ثبت نشده.</p>{% endif %}
 {% endblock %}
