@@ -65,6 +65,7 @@
     HV.enhance = (root = document) => {
         HV.$$("[data-w]", root).forEach((el) => { el.style.width = el.dataset.w + "%"; });
         HV.$$("[data-h]", root).forEach((el) => { el.style.height = el.dataset.h + "%"; });
+        HV.$$("[data-pct]", root).forEach((el) => { el.style.setProperty("--pct", el.dataset.pct); });
         HV.$$("img[data-lqip]", root).forEach((img) => {
             const box = img.closest(".hv-card-cover, .cover");
             if (box && !box.style.backgroundImage) box.style.backgroundImage = `url("${img.dataset.lqip}")`;

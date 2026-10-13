@@ -2626,3 +2626,48 @@ class PersonalShelfTests(Base):
         e = ShelfEntry.objects.create(user=self.giver, title="سووشون", author="دانشور", review="خواندنی", rating=4)
         r = self.client.get(f"/story/?entry={e.pk}")
         self.assertEqual((r.context["story"]["text"], r.context["story"]["stars"]), ("خواندنی", 4))
+
+
+class ReadingMVPTests(Base):
+    def setUp(self):
+        self.client.force_login(self.giver)
+
+    def test_finished_at_follows_status_and_goal_progress(self):
+        from books import reading
+        from books.models import ReadingGoal, ShelfEntry
+        e = ShelfEntry.objects.create(user=self.giver, title="الف", author="ب", reading_status="reading")
+        self.assertIsNone(e.finished_at)
+        e.reading_status = "read"; e.save()
+        self.assertEqual(e.finished_at, timezone.localdate())
+        r = self.client.post("/books/shelf/stats/", {"target": "10"})
+        self.assertRedirects(r, "/books/shelf/stats/")
+        g = reading.goal_progress(self.giver)
+        self.assertEqual((g["target"], g["done"], g["percent"]), (10, 1, 10))
+        self.assertEqual(ReadingGoal.objects.get(user=self.giver).year, reading.current_jyear())
+        r = self.client.get("/books/shelf/stats/")
+        self.assertEqual(r.context["stats"]["count"], 1)
+        e.reading_status = "want"; e.save()
+        self.assertIsNone(e.finished_at)
+
+    def test_want_entry_shows_available_listings(self):
+        from books.models import ShelfEntry
+        ShelfEntry.objects.create(user=self.giver, title="کلیدر", author="محمود دولت‌آبادی", reading_status="want")
+        Book.objects.create(owner=self.taker, title="كليدر", author="محمود دولت‌آبادی", city=self.tehran)   # ک و ی عربی
+        r = self.client.get("/books/shelf/")
+        e = [x for x in r.context["entries"] if x.title == "کلیدر"][0]
+        self.assertEqual(len(e.matches), 1)
+        self.assertContains(r, "آگهی موجود")
+
+    def test_suggest_includes_catalog(self):
+        from books.models import Edition
+        Edition.objects.create(isbn13="9786007547717", title="سمفونی مردگان", authors=["عباس معروفی"], publisher="ققنوس")
+        r = self.client.get("/books/suggest/?kind=title&q=سمفونی")
+        self.assertEqual(r.json()["items"][0]["publisher"], "ققنوس")
+
+    def test_recommendations_by_favorite_author(self):
+        from books import reading
+        from books.models import ShelfEntry
+        ShelfEntry.objects.create(user=self.giver, title="سووشون", author="سیمین دانشور", rating=5)
+        Book.objects.create(owner=self.taker, title="جزیره سرگردانی", author="سیمین دانشور", city=self.tehran)
+        recs = reading.recommendations(self.giver)
+        self.assertEqual([b.title for b in recs], ["جزیره سرگردانی"])

@@ -403,6 +403,18 @@ def suggest(request):
         rows = qs.order_by("author").values_list("author", flat=True).distinct()[:8]
         return JsonResponse({"items": [{"author": a} for a in rows]})
     seen, items = set(), []
+    # اول کاتالوگ (چاپ‌های ثبت‌شده با شابک و ناشر)، بعد آگهی‌های سایت
+    from .models import Edition
+
+    eq = Edition.objects.all()
+    for w in ws:
+        eq = eq.filter(title__icontains=w)
+    for ed in eq.order_by("-confidence")[:8]:
+        author = (ed.authors or [""])[0]
+        if (ed.title, author) in seen:
+            continue
+        seen.add((ed.title, author))
+        items.append({"title": ed.title, "author": author, "isbn": ed.isbn13 or "", "publisher": ed.publisher, "year": ed.year or ""})
     for title, author, isbn in qs.order_by("-created_at").values_list("title", "author", "isbn")[:60]:
         if (title, author) in seen:
             continue

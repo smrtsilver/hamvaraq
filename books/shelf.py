@@ -8,7 +8,8 @@ from django.views.decorators.http import require_POST
 from common.throttle import throttle
 
 from .forms import ShelfAddForm, ShelfEntryForm
-from .models import ShelfEntry
+from . import reading
+from .models import ReadingGoal, ShelfEntry
 
 SHELF_MAX = 2000
 
@@ -23,7 +24,37 @@ def my_shelf(request):
     elif tab == "swap":
         qs = qs.filter(book__isnull=False, book__deleted_at__isnull=True, book__owner=request.user, book__status__in=["available", "reserved"])
     tabs = [("", "همه", sum(counts.values()))] + [(v, label, counts.get(v, 0)) for v, label in ShelfEntry.Reading.choices]
-    return render(request, "books/shelf.html", {"entries": qs[:300], "tabs": tabs, "tab": tab, "add_form": ShelfAddForm()})
+    entries = list(qs[:300])
+    matches = reading.wanted_matches(request.user, entries)
+    for e in entries:
+        e.matches = matches.get(e.pk, [])
+    return render(request, "books/shelf.html", {"entries": entries, "tabs": tabs, "tab": tab, "add_form": ShelfAddForm(),
+                                                "goal": reading.goal_progress(request.user), "jyear": reading.current_jyear(),
+                                                "recs": reading.recommendations(request.user, 8) if not tab else []})
+
+
+@login_required
+def shelf_stats(request):
+    this = reading.current_jyear()
+    try:
+        year = int(request.GET.get("y", this))
+    except ValueError:
+        year = this
+    year = max(1300, min(this, year))
+    if request.method == "POST":
+        try:
+            target = int(request.POST.get("target", "").strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")))
+        except ValueError:
+            target = 0
+        if 1 <= target <= 500:
+            ReadingGoal.objects.update_or_create(user=request.user, year=this, defaults={"target": target})
+            messages.success(request, "هدف امسالت ثبت شد. کتاب‌خوندنت پربار!")
+        else:
+            messages.error(request, "یه عدد بین ۱ تا ۵۰۰ بنویس.")
+        return redirect("books:shelf_stats")
+    years = sorted({this, *[y for y in ReadingGoal.objects.filter(user=request.user).values_list("year", flat=True)]}, reverse=True)
+    return render(request, "books/shelf_stats.html", {"year": year, "this_year": this, "years": years,
+                                                      "goal": reading.goal_progress(request.user, year), "stats": reading.reading_stats(request.user, year)})
 
 
 @login_required

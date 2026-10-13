@@ -14,6 +14,7 @@ urlpatterns = [
     path("mine/", views.my_books, name="mine"),
     path("shelf/", shelf.my_shelf, name="shelf"),
     path("shelf/add/", shelf.shelf_add, name="shelf_add"),
+    path("shelf/stats/", shelf.shelf_stats, name="shelf_stats"),
     path("shelf/<int:pk>/", shelf.shelf_edit, name="shelf_edit"),
     path("shelf/<int:pk>/delete/", shelf.shelf_delete, name="shelf_delete"),
     path("wishlist/", views.wishlist, name="wishlist"),

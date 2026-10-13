@@ -333,6 +333,7 @@ class ShelfEntry(models.Model):
     rating = models.PositiveSmallIntegerField(null=True, blank=True, choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="امتیاز")
     review = models.TextField(blank=True, max_length=1500, verbose_name="نقد (عمومی)")
     note = models.TextField(blank=True, max_length=3000, verbose_name="یادداشت (فقط برای خودت)")
+    finished_at = models.DateField(null=True, blank=True, db_index=True, verbose_name="تاریخ تموم کردن")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان افزودن")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین تغییر")
 
@@ -367,6 +368,12 @@ class ShelfEntry(models.Model):
 
         if self.isbn and not self.edition_id:
             self.edition = Edition.objects.filter(isbn13=normalize_isbn(self.isbn) or "-").first()
+        # تاریخ تموم کردن برای هدف سالانه و آمار: با «خوانده‌شده» امروز ثبت می‌شه (اگه خود کاربر تاریخ نداده)
+        if self.reading_status == self.Reading.READ and self.finished_at is None:
+            from django.utils import timezone
+            self.finished_at = timezone.localdate()
+        elif self.reading_status != self.Reading.READ:
+            self.finished_at = None
         super().save(*args, **kwargs)
 
 
@@ -376,3 +383,18 @@ def _book_to_shelf(sender, instance, created, raw=False, **kwargs):
     if created and not raw and not getattr(instance, "_from_shelf", False):
         ShelfEntry.objects.get_or_create(user_id=instance.owner_id, book=instance, defaults={
             "title": instance.title, "author": instance.author, "isbn": instance.isbn, "edition_id": instance.edition_id})
+
+
+class ReadingGoal(models.Model):
+    """هدف خواندن یه سال شمسی («امسال ۲۴ کتاب»)."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reading_goals", verbose_name="کاربر")
+    year = models.PositiveSmallIntegerField(verbose_name="سال شمسی")
+    target = models.PositiveSmallIntegerField(verbose_name="تعداد کتاب")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "year"], name="one_goal_per_year"),
+                       models.CheckConstraint(condition=models.Q(target__gte=1, target__lte=500), name="goal_target_range")]
+        verbose_name = "هدف خواندن"
+        verbose_name_plural = "هدف‌های خواندن"

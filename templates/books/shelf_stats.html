@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}آمار خواندن | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'books:shelf' %}">قفسه‌ی من</a></p>
+<div class="page-head"><div><h1>آمار خواندن {{ year|fa }}</h1><p>هر کتابی که «خوانده‌شده» بزنی، با تاریخ همون روز اینجا حساب می‌شه.</p></div>
+    {% if years|length > 1 %}<nav class="shelf-tabs" aria-label="سال">{% for y in years %}<a href="?y={{ y }}"{% if y == year %} aria-current="page"{% endif %}>{{ y|fa }}</a>{% endfor %}</nav>{% endif %}</div>
+
+<section class="goal-hero" aria-labelledby="goal-h">
+    {% if goal %}<div class="goal-ring goal-ring-lg" role="img" aria-label="{{ goal.done|fa }} از {{ goal.target|fa }} کتاب" data-pct="{{ goal.percent }}"><span>{{ goal.done|fa }}<small>از {{ goal.target|fa }}</small></span></div>{% endif %}
+    <div class="grow"><h2 id="goal-h">{% if goal %}هدف {{ year|fa }}: {{ goal.target|fa }} کتاب{% else %}هدف {{ year|fa }} رو بذار{% endif %}</h2>
+        {% if goal %}<p class="muted">{% if goal.done >= goal.target %}به هدفت رسیدی؛ هر کتاب بعدی جایزه‌ست.{% elif year == this_year %}{% if goal.ahead > 0 %}{{ goal.ahead|fa }} کتاب جلوتر از برنامه‌ای.{% elif goal.ahead < 0 %}{{ goal.ahead|stringformat:"d"|slice:"1:"|fa }} کتاب عقب‌تر از برنامه‌ای؛ هنوز وقت هست.{% else %}دقیقاً طبق برنامه‌ای.{% endif %}{% endif %}</p>{% endif %}
+        {% if year == this_year %}<form method="post" class="goal-form">{% csrf_token %}<label for="goal-t">{% if goal %}تغییر هدف{% else %}چند کتاب؟{% endif %}</label>
+            <input id="goal-t" name="target" type="text" inputmode="numeric" pattern="[0-9۰-۹]{1,3}" maxlength="3" value="{{ goal.target|default:12|fa }}" required><button class="btn btn-sm">ثبت</button></form>{% endif %}</div>
+</section>
+
+<div class="stats mt-16">
+    <div class="stat"><strong>{{ stats.count|fa }}</strong><span>کتاب خوندی</span></div>
+    <div class="stat"><strong>{% if stats.pages %}{{ stats.pages|fa }}{% else %}—{% endif %}</strong><span>صفحه</span></div>
+    <div class="stat"><strong>{% if stats.avg %}{{ stats.avg|floatformat:1|fa }}{% else %}—{% endif %}</strong><span>میانگین ستاره</span></div>
+    <div class="stat"><strong>{{ stats.reviews|fa }}</strong><span>نقد نوشتی</span></div>
+</div>
+
+<section class="section-sm" aria-labelledby="months-h"><h2 id="months-h">ماه‌به‌ماه</h2>
+    <div class="month-bars" role="list">{% for name, n, pct in stats.months %}<div class="mb" role="listitem" aria-label="{{ name }}: {{ n|fa }} کتاب"><span class="mb-n">{% if n %}{{ n|fa }}{% endif %}</span><span class="mb-track"><i data-h="{{ pct }}"></i></span><span class="mb-l">{{ name|slice:":3" }}</span></div>{% endfor %}</div></section>
+
+<div class="grid-2 ai-start">
+<section class="card" aria-labelledby="auth-h"><h2 id="auth-h" class="h3">نویسنده‌های امسالت</h2>
+    {% if stats.authors %}<ol class="rank-list">{% for a, n in stats.authors %}<li><span>{{ a }}</span><b>{{ n|fa }}</b></li>{% endfor %}</ol>{% else %}<p class="muted">هنوز کتابی امسال تموم نکردی.</p>{% endif %}</section>
+<section class="card" aria-labelledby="st-h"><h2 id="st-h" class="h3">کل قفسه</h2>
+    <ul class="rank-list"><li><span>خوانده‌شده</span><b>{{ stats.by_status.read|default:0|fa }}</b></li><li><span>در حال خواندن</span><b>{{ stats.by_status.reading|default:0|fa }}</b></li><li><span>می‌خواهم بخوانم</span><b>{{ stats.by_status.want|default:0|fa }}</b></li></ul></section>
+</div>
+{% endblock %}
