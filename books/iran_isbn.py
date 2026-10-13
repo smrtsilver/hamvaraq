@@ -231,6 +231,7 @@ def parse_ketab(page, isbn13):
         "publisher": _text(rows.get("ناشر", "")), "year": year, "year_calendar": "jalali" if year and year < 1700 else ("gregorian" if year else ""),
         "pages": _int(pages.group(1)) if pages else None, "edition_no": f"چاپ {edition.group(1)}" if edition else "",
         "language": _text(rows.get("زبان کتاب", "")), "subjects": subjects, "dewey": _text(rows.get("کد دیویی", "")),
+        "cover_url": (re.search(r'<img[^>]+src="(https://pic\.ketab\.ir/[^"]+\.(?:jpe?g|png|webp))"', page, re.I) or [None, ""])[1],
     }.items() if v not in ("", None, [])}
 
 

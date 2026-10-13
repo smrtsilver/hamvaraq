@@ -10,6 +10,7 @@ urlpatterns = [
     path("bulk/", views.book_bulk_create, name="bulk"),
     path("isbn/", views.isbn_view, name="isbn"),
     path("catalog-search/", views.catalog_search, name="catalog_search"),
+    path("cover-image/<str:isbn>/", views.cover_image, name="cover_image"),
     path("quick/", views.quick_search, name="quick"),
     path("suggest/", views.suggest, name="suggest"),
     path("mine/", views.my_books, name="mine"),

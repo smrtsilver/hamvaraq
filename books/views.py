@@ -304,6 +304,58 @@ def catalog_search(request):
     return JsonResponse({"items": items})
 
 
+COVER_HOSTS = {"pic.ketab.ir", "covers.openlibrary.org", "books.google.com", "books.googleusercontent.com"}
+COVER_MAX_BYTES = 4 * 1024 * 1024
+
+
+@login_required
+@throttle("cover_image", 30, 60, by="user", methods=("GET",), json=True)
+def cover_image(request, isbn):
+    """
+    عکس جلدِ چاپ (از خانه‌ی کتاب/Open Library) از طریق خود سایت: فقط دامنه‌های مجاز، سقف حجم، و باید واقعاً تصویر باشه.
+    فرم ثبت کتاب همین رو به‌عنوان «عکس جلد» برمی‌داره؛ مرورگر هم به سایت بیرونی وصل نمی‌شه (CSP و کندی اون سایت مهم نیست).
+    """
+    import io
+    import urllib.request
+    from urllib.parse import urlparse
+
+    from django.core.cache import cache
+    from django.http import Http404
+    from PIL import Image
+
+    isbn13 = isbn_lookup.normalize_isbn(isbn)
+    from .models import Edition
+
+    edition = Edition.objects.filter(isbn13=isbn13).first() if isbn13 else None
+    url = edition.cover_url if edition else ""
+    if not url or urlparse(url).scheme != "https" or urlparse(url).hostname not in COVER_HOSTS:
+        raise Http404
+    key = f"cover-img:{isbn13}"
+    data = cache.get(key)
+    if data is None:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": isbn_lookup.NLAI_HEADERS["User-Agent"]})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = resp.read(COVER_MAX_BYTES + 1)
+            if len(data) > COVER_MAX_BYTES:
+                raise ValueError("too big")
+            with Image.open(io.BytesIO(data)) as im:
+                im.verify()
+                fmt = (im.format or "").lower()
+            if fmt not in ("jpeg", "png", "webp"):
+                raise ValueError("format")
+        except Exception:
+            cache.set(key, b"", 3600)       # تصویر خراب/نبود: یه ساعت دوباره نمی‌پرسیم
+            raise Http404
+        cache.set(key, data, 24 * 3600)
+    if not data:
+        raise Http404
+    kind = "jpeg" if data[:2] == bytes([0xFF, 0xD8]) else "png" if data[:4] == bytes([0x89, 0x50, 0x4E, 0x47]) else "webp"
+    resp = HttpResponse(data, content_type=f"image/{kind}")
+    resp["Cache-Control"] = "private, max-age=86400"
+    return resp
+
+
 def _category_json(subjects, dewey):
     """دسته‌ی پیشنهادی از موضوع‌ها/رده‌ی دیویی (books/categorize.py) برای پر کردن خودکار فرم؛ None اگه مطمئن نبودیم."""
     from .categorize import guess_category

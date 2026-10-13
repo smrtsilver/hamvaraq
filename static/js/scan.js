@@ -12,7 +12,7 @@
     const ZXING_URL = document.currentScript ? document.currentScript.dataset.zxing : "";
     const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
     const TICK = 220;
-    let dialog, video, statusEl, counterEl, zoomEl, torchEl, shotEl, galleryEl, frameEl, tipEl, stop = null, handler = null, track = null, mode = "scan";
+    let dialog, video, statusEl, counterEl, zoomEl, torchEl, shotEl, galleryEl, frameEl, tipEl, resEl, stop = null, handler = null, track = null, mode = "scan";
 
     function build() {
         if (dialog) return;
@@ -24,7 +24,7 @@
             '<button type="button" class="btn btn-secondary btn-sm" data-scan-torch hidden aria-pressed="false">چراغ</button>' +
             '<button type="button" class="btn btn-sm" data-scan-shot>عکس بگیر</button>' +
             '<label class="link small scan-gallery">از گالری<input type="file" accept="image/*" hidden></label></div>' +
-            '<p class="scan-status" role="status" aria-live="polite"></p><p class="scan-tip small muted"></p><p class="scan-count" hidden></p>';
+            '<p class="scan-status" role="status" aria-live="polite"></p><p class="scan-tip small muted"></p><p class="scan-count" hidden></p><p class="scan-res"></p>';
         document.body.append(dialog);
         video = dialog.querySelector("video");
         statusEl = dialog.querySelector(".scan-status");
@@ -35,6 +35,7 @@
         shotEl = dialog.querySelector("[data-scan-shot]");
         galleryEl = dialog.querySelector(".scan-gallery input");
         frameEl = dialog.querySelector(".scan-frame");
+        resEl = dialog.querySelector(".scan-res");
         galleryEl.addEventListener("change", () => {
             const f = galleryEl.files[0];
             galleryEl.value = "";
@@ -82,16 +83,19 @@
         }
         try { return zx.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(canvas)))).getText(); } catch (_) { return null; }
     }
-    async function decode(canvas) {
+    async function decode(canvas, alsoZxing = true) {
         const det = await getDetector();
         if (det) { try { const c = await det.detect(canvas); if (c.length) return c[0].rawValue; } catch (_) { /* فریم خراب */ } }
-        return zxDecode(canvas);
+        if (!det || alsoZxing) { if (!window.ZXing) await loadZxing().catch(() => {}); return zxDecode(canvas); }
+        return null;
     }
+    // zxing به اندازه‌ی تصویر حساسه (تو تست با عکس واقعی: عرض ۱۱۲۶ نخوند، ۱۰۰۰ و ۷۰۰ خوند)، پس چند مقیاس امتحان می‌شه
+    const SCALES = [1000, 720, 1400];
 
     // ناحیه‌ی کادر روی تصویر واقعی دوربین (object-fit: cover رو حساب می‌کنه)
     const work = document.createElement("canvas");
     const wctx = work.getContext("2d", {willReadFrequently: true});
-    function grab(full) {
+    function grab(full, maxW = 1000) {
         const vw = video.videoWidth, vh = video.videoHeight;
         if (!vw || !vh) return null;
         let sx = 0, sy = 0, sw = vw, sh = vh;
@@ -102,7 +106,7 @@
             sx = Math.max(0, (fr.left - box.left - ox) / k); sy = Math.max(0, (fr.top - box.top - oy) / k);
             sw = Math.min(vw - sx, fr.width / k); sh = Math.min(vh - sy, fr.height / k);
         }
-        const scale = Math.min(1, 1400 / sw);
+        const scale = Math.min(1, maxW / sw);
         work.width = Math.round(sw * scale); work.height = Math.round(sh * scale);
         wctx.drawImage(video, sx, sy, sw, sh, 0, 0, work.width, work.height);
         return work;
@@ -110,7 +114,7 @@
 
     // ---- دوربین ----
     async function camera() {
-        const base = {facingMode: {ideal: "environment"}, width: {ideal: 1920}, height: {ideal: 1080}};
+        const base = {facingMode: {ideal: "environment"}, width: {ideal: 2560}, height: {ideal: 1440}};
         let stream;
         try { stream = await navigator.mediaDevices.getUserMedia({video: {...base, advanced: [{focusMode: "continuous"}]}, audio: false}); }
         catch (e) { if (e && e.name === "NotAllowedError") throw e; stream = await navigator.mediaDevices.getUserMedia({video: base, audio: false}); }
@@ -118,6 +122,7 @@
         await video.play();
         track = stream.getVideoTracks()[0];
         setupTrack(track);
+        resEl.textContent = video.videoWidth ? "دوربین: " + fa(video.videoWidth) + "×" + fa(video.videoHeight) + (("BarcodeDetector" in window) ? " · آشکارساز گوشی" : " · موتور داخلی") : "";
         return () => { stream.getTracks().forEach((t) => t.stop()); video.srcObject = null; };
     }
 
@@ -172,8 +177,9 @@
             const t = Date.now() - started;
             const hint = HINTS.filter(([at]) => t >= at).pop();
             if (hint && tipEl.textContent !== hint[1] && !dialog.classList.contains("hit")) tipEl.textContent = hint[1];
-            const c = grab(n % 4 === 3);               // بیشتر وقت‌ها فقط کادر، هر چهارمی کل تصویر
-            if (c) { const raw = await decode(c); if (raw && isAlive()) onRaw(raw); }
+            // بیشتر وقت‌ها فقط کادر، هر چهارمی کل تصویر؛ مقیاس‌ها به نوبت؛ zxing هر سومین بار حتی وقتی آشکارساز گوشی هست
+            const c = grab(n % 4 === 3, SCALES[n % SCALES.length]);
+            if (c) { const raw = await decode(c, n % 3 === 2); if (raw && isAlive()) onRaw(raw); }
             n += 1;
             await new Promise((r) => setTimeout(r, TICK));
         }
@@ -183,18 +189,21 @@
         say("در حال خوندن بارکد از عکس…");
         try {
             const bmp = await createImageBitmap(blob);
-            const c = document.createElement("canvas");
-            const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
-            c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-            c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
-            bmp.close && bmp.close();
-            let raw = await decode(c);
-            if (!raw) {     // وسط عکس با بزرگ‌نمایی (بارکد کوچیک تو عکس دور)
-                const m = document.createElement("canvas");
-                m.width = Math.round(c.width * 0.6); m.height = Math.round(c.height * 0.5);
-                m.getContext("2d").drawImage(c, c.width * 0.2, c.height * 0.25, m.width, m.height, 0, 0, m.width, m.height);
-                raw = await decode(m);
+            // کل عکس، وسط عکس، و نوار افقی وسط؛ هر کدوم در چند مقیاس (بارکد کوچیکِ عکس دور هم پیدا بشه)
+            const boxes = [[0, 0, 1, 1], [0.15, 0.2, 0.85, 0.8], [0.05, 0.3, 0.95, 0.7], [0.25, 0.35, 0.75, 0.65]];
+            let raw = null;
+            for (const [x0, y0, x1, y1] of boxes) {
+                for (const w of SCALES) {
+                    const sw = bmp.width * (x1 - x0), sh = bmp.height * (y1 - y0), k = Math.min(1, w / sw);
+                    const c = document.createElement("canvas");
+                    c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+                    c.getContext("2d").drawImage(bmp, bmp.width * x0, bmp.height * y0, sw, sh, 0, 0, c.width, c.height);
+                    raw = await decode(c);
+                    if (raw) break;
+                }
+                if (raw) break;
             }
+            bmp.close && bmp.close();
             if (raw && handler) handler(raw);
             else say("تو این عکس بارکدی پیدا نشد؛ از نزدیک‌تر، صاف و بدون انعکاس بگیر یا شابک رو دستی بنویس.", "warn");
         } catch (_) { say("عکس خونده نشد؛ شابک رو دستی بنویس.", "warn"); }

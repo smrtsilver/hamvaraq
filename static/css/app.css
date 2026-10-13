@@ -1689,3 +1689,8 @@ input.is-locked,textarea.is-locked{background:var(--bg-soft);color:var(--ink-2);
 .cl-item ul{margin:0;padding-inline-start:20px;display:grid;gap:4px;color:var(--ink-2)}
 .footer-version{color:inherit;opacity:.8;text-decoration:underline;text-underline-offset:3px}
 .footer-version:hover{opacity:1}
+.scan-res{margin:0;padding:0 16px 12px;font-size:var(--fs-xs);color:var(--ink-3,var(--ink-2))}
+.isbn-cover{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface)}
+.isbn-cover img{width:72px;height:104px;object-fit:cover;border-radius:6px;box-shadow:var(--shadow-1,0 2px 6px rgba(0,0,0,.15));flex:none;background:var(--bg-soft)}
+.isbn-cover > div{display:grid;gap:8px;justify-items:start}
+.isbn-status .isbn-cover p{padding:0;background:none;font-size:var(--fs-sm);color:var(--ink-2)}

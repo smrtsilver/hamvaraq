@@ -208,6 +208,54 @@
         return wrap;
     }
 
+    // ---- عکس جلد منبع (خانه‌ی کتاب/Open Library) از مسیر امن خود سایت؛ با یه لمس جلد کتاب می‌شه ----
+    function coverOffer(input, scope, d) {
+        const base = input.dataset.coverImageUrl;
+        if (!base) return null;
+        const src = base.replace("ISBN", d.isbn);
+        const file = scope.querySelector("input[type=file][name=cover]");
+        const wrap = document.createElement("div");
+        wrap.className = "isbn-cover";
+        const img = document.createElement("img");
+        img.alt = "جلد «" + d.title + "»";
+        img.loading = "lazy";
+        img.width = 72; img.height = 104;
+        img.onerror = () => wrap.remove();                     // عکس منبع خراب بود: پیشنهادی نشون نمی‌دیم
+        img.src = src;
+        const side = document.createElement("div");
+        const note = document.createElement("p");
+        note.textContent = "عکس جلد این چاپ پیدا شد.";
+        side.append(note);
+        if (file) {
+            const b = document.createElement("button");
+            b.type = "button"; b.className = "btn btn-sm";
+            b.innerHTML = '<span class="btn-label">همین عکس جلد باشه</span>';
+            b.addEventListener("click", async () => {
+                b.disabled = true; b.classList.add("is-loading");
+                try {
+                    const r = await fetch(src, {credentials: "same-origin"});
+                    if (!r.ok) throw new Error("cover");
+                    const blob = await r.blob();
+                    const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+                    const dt = new DataTransfer();
+                    dt.items.add(new File([blob], "cover-" + d.isbn + "." + ext, {type: blob.type, lastModified: Date.now()}));
+                    file.files = dt.files;
+                    const photoMode = scope.querySelector("input[name=cover_mode][value=photo]");
+                    if (photoMode && !photoMode.checked) { photoMode.checked = true; photoMode.dispatchEvent(new Event("change", {bubbles: true})); }
+                    file.dispatchEvent(new Event("change", {bubbles: true}));   // فشرده‌سازی و پیش‌نمایش
+                    note.textContent = "✓ به‌عنوان عکس جلد گذاشته شد (تو بخش «جلد» می‌تونی عوضش کنی).";
+                    b.remove();
+                } catch (_) {
+                    note.textContent = "عکس گرفته نشد؛ می‌تونی خودت عکس بگیری یا طرح آماده انتخاب کنی.";
+                    b.disabled = false; b.classList.remove("is-loading");
+                }
+            });
+            side.append(b);
+        }
+        wrap.append(img, side);
+        return wrap;
+    }
+
     // ---- استعلام ----
     let seq = 0;
     document.addEventListener("change", (e) => { if (e.target.matches && e.target.matches("[data-isbn-url]")) lookup(e.target); });
@@ -270,6 +318,8 @@
             if (d.mine) items.push(line("isbn-warn", "این کتاب (همین شابک) رو قبلاً ثبت کردی؛ مطمئنی دوباره می‌خوای؟"));
             if (d.demand) items.push(line("isbn-demand", faNum(d.demand) + " نفر دنبال این کتاب بوده‌ن؛ ثبتش شانس مبادله‌ات رو بالا می‌بره."));
             if (d.available_elsewhere) items.push(line("isbn-note", faNum(d.available_elsewhere) + " نسخه‌ی دیگه‌ی همین کتاب الان تو هم‌ورق موجوده."));
+            const cover = d.cover_url && coverOffer(input, scope, d);
+            if (cover) items.push(cover);
             show(box, items);
             document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: d}}));
         } catch (_) {

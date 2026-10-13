@@ -343,7 +343,7 @@ def _google(isbn, timeout):
 # ترتیب = اولویت ادغام (کتاب فارسی: منبع‌های ایرانی بهترن). کدوم‌ها واقعاً پرسیده بشن از settings.ISBN_SOURCES میاد
 SOURCE_NAMES = ("opac", "ketab", "nlai", "openlibrary", "google")
 PRIMARY_SOURCES = ("opac", "ketab", "nlai")      # رکورد کامل از هر کدوم ← منتظر بقیه نمی‌مونیم
-FIELD_PRIORITY = {"cover_url": ("openlibrary", "google")}     # جلد: Open Library بهتر از گوگل
+FIELD_PRIORITY = {"cover_url": ("ketab", "openlibrary", "google")}     # جلد: خانه‌ی کتاب (کتاب فارسی)، بعد Open Library
 MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "year", "year_calendar", "edition_no", "volume",
                 "pages", "language", "subjects", "description", "cover_url", "dewey")
 GRACE_AFTER_COMPLETE = 0.6    # ثانیه
