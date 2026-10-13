@@ -1439,7 +1439,7 @@ class NoEnglishAuditTests(TestCase):
         for model in ("accounts/user", "accounts/badge", "accounts/userbadge", "books/book", "books/category", "books/review",
                       "books/wishlist", "books/booknote", "books/bookjourney", "challenges/challenge", "common/city",
                       "common/province", "common/meetingpoint", "common/sitesetting", "exchanges/exchange", "notifications/notification",
-                      "trust/report", "trust/vote", "posts/post", "posts/tag", "announcements/announcement", "announcements/announcementbookmark",
+                      "trust/report", "trust/vote", "books/edition", "posts/post", "posts/tag", "announcements/announcement", "announcements/announcementbookmark",
                       "notifications/pushsubscription", "notifications/notificationpreference"):
             urls += [f"/admin/{model}/"] + ([] if model == "common/sitesetting" else [f"/admin/{model}/add/"])
         urls.append("/admin/common/sitesetting/1/change/")

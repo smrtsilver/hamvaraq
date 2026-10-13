@@ -25,3 +25,22 @@ admin.site.register(Wishlist)
 admin.site.register(BookNote)
 admin.site.register(BookJourney)
 admin.site.register(Review)
+
+
+from .models import Edition  # noqa: E402
+
+
+@admin.register(Edition)
+class EditionAdmin(admin.ModelAdmin):
+    list_display = ("title", "isbn13", "publisher", "year", "source", "confidence", "verified")
+    list_filter = ("source", "verified", "year_calendar")
+    search_fields = ("title", "isbn13", "publisher")
+    readonly_fields = ("provenance", "created_at", "updated_at")
+    actions = ["mark_verified"]
+
+    @admin.action(description="تأیید مدیر (اطمینان حداقل ۹۰)")
+    def mark_verified(self, request, queryset):
+        for edition in queryset:
+            edition.verified = True
+            edition.confidence = max(edition.confidence, 90)
+            edition.save(update_fields=["verified", "confidence", "updated_at"])

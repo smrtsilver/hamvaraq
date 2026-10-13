@@ -311,3 +311,26 @@ class QualityAndUxTests(Base):
         self.assertTrue("۲ نفر دنبال" in page)        # taker و third
         for needle in ("نشر نمونه", "مترجم", "۱۳۹۲", "(شمسی)", "9786007547717"):
             self.assertTrue(needle in page, needle)
+
+
+class CoverageCommandAndAdminTests(Base):
+    def test_isbn_coverage_command_reports_percentage(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            f.write("# نمونه\n978-600-7547-71-7  # مدارس\n9780140328721\n9789646194485\n")
+            path = f.name
+        out = StringIO()
+        rec = {"isbn": "x", "title": "ت", "authors": ["ن"], "publisher": "ن", "sources": ["nlai"], "confidence": 60, "author": "ن"}
+        with mock.patch("books.isbn.lookup_full", side_effect=[rec, None]):
+            call_command("isbn_coverage", path, "--sleep", "0", stdout=out)
+        text = out.getvalue()
+        self.assertTrue("کامل (عنوان+نویسنده+ناشر): 1/2 = 50٪" in text and "شابک نامعتبر" in text, text)
+
+    def test_edition_admin_verify_action(self):
+        e = catalog.record_user_entry(self.giver, "9780306406157", "ک", "ن")
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.assertEqual(self.client.get("/admin/books/edition/").status_code, 200)
+        self.client.post("/admin/books/edition/", {"action": "mark_verified", "_selected_action": [e.pk]})
+        e.refresh_from_db()
+        self.assertEqual((e.verified, e.confidence), (True, 90))
