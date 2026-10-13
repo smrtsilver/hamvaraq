@@ -60,7 +60,7 @@
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
             <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" data-confirm="این کتاب حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}
         {% elif book.status == 'available' %}{% include "books/_cta.html" %}
-        {% elif book.status == 'reserved' %}<div class="alert alert-warning"><p>این نسخه الان در حال مبادله با کتاب‌خوان دیگه‌ایه. اگه مبادله سر نگیره، دوباره آزاد می‌شه.</p></div>
+        {% elif book.status == 'reserved' %}<div class="alert alert-warning"><p>صاحب کتاب درخواست یه نفر دیگه رو قبول کرده. اگه مبادله سر نگیره، دوباره آزاد می‌شه.</p></div>
         {% else %}<div class="alert alert-warning"><p>این کتاب الان برای مبادله آزاد نیست.</p></div>{% endif %}
         </div>
         {% if book.status == 'available' and not is_owner and user.is_authenticated and not my_request and user.can_request and user.points >= 1 %}<details class="hold-note"><summary>{% include "components/icon.html" with name="info" %} ۱ امتیاز چطور نگه داشته می‌شه؟</summary>

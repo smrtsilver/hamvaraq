@@ -114,7 +114,7 @@ class BookDetailTests(Base):
         self.assertTrue("cta-fixed" not in owner_page and "کیفیت آگهی:" in owner_page)
         Book.objects.filter(pk=book.pk).update(status="reserved")
         self.client.login(username="taker", password="x12345678")
-        self.assertTrue("در حال مبادله با کتاب‌خوان دیگه‌ایه" in self.client.get(book.get_absolute_url()).content.decode())
+        self.assertTrue("درخواست یه نفر دیگه رو قبول کرده" in self.client.get(book.get_absolute_url()).content.decode())
         self.client.logout()
         Book.objects.filter(pk=book.pk).update(status="available")
         guest = self.client.get(book.get_absolute_url()).content.decode()
