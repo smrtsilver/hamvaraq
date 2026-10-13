@@ -229,7 +229,7 @@ def nlai_title_search(query, timeout=None, limit=NLAI_TITLE_LIMIT):
     cached = cache.get(key)
     if cached is not None:
         return cached
-    deadline = time.monotonic() + (timeout or getattr(settings, "ISBN_BUDGET", 3.0) + 3)
+    deadline = time.monotonic() + (timeout or getattr(settings, "ISBN_BUDGET", 3.0) + 7)   # کاربر خودش «بگرد» رو زده؛ صبر بیشتری داریم
 
     def left():
         return max(0.3, deadline - time.monotonic())

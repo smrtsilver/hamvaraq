@@ -292,7 +292,7 @@ def catalog_search(request):
     try:
         records = isbn_lookup.nlai_title_search(request.GET.get("q", ""))
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
-        return JsonResponse({"error": "unavailable", "message": "کتابخانه‌ی ملی الان جواب نمی‌ده؛ چند دقیقه‌ی دیگه دوباره امتحان کن یا دستی پر کن."}, status=503)
+        return JsonResponse({"error": "unavailable", "message": "کتابخانه‌ی ملی دیر جواب داد؛ یه بار دیگه «بگرد» رو بزن یا دستی پر کن."}, status=503)
     items = [{
         "title": r.get("title", ""), "subtitle": r.get("subtitle", ""), "author": "، ".join(r.get("authors", [])),
         "translators": r.get("translators", []), "publisher": r.get("publisher", ""), "year": r.get("year"),
