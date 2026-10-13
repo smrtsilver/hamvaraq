@@ -47,3 +47,32 @@ def process_upload(file, max_side=MAIN_SIZE):
 def make_thumb(file):
     """بند‌انگشتی مربعی‌نما برای گرید کتاب‌ها (نسبت ۳:۴ حفظ می‌شه)."""
     return ContentFile(_encode(_open(file), THUMB_SIZE, 80), name="thumb.jpg")
+
+
+WEBP_MAIN = 960
+WEBP_THUMB = 420
+
+
+def make_webp(file, max_side, quality=78):
+    """نسخه‌ی WebP برای srcset (۲۵ تا ۳۵ درصد سبک‌تر از JPEG هم‌کیفیت)."""
+    img = _open(file)
+    img.thumbnail((max_side, max_side), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "WEBP", quality=quality, method=5)
+    return ContentFile(buf.getvalue(), name="photo.webp")
+
+
+def make_lqip(file, width=16, quality=35):
+    """تصویر بسیار کوچک (data URI حدود ۳۰۰ تا ۶۰۰ بایت) تا قبل از لود شدن عکس، رنگ و فرم جلد دیده بشه."""
+    import base64
+
+    img = _open(file)
+    img.thumbnail((width, width * 2), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=quality, optimize=True)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def image_size(file):
+    img = _open(file)
+    return img.width, img.height

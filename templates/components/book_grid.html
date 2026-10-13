@@ -1,2 +1,2 @@
-{% if books %}<div class="book-grid">{% for b in books %}{% include "components/book_card.html" %}{% endfor %}</div>
+{% if books %}<div class="book-grid">{% for b in books %}{% if prioritize_first and forloop.first %}{% include "components/book_card.html" with priority=True %}{% else %}{% include "components/book_card.html" %}{% endif %}{% endfor %}</div>
 {% else %}{% include "components/empty.html" with ill="books" title=empty_title|default:"کتابی پیدا نشد" text=empty_text cta_url=empty_url cta_label=empty_label %}{% endif %}

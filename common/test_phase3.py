@@ -1,3 +1,5 @@
+from io import StringIO
+
 """فاز ۳ طرح بهبود: لیست، کارت، جزئیات، فرم، تصویر، دسترس‌پذیری."""
 
 from django.db import connection
@@ -117,3 +119,63 @@ class BookDetailTests(Base):
         Book.objects.filter(pk=book.pk).update(status="available")
         guest = self.client.get(book.get_absolute_url()).content.decode()
         self.assertTrue("برای درخواست وارد شو" in guest)
+
+
+class CoverImageTests(Base):
+    def make_book(self, w=900, h=1200):
+        import io
+        from django.core.files.base import ContentFile
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (w, h), (180, 60, 60)).save(buf, "JPEG")
+        book = Book(owner=self.giver, title="با جلد", author="ن", city=self.tehran, cover=ContentFile(buf.getvalue(), name="c.jpg"))
+        book.save()
+        return Book.objects.get(pk=book.pk)
+
+    def test_upload_builds_webp_variants_dimensions_and_lqip(self):
+        from PIL import Image
+        b = self.make_book()
+        self.assertEqual((b.cover_w, b.cover_h), (900, 1200))
+        self.assertTrue(b.cover_lqip.startswith("data:image/jpeg;base64,") and len(b.cover_lqip) < 900)
+        with Image.open(b.cover_webp.path) as big, Image.open(b.cover_thumb_webp.path) as small:
+            self.assertEqual((big.format, small.format), ("WEBP", "WEBP"))
+            self.assertEqual((max(big.size), max(small.size)), (960, 420))
+        self.assertLess(b.cover_thumb_webp.size, b.cover_thumb.size)           # WebP کوچک‌تر از JPEG هم‌اندازه
+
+    def test_picture_tag_has_srcset_dimensions_and_only_first_gets_high_priority(self):
+        b = self.make_book()
+        self.make_book()
+        page = self.client.get(reverse("books:list")).content.decode()
+        self.assertEqual(page.count('fetchpriority="high"'), 1)                # فقط اولین کارت
+        self.assertTrue(page.count("loading=\"lazy\"") >= 1)
+        for needle in ('<picture><source type="image/webp"', "420w", "960w", 'width="315" height="420"', 'decoding="async"', "data-lqip="):
+            self.assertTrue(needle in page, needle)
+        detail = self.client.get(b.get_absolute_url()).content.decode()
+        self.assertEqual(detail.count('fetchpriority="high"'), 1)
+        self.assertTrue('width="720" height="960"' in detail and "data-gallery-main" in detail)
+
+    def test_no_cover_means_no_picture_and_removal_clears_variants(self):
+        b = self.make_book()
+        b.cover = ""
+        b.save()
+        b.refresh_from_db()
+        self.assertEqual((b.cover_webp.name, b.cover_thumb_webp.name, b.cover_w, b.cover_lqip), ("", "", None, ""))
+
+    def test_generate_image_variants_backfills_old_books(self):
+        from django.core.management import call_command
+        b = self.make_book()
+        Book.all_objects.filter(pk=b.pk).update(cover_webp="", cover_thumb_webp="", cover_w=None, cover_h=None, cover_lqip="")
+        out = StringIO()
+        call_command("generate_image_variants", stdout=out)
+        b.refresh_from_db()
+        self.assertTrue(b.cover_webp and b.cover_thumb_webp and b.cover_w == 900 and b.cover_lqip)
+        self.assertIn("ساخته‌شده: 1", out.getvalue())
+        call_command("generate_image_variants", stdout=out)
+        self.assertIn("ساخته‌شده: 0", out.getvalue().splitlines()[-1])
+
+    def test_broken_image_does_not_block_book_save(self):
+        from unittest import mock
+        with mock.patch("common.images.make_webp", side_effect=ValueError("bad")):
+            b = self.make_book()
+        self.assertTrue(b.cover)
+        self.assertEqual(b.cover_webp.name, "")

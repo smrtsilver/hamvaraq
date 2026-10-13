@@ -14,7 +14,7 @@
 <div class="result-bar"><p class="result-count" aria-live="polite">{{ page.paginator.count|fa }} کتاب پیدا شد</p>
     {% if can_save_search %}<form method="post" action="{% url 'books:wishlist' %}">{% csrf_token %}<input type="hidden" name="text" value="{{ form.cleaned_data.q }}"><button class="btn btn-ghost btn-sm">{% include "components/icon.html" with name="heart" %} این جستجو رو به لیست آرزو اضافه کن</button></form>{% endif %}</div>
 {% with books=page empty_title="کتابی با این مشخصات پیدا نشد" empty_text="فیلترها رو کم کن یا شهر دیگه‌ای رو امتحان کن." %}
-    {% include "components/book_grid.html" %}
+    {% include "components/book_grid.html" with prioritize_first=True %}
 {% endwith %}
 {% include "components/pagination.html" %}
 {% endblock %}

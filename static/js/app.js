@@ -38,6 +38,9 @@
         const main = g.querySelector("[data-gallery-main]");
         g.querySelectorAll("[data-gallery-thumb]").forEach((b) => b.addEventListener("click", () => {
             main.src = b.dataset.src;
+            const pic = main.closest("picture");
+            if (pic) pic.querySelectorAll("source").forEach((s) => s.remove());      // وگرنه srcset ِ WebP روی src جدید غالب می‌شه
+            main.removeAttribute("srcset");
             g.querySelectorAll("[data-gallery-thumb]").forEach((x) => x.removeAttribute("aria-current"));
             b.setAttribute("aria-current", "true");
         }));
@@ -88,4 +91,11 @@ document.querySelectorAll("[data-share]").forEach((btn) => {
             else { await navigator.clipboard.writeText(data.url); const old = btn.textContent; btn.textContent = "لینک کپی شد"; setTimeout(() => { btn.textContent = old; }, 2000); }
         } catch (_) { /* کاربر انصراف داد */ }
     });
+});
+
+
+// LQIP: رنگ و فرم مات جلد تا قبل از لود شدن عکس (با CSSOM؛ سازگار با CSP)
+document.querySelectorAll("img[data-lqip]").forEach((img) => {
+    const apply = () => { img.parentElement.closest(".cover, .gallery .cover") && (img.parentElement.closest(".cover").style.backgroundImage = `url("${img.dataset.lqip}")`); };
+    apply();
 });

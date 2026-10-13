@@ -746,3 +746,7 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .step-label{font-weight:700;font-size:var(--fs-sm);color:var(--ink-3)}.step-nav .btn{min-width:96px}
 .compress-note{color:var(--primary-ink)}
 [hidden]{display:none!important}
+
+/* LQIP: پس‌زمینه‌ی مات پشت عکس تا لود بشه؛ aspect-ratio از CLS جلوگیری می‌کنه */
+.cover{background-size:cover;background-position:center}
+.cover picture,.cover img{display:block;width:100%;height:100%;object-fit:cover}

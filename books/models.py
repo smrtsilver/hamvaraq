@@ -96,6 +96,12 @@ class Book(models.Model):
     view_count = models.PositiveIntegerField(default=0, editable=False, verbose_name="بازدید یکتا")
     cover = models.ImageField(upload_to="books/%Y/%m/", blank=True, verbose_name="عکس")
     cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False, verbose_name="بند‌انگشتی")
+    # نسخه‌های سبک برای srcset/<picture> (WebP)، ابعاد واقعی (برای width/height و CLS صفر) و LQIP
+    cover_webp = models.ImageField(upload_to="books/webp/%Y/%m/", blank=True, editable=False, verbose_name="WebP بزرگ")
+    cover_thumb_webp = models.ImageField(upload_to="books/webp/%Y/%m/", blank=True, editable=False, verbose_name="WebP کوچک")
+    cover_w = models.PositiveSmallIntegerField(null=True, blank=True, editable=False, verbose_name="عرض جلد")
+    cover_h = models.PositiveSmallIntegerField(null=True, blank=True, editable=False, verbose_name="ارتفاع جلد")
+    cover_lqip = models.CharField(max_length=900, blank=True, editable=False, verbose_name="پیش‌نمایش مات")
     description = models.TextField(blank=True, verbose_name="توضیحات")
     edition = models.ForeignKey(Edition, null=True, blank=True, on_delete=models.PROTECT, related_name="books", verbose_name="چاپ")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
@@ -132,6 +138,23 @@ class Book(models.Model):
     def is_deleted(self):
         return self.deleted_at is not None
 
+    def build_cover_variants(self):
+        """WebP (۹۶۰ و ۴۲۰)، ابعاد و LQIP از روی فایل جلد؛ خطای تصویر سیو کتاب رو خراب نمی‌کنه (همون JPEG کار می‌کنه)."""
+        import logging
+
+        from common.images import WEBP_MAIN, WEBP_THUMB, image_size, make_lqip, make_webp
+
+        try:
+            f = self.cover.file
+            self.cover_w, self.cover_h = image_size(f)
+            self.cover_lqip = make_lqip(f)
+            self.cover_webp = make_webp(f, WEBP_MAIN)
+            self.cover_thumb_webp = make_webp(f, WEBP_THUMB, quality=75)
+        except Exception:      # noqa: BLE001 — فقط بهینه‌سازیه
+            logging.getLogger(__name__).exception("cover variants failed for book %s", self.pk)
+        finally:
+            self.cover.file.seek(0)
+
     def soft_delete(self):
         """حذف نرم: کتاب از سایت پنهان می‌شه ولی تاریخچه‌ی مبادله، رأی‌ها و نقدها سر جاشون می‌مونن."""
         from django.utils import timezone
@@ -145,13 +168,16 @@ class Book(models.Model):
 
     def save(self, *args, **kwargs):
         if self.cover and not self.cover._committed:
-            # عکس تازه آپلود شده: بند‌انگشتی بسازیم (کاور قبلاً تو فرم پردازش شده)
+            # عکس تازه آپلود شده: بند‌انگشتی و نسخه‌های WebP/LQIP بسازیم (کاور قبلاً تو فرم پردازش شده)
             from common.images import make_thumb
 
             self.cover_thumb = make_thumb(self.cover.file)
             self.cover.file.seek(0)
+            self.build_cover_variants()
         elif not self.cover:
-            self.cover_thumb = ""
+            self.cover_thumb = self.cover_webp = self.cover_thumb_webp = ""
+            self.cover_w = self.cover_h = None
+            self.cover_lqip = ""
         self.search_text = normalize(f"{self.title} {self.author} {self.isbn}")
         self.work_key = work_key(self.title, self.author)
         fields = kwargs.get("update_fields")
