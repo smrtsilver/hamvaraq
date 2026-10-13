@@ -57,6 +57,71 @@
         if (input.getAttribute("aria-invalid") !== "true") e.target.requestSubmit(e.submitter || undefined);
     }, true);
 
+    // شابک پیدا نشد: جستجوی عنوان/نویسنده تو کتابخانه‌ی ملی؛ انتخاب یه چاپ، عنوان و نویسنده رو پر می‌کنه
+    let fbSeq = 0;
+    function fallback(input, scope, title, author, isbn) {
+        const url = input.dataset.catalogUrl;
+        if (!url) return null;
+        const wrap = document.createElement("div");
+        wrap.className = "isbn-fb";
+        const id = (input.id || "isbn") + "-fb";
+        wrap.innerHTML = '<label class="isbn-fb-label"></label><div class="isbn-row"><input type="search" enterkeyhint="search" autocomplete="off">' +
+            '<button type="button" class="btn btn-secondary">بگرد</button></div><p class="isbn-fb-msg" role="status" aria-live="polite"></p><ul class="isbn-fb-list"></ul>';
+        const label = wrap.querySelector("label"), q = wrap.querySelector("input"), go = wrap.querySelector("button");
+        const msg = wrap.querySelector(".isbn-fb-msg"), list = wrap.querySelector("ul");
+        label.textContent = "با عنوان یا نویسنده تو کتابخانه‌ی ملی بگرد و چاپ درست رو انتخاب کن:";
+        label.htmlFor = q.id = id;
+        q.placeholder = "مثلاً عنوان کتاب";
+        q.value = (title && title.value.trim()) || "";
+        const say = (text) => { msg.textContent = text; msg.hidden = !text; };
+        say("");
+        async function run() {
+            const text = q.value.trim();
+            if (text.length < 3) { say("دست‌کم ۳ حرف از عنوان یا نویسنده رو بنویس."); q.focus(); return; }
+            const mine = ++fbSeq;
+            list.replaceChildren();
+            say("در حال جستجو تو کتابخانه‌ی ملی…");
+            go.disabled = true;
+            try {
+                const r = await fetch(url + "?q=" + encodeURIComponent(text), {credentials: "same-origin"});
+                if (mine !== fbSeq) return;
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok) { say(d.message || (r.status === 429 ? "جستجوهات زیاد بود؛ یه دقیقه صبر کن." : "جستجو ناموفق بود؛ دستی پر کن.")); return; }
+                if (!d.items || !d.items.length) { say("چیزی پیدا نشد؛ عنوان و نویسنده رو خودت بنویس (برای نفر بعدی ذخیره می‌شه)."); return; }
+                say(faNum(d.items.length) + " نتیجه؛ روی چاپ درست بزن:");
+                d.items.forEach((it) => {
+                    const li = document.createElement("li");
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = "isbn-fb-item";
+                    const t = document.createElement("strong");
+                    t.textContent = it.title + (it.subtitle ? ": " + it.subtitle : "") + (it.volume ? " (" + it.volume + ")" : "");
+                    const m = document.createElement("span");
+                    m.textContent = [it.author, it.translators && it.translators.length ? "ترجمه‌ی " + it.translators.join("، ") : "", it.publisher,
+                        it.year ? faNum(it.year) : "", it.pages ? faNum(it.pages) + " صفحه" : ""].filter(Boolean).join(" · ");
+                    b.append(t, m);
+                    b.addEventListener("click", () => pick(it, b));
+                    li.append(b);
+                    list.append(li);
+                });
+            } catch (_) { if (mine === fbSeq) say("ارتباط برقرار نشد؛ دوباره بزن یا دستی پر کن."); }
+            finally { if (mine === fbSeq) go.disabled = false; }
+        }
+        function pick(it, b) {
+            if (title) { title.value = it.title; title.dispatchEvent(new Event("input", {bubbles: true})); }
+            if (author && it.author) { author.value = it.author; author.dispatchEvent(new Event("input", {bubbles: true})); }
+            list.querySelectorAll(".isbn-fb-item").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+            say(it.isbn && it.isbn !== isbn
+                ? "پر شد ✓ (این رکورد مال چاپ دیگه‌ایه؛ شابک خودت حفظ می‌شه و برای بقیه هم ذخیره می‌شه)."
+                : "پر شد ✓");
+            document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: Object.assign({}, it, {source: "nlai"})}}));
+        }
+        go.addEventListener("click", run);
+        q.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+        if (q.value.length >= 3) setTimeout(run, 0);
+        return wrap;
+    }
+
     let seq = 0;
     document.addEventListener("change", (e) => { if (e.target.matches("[data-isbn-url]")) lookup(e.target); });
     async function lookup(input) {
@@ -79,7 +144,13 @@
         try {
             const r = await fetch(input.dataset.isbnUrl + "?isbn=" + encodeURIComponent(value), {credentials: "same-origin"});
             if (mine !== seq) return;
-            if (r.status === 404) { show(box, [line("isbn-note", "این شابک تو منبع‌ها پیدا نشد؛ عنوان و نویسنده رو خودت بنویس.")]); return; }
+            if (r.status === 404) {
+                const items = [line("isbn-warn", "این شابک هنوز تو منبع‌های آنلاین (کتابخانه‌ی ملی و…) ثبت نشده؛ معمولاً یعنی چاپ تازه‌ست.")];
+                const fb = fallback(input, scope, title, author, clean);
+                items.push(fb || line("isbn-note", "عنوان و نویسنده رو خودت بنویس؛ برای نفر بعدی ذخیره می‌شه."));
+                show(box, items);
+                return;
+            }
             if (!r.ok) { show(box, [line("isbn-err", (await r.json().catch(() => ({}))).message || "استعلام ناموفق بود؛ دستی پر کن.")]); return; }
             const d = await r.json();
             if (title && !title.value) title.value = d.title;

@@ -283,6 +283,25 @@ def isbn_view(request):
     })
 
 
+@login_required
+@throttle("catalog", 20, 60, by="user", methods=("GET",), json=True)
+def catalog_search(request):
+    """شابک پیدا نشد ← جستجوی عنوان/نویسنده در کتابخانه‌ی ملی تا کاربر چاپ درست رو انتخاب کنه و فیلدها پر بشن."""
+    import urllib.error
+
+    try:
+        records = isbn_lookup.nlai_title_search(request.GET.get("q", ""))
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return JsonResponse({"error": "unavailable", "message": "کتابخانه‌ی ملی الان جواب نمی‌ده؛ چند دقیقه‌ی دیگه دوباره امتحان کن یا دستی پر کن."}, status=503)
+    items = [{
+        "title": r.get("title", ""), "subtitle": r.get("subtitle", ""), "author": "، ".join(r.get("authors", [])),
+        "translators": r.get("translators", []), "publisher": r.get("publisher", ""), "year": r.get("year"),
+        "year_calendar": r.get("year_calendar", ""), "edition_no": r.get("edition_no", ""), "volume": r.get("volume", ""),
+        "pages": r.get("pages"), "isbn": r.get("isbn", ""),
+    } for r in records]
+    return JsonResponse({"items": items})
+
+
 def _can_review(book, user):
     """فقط گیرنده‌ی کتاب در یه مبادله‌ی کامل‌شده (نه صاحب اولیه) نقد می‌نویسه."""
     return Exchange.objects.filter(book=book, requester=user, status=Exchange.Status.COMPLETED).exists()

@@ -193,6 +193,7 @@ def _isbn_widget(isbn, title, author):
     from django.urls import reverse
 
     isbn.widget.attrs["data-isbn-url"] = reverse("books:isbn")
+    isbn.widget.attrs["data-catalog-url"] = reverse("books:catalog_search")
     isbn.widget.attrs["placeholder"] = "۱۰ یا ۱۳ رقم پشت کتاب"
     isbn.help_text = isbn.help_text or "اختیاری؛ با جستجو عنوان و نویسنده خودکار پر می‌شه."
     title.widget.attrs.update({"data-isbn-title": "", "data-suggest": "title", "autocomplete": "off"})

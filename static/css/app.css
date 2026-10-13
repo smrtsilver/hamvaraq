@@ -1600,3 +1600,54 @@ input[type=range]{accent-color:var(--primary)}
   .footer-bottom{font-size:11px}
 }
 @media (max-width:640px){.footer-grid li{margin:0!important;padding:0!important}}
+
+/* ---- قفسه‌ی خالی: همیشه دست‌کم دو طبقه‌ی چوبی دیده می‌شه، با پیام روی طبقه‌ی اول و دو نگه‌دارنده‌ی کتاب ---- */
+.my-wshelf .wshelf-books{min-height:calc(var(--row-h) * 2)}
+.wshelf-empty{position:absolute;inset-inline:0;top:0;z-index:1;height:calc(var(--row-h) - var(--plank));display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 20px;text-align:center;color:#f6e7c8;pointer-events:none}
+.wshelf-empty strong{font-size:var(--fs-lg);font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.wshelf-empty span{font-size:var(--fs-sm);opacity:.82;max-width:30ch}
+.wshelf-empty .btn{pointer-events:auto;margin-top:6px;background:#f3e3c2;border-color:#8a5c2c;color:#4a2c14}
+.shelf-views.is-empty .wshelf-empty,.wshelf-empty.is-shown{display:flex}
+.shelf-views[data-view=shelf] .shelf-empty-f{display:none}
+/* نگه‌دارنده‌ها روی طبقه‌ی دوم (فقط وقتی قفسه خالیه) */
+.shelf-views.is-empty .wshelf-in::before,.wshelf.is-blank .wshelf-in::before{content:"";position:absolute;z-index:1;inset-inline-start:18%;top:calc(var(--row-h) * 2 - var(--plank) - 46px);width:46px;height:46px;
+  background:linear-gradient(90deg,#c8a96a 0 7px,transparent 7px) ,linear-gradient(0deg,#b8954f 0 6px,transparent 6px);border-radius:2px;filter:drop-shadow(2px 2px 2px rgba(0,0,0,.5));opacity:.85}
+.shelf-views.is-empty .wshelf-in::after,.wshelf.is-blank .wshelf-in::after{content:"";position:absolute;z-index:1;inset-inline-end:18%;top:calc(var(--row-h) * 2 - var(--plank) - 46px);width:46px;height:46px;
+  background:linear-gradient(270deg,#c8a96a 0 7px,transparent 7px),linear-gradient(0deg,#b8954f 0 6px,transparent 6px);border-radius:2px;filter:drop-shadow(-2px 2px 2px rgba(0,0,0,.5));opacity:.85;pointer-events:none}
+.shelf-views.is-empty .wshelf-more{display:none}
+
+/* ---- رأی مبادله: دو دکمه‌ی آیکونی کوچک ---- */
+.vote-card .vote-line{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.vote-card h3{margin:0}
+.vote-quick{display:contents}
+.vote-btns{display:inline-flex;gap:8px}
+.vote-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;transition:background var(--motion-fast,.15s),color var(--motion-fast,.15s),border-color var(--motion-fast,.15s),transform var(--motion-fast,.15s)}
+.vote-btn .i{width:20px;height:20px}
+.vote-btn:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.vote-btn:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:2px}
+.vote-up.is-on{background:var(--primary-soft);color:var(--primary-ink);border-color:var(--primary)}
+.vote-down.is-on{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+.vote-btn.is-static{cursor:default}
+.vote-why{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px;padding:12px;border-radius:var(--r-sm);background:var(--bg-soft)}
+.vote-why[hidden]{display:none}
+.vote-why .btn{justify-self:start}
+.vote-reason{margin:8px 0 0}
+.vote-card .hint{margin:10px 0 0}
+
+/* ---- شمارنده‌ی لایک/دیسلایک کنار اعتبار ---- */
+.rep-votes{display:inline-flex;align-items:center;gap:10px;margin-inline-start:8px;font-size:var(--fs-sm);color:var(--ink-2);vertical-align:middle}
+.rep-votes .rv{display:inline-flex;align-items:center;gap:3px}
+.rep-votes .i{width:15px;height:15px}
+.rep-votes .rv-up{color:var(--primary-ink)}.rep-votes .rv-down{color:var(--danger)}
+
+/* ---- شابک پیدا نشد: جستجو با عنوان در کتابخانه‌ی ملی ---- */
+.isbn-fb{display:grid;gap:8px;margin-top:4px;padding:12px;border-radius:var(--r-sm);border:1px dashed var(--line-strong);background:var(--surface)}
+.isbn-fb-label{font-size:var(--fs-sm);font-weight:700;color:var(--ink)}
+.isbn-status .isbn-fb p{padding:0}
+.isbn-fb-msg{font-size:var(--fs-sm);color:var(--ink-2)}
+.isbn-fb-msg[hidden]{display:none}
+.isbn-fb-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.isbn-fb-item{display:grid;gap:2px;width:100%;text-align:start;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface-2,var(--surface));color:var(--ink);cursor:pointer}
+.isbn-fb-item strong{font-size:var(--fs-sm)}
+.isbn-fb-item span{font-size:var(--fs-xs);color:var(--ink-2)}
+.isbn-fb-item:hover,.isbn-fb-item[aria-pressed=true]{border-color:var(--primary);background:var(--primary-soft)}

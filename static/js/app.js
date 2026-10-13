@@ -105,3 +105,15 @@ document.addEventListener("click", (e) => {
     try { same = document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href; } catch (_) { /* ارجاع نامعتبر */ }
     if (same && history.length > 1) { e.preventDefault(); history.back(); }
 });
+
+// رأی مبادله: دکمه‌ی دیسلایک فقط پنل «چرا؟» رو باز/بسته می‌کنه؛ لایک مستقیم ثبت می‌شه
+document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-vote-down]");
+    if (!b) return;
+    const panel = document.getElementById(b.getAttribute("aria-controls"));
+    if (!panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    b.setAttribute("aria-expanded", String(open));
+    if (open) { const s = panel.querySelector("select"); if (s) s.focus(); }
+});

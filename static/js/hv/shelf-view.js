@@ -29,6 +29,12 @@
     }
 
     // ---- فیلتر ----
+    // قفسه‌ی بدون کتابِ قابل‌نمایش: طبقه‌های خالی + پیام روی خود قفسه (و پیام متنی در حالت فهرست)
+    function syncEmpty(items) {
+        const none = !items.some((el) => !el.classList.contains("is-out"));
+        if (empty) empty.hidden = !none;
+        root.classList.toggle("is-empty", none);
+    }
     const match = (el, f) => !f || (f === "swap" ? el.dataset.swap === "1" : el.dataset.rs === f);
     function filter(f) {
         const container = root.dataset.view === "list" ? root.querySelector(".shelf-list") : root.querySelector(".wshelf-books");
@@ -43,7 +49,7 @@
         const finish = () => {
             leaving.forEach((el) => el.classList.add("is-out"));
             entering.forEach((el) => el.classList.remove("is-out"));
-            if (empty) empty.hidden = items.some((el) => !el.classList.contains("is-out"));
+            syncEmpty(items);
             if (shelf) shelf.dispatchEvent(new Event("hv:wshelf-update"));
             if (!animate) return;
             items.forEach((el) => {
@@ -66,6 +72,7 @@
             });
         } else finish();
     }
+    syncEmpty([...root.querySelectorAll(root.dataset.view === "list" ? ".shelf-list [data-item]" : ".wshelf-books [data-item]")]);
     tabs.addEventListener("click", (e) => {
         const a = e.target.closest("[data-filter]");
         if (!a || e.metaKey || e.ctrlKey) return;

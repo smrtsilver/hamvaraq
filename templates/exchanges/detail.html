@@ -56,10 +56,22 @@
     </section>
 
     {% if ex.status == 'completed' %}
-    <section class="card"><h3>رأی به {{ other.public_name }}</h3>
-        {% if my_vote %}<p class="muted">رأی فعلی: {% if my_vote.like %}👍 لایک{% else %}👎 دیسلایک — {{ my_vote.get_reason_display }}{% endif %}</p>{% endif %}
-        {% if vote_form %}<form method="post" action="{% url 'trust:vote' ex.pk %}" novalidate>{% csrf_token %}{% include "components/form.html" with form=vote_form %}<button class="btn btn-sm">ثبت رأی</button></form>
-        <p class="hint">تا ۲۴ ساعت بعد از ثبت می‌تونی ویرایشش کنی.</p>{% else %}<p class="muted small">مهلت ویرایش رأی تموم شده.</p>{% endif %}</section>
+    <section class="card vote-card" aria-labelledby="vote-h-{{ ex.pk }}">
+        <div class="vote-line"><h3 id="vote-h-{{ ex.pk }}">رأی به {{ other.public_name }}</h3>
+        {% if vote_form %}<form method="post" action="{% url 'trust:vote' ex.pk %}" class="vote-quick" novalidate>{% csrf_token %}
+            <div class="vote-btns" role="group" aria-label="رأی تو">
+                <button name="like" value="1" class="vote-btn vote-up{% if my_vote and my_vote.like %} is-on{% endif %}" aria-pressed="{% if my_vote and my_vote.like %}true{% else %}false{% endif %}" title="لایک">{% include "components/icon.html" with name="thumb-up" %}<span class="visually-hidden">لایک</span></button>
+                <button type="button" class="vote-btn vote-down{% if my_vote and not my_vote.like %} is-on{% endif %}" aria-pressed="{% if my_vote and not my_vote.like %}true{% else %}false{% endif %}" aria-expanded="false" aria-controls="vote-why-{{ ex.pk }}" data-vote-down title="دیسلایک">{% include "components/icon.html" with name="thumb-down" %}<span class="visually-hidden">دیسلایک</span></button>
+            </div>
+            <div class="vote-why" id="vote-why-{{ ex.pk }}" hidden>
+                <label class="small" for="{{ vote_form.reason.id_for_label }}">چرا؟</label>{{ vote_form.reason }}
+                <input type="text" name="comment" maxlength="300" placeholder="توضیح کوتاه (اختیاری)" aria-label="توضیح" value="{{ my_vote.comment|default:'' }}" autocomplete="off">
+                <button name="like" value="0" class="btn btn-sm btn-secondary">ثبت دیسلایک</button>
+            </div>
+        </form>{% elif my_vote %}<span class="vote-btn is-on is-static {% if my_vote.like %}vote-up{% else %}vote-down{% endif %}" title="رأی تو">{% include "components/icon.html" with name=my_vote.like|yesno:"thumb-up,thumb-down" %}</span>{% endif %}
+        </div>
+        {% if my_vote and not my_vote.like and my_vote.reason %}<p class="small muted vote-reason">دلیل: {{ my_vote.get_reason_display }}</p>{% endif %}
+        <p class="hint">{% if vote_form %}{% if my_vote %}رأیت ثبت شده؛ {% endif %}تا ۲۴ ساعت بعد از ثبت می‌تونی عوضش کنی.{% else %}مهلت ویرایش رأی تموم شده.{% endif %}</p></section>
     {% if can_note %}<section class="card"><h3>یادداشت برای خواننده‌ی بعدی</h3>
         <form method="post" action="{% url 'exchanges:note' ex.pk %}" class="inline-form" novalidate>{% csrf_token %}<input name="text" maxlength="500" placeholder="یه جمله تو کتاب بنویس…" required autocomplete="off" aria-label="یادداشت"><button class="btn btn-sm">ثبت</button></form></section>{% endif %}
     {% endif %}

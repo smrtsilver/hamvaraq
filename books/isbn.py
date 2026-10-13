@@ -73,7 +73,8 @@ def isbn_error(raw):
     return "شابک باید ۱۰ یا ۱۳ رقم باشه."
 
 
-_BIDI = re.compile("[‎‏‪-‮⁦-⁩]")
+# کنترل‌های جهت + «اتصال» (ZWJ) که کتابخانه‌ی ملی وسط حروف نام‌ها می‌ذاره (م‍ن‍ی‍ژه)؛ نیم‌فاصله (ZWNJ) می‌مونه
+_BIDI = re.compile("[‍‎‏‪-‮⁦-⁩]")
 
 
 def _fetch(url, timeout):
@@ -82,7 +83,8 @@ def _fetch(url, timeout):
 
 
 def _clean(text):
-    return re.sub(r"\s+", " ", _BIDI.sub("", text or "")).strip(" 	،,:/؛;.")
+    text = re.sub(r"‌+(?=\s|$)|(?<=\s)‌+|^‌+", "", _BIDI.sub("", text or ""))   # نیم‌فاصله‌ی سرِ کلمه بی‌معنیه
+    return re.sub(r"\s+", " ", text).strip(" 	،,:/؛;.")
 
 
 def parse_marc(data):
@@ -155,6 +157,11 @@ def _from_marc(fields, isbn):
     """رکورد UNIMARC ← دیکشنری غنی؛ None اگه شابکش با شابک پرسیده‌شده نخونه (شابک ۱۰ و ۱۳ یکی حساب می‌شن)."""
     if normalize_isbn(_clean(_sub(fields, "010", "a"))) != isbn:
         return None
+    return _marc_record(fields, isbn)
+
+
+def _marc_record(fields, isbn):
+    """رکورد UNIMARC ← دیکشنری غنی (بدون شرط تطابق شابک)؛ None اگه عنوان نداشت."""
     title = _clean(_sub(fields, "200", "a"))
     if not title:
         return None
@@ -200,6 +207,46 @@ def _nlai(isbn, timeout):
         if result:
             return result
     return None
+
+
+NLAI_TITLE_LIMIT = 6
+NLAI_TITLE_CACHE = 6 * 3600
+
+
+def nlai_title_search(query, timeout=None, limit=NLAI_TITLE_LIMIT):
+    """
+    جستجوی عنوان/نویسنده در کتابخانه‌ی ملی ← فهرست رکوردهای کامل (عنوان، پدیدآور، ناشر، سال، شابک…).
+    برای وقتی که شابک تو هیچ منبعی نیست (مثلاً چاپ تازه)؛ کاربر چاپ درست رو انتخاب می‌کنه. نتیجه ۶ ساعت کش می‌شه.
+    """
+    import hashlib
+
+    from common.text import normalize as text_normalize
+
+    q = " ".join((query or "").split())[:120]
+    if len(q) < 3:
+        return []
+    key = "nlai:title:" + hashlib.sha1(text_normalize(q).encode()).hexdigest()
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    deadline = time.monotonic() + (timeout or getattr(settings, "ISBN_BUDGET", 3.0) + 3)
+
+    def left():
+        return max(0.3, deadline - time.monotonic())
+
+    page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": q})), left()).decode("utf-8", "replace")
+    uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[: limit + 2]
+    out = []
+    if uids:
+        for fields in parse_marc(_get(NLAI_MARC.format(qs=urllib.parse.urlencode([("uid", u) for u in uids])), left())):
+            raw = _clean(_sub(fields, "010", "a"))
+            record = _marc_record(fields, (normalize_isbn(raw) if raw else None) or "")
+            if record:
+                out.append(record)
+            if len(out) >= limit:
+                break
+    cache.set(key, out, NLAI_TITLE_CACHE)
+    return out
 
 
 def _compact(record):

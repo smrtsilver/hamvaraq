@@ -18,7 +18,7 @@ def reputation(user):
     votes = list(Vote.objects.filter(target=user))
     total = len(votes)
     if total == 0:
-        return {"newcomer": True, "percent": None, "total": 0, "low": False}
+        return {"newcomer": True, "percent": None, "total": 0, "low": False, "likes": 0, "dislikes": 0}
     weighted_like = weighted_total = 0.0
     per_pair = {}
     for v in votes:
@@ -30,7 +30,8 @@ def reputation(user):
             weighted_like += w
     percent = round(100 * weighted_like / weighted_total)
     low = total >= settings.LOW_REPUTATION_MIN_VOTES and percent < settings.LOW_REPUTATION_PERCENT
-    return {"newcomer": False, "percent": percent, "total": total, "low": low}
+    likes = sum(1 for v in votes if v.like)
+    return {"newcomer": False, "percent": percent, "total": total, "low": low, "likes": likes, "dislikes": total - likes}
 
 
 def can_edit_vote(vote):
