@@ -66,6 +66,7 @@
                         <div class="menu-head"><strong>{{ user.username }}</strong><span>{{ user.points|fa }} امتیاز{% if user.city %} · {{ user.city.name }}{% endif %}</span></div>
                         <a href="{% url 'accounts:profile' user.username %}">{% include "components/icon.html" with name="user" %} پروفایل من</a>
                         <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %} قفسه‌ی من</a>
+                        <a href="{% url 'accounts:feed' %}">{% include "components/icon.html" with name="news" %} فید کتاب‌خوان‌ها</a>
                         <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} آگهی‌های معاوضه‌ی من</a>
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>

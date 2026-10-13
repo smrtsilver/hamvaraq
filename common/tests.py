@@ -2671,3 +2671,32 @@ class ReadingMVPTests(Base):
         Book.objects.create(owner=self.taker, title="جزیره سرگردانی", author="سیمین دانشور", city=self.tehran)
         recs = reading.recommendations(self.giver)
         self.assertEqual([b.title for b in recs], ["جزیره سرگردانی"])
+
+
+class FollowFeedTests(Base):
+    def test_follow_toggle_feed_and_no_self_follow(self):
+        from accounts.models import Follow
+        from books.models import ShelfEntry
+        self.client.force_login(self.giver)
+        self.client.post("/accounts/u/taker/follow/")
+        self.assertTrue(Follow.objects.filter(follower=self.giver, followee=self.taker).exists())
+        self.client.post("/accounts/u/giver/follow/")
+        self.assertFalse(Follow.objects.filter(follower=self.giver, followee=self.giver).exists())
+        ShelfEntry.objects.create(user=self.taker, title="سووشون", author="دانشور", reading_status="read", review="عالی", rating=5)
+        r = self.client.get("/accounts/feed/")
+        self.assertEqual(r.context["items"][0]["kind"], "review")
+        self.assertContains(r, "عالی")
+        r = self.client.get("/accounts/u/taker/")
+        self.assertTrue(r.context["is_following"])
+        self.client.post("/accounts/u/taker/follow/")
+        self.assertFalse(Follow.objects.filter(follower=self.giver).exists())
+
+    def test_anonymize_clears_shelf_and_follows(self):
+        from accounts.models import Follow
+        from accounts.services import anonymize_user
+        from books.models import ShelfEntry
+        Follow.objects.create(follower=self.giver, followee=self.taker)
+        ShelfEntry.objects.create(user=self.giver, title="الف", author="ب", note="خصوصی")
+        anonymize_user(self.giver)
+        self.assertFalse(ShelfEntry.objects.filter(note="خصوصی").exists())
+        self.assertFalse(Follow.objects.exists())

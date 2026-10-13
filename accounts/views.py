@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from books.models import Book
 
@@ -49,7 +50,37 @@ def profile(request, username):
         "given": done.filter(owner=owner).count(),
         "received": done.filter(requester=owner).count(),
         "badges": owner.user_badges.select_related("badge"),
+        "followers": owner.follower_set.count(), "following": owner.following_set.count(),
+        "is_following": request.user.is_authenticated and owner.follower_set.filter(follower=request.user).exists(),
+        "goal": _public_goal(owner),
     })
+
+
+def _public_goal(owner):
+    from books.reading import goal_progress
+
+    return goal_progress(owner)
+
+
+@login_required
+@require_POST
+@throttle("follow", 120, 3600, by="user")
+def follow_toggle(request, username):
+    from .models import Follow
+
+    target = get_object_or_404(User, username=username, deleted_at__isnull=True, is_active=True)
+    if target != request.user:
+        f, created = Follow.objects.get_or_create(follower=request.user, followee=target)
+        if not created:
+            f.delete()
+    return redirect("accounts:profile", username)
+
+
+@login_required
+def feed(request):
+    from . import feed as feedmod
+
+    return render(request, "accounts/feed.html", {"items": feedmod.build(request.user), "suggested": feedmod.suggested_readers(request.user)})
 
 
 @login_required

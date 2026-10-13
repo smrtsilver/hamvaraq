@@ -103,3 +103,18 @@ class PointEntry(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.delta:+d} ({self.get_reason_display()})"
+
+
+class Follow(models.Model):
+    """دنبال کردن یه کتاب‌خوان؛ فقط فید رو پر می‌کنه (اعلانی فرستاده نمی‌شه)."""
+
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="following_set", verbose_name="دنبال‌کننده")
+    followee = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follower_set", verbose_name="دنبال‌شونده")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["follower", "followee"], name="one_follow"),
+                       models.CheckConstraint(condition=~models.Q(follower=models.F("followee")), name="no_self_follow")]
+        indexes = [models.Index(fields=["followee", "-created_at"])]
+        verbose_name = "دنبال کردن"
+        verbose_name_plural = "دنبال کردن‌ها"

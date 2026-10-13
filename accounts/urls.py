@@ -31,6 +31,8 @@ urlpatterns = [
     path("points/", views.my_points, name="points"),
     path("delete/", views.delete_account, name="delete"),
     path("u/<str:username>/", views.profile, name="profile"),
+    path("u/<str:username>/follow/", views.follow_toggle, name="follow"),
+    path("feed/", views.feed, name="feed"),
     # بازیابی رمز با ایمیل (اختیاری)
     path("password-reset/", ThrottledPasswordResetView.as_view(
         template_name="accounts/password_reset.html",

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}فید کتاب‌خوان‌ها | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>فید کتاب‌خوان‌ها</h1><p>کتاب‌هایی که دوستانت تموم کردن، نقدهاشون و آگهی‌های تازه‌شون.</p></div></div>
+<div class="feed-layout">
+<div>
+{% if items %}<ol class="feed">{% for it in items %}
+    <li class="feed-item feed-{{ it.kind }}">
+        <a class="feed-av" href="{% url 'accounts:profile' it.user.username %}" aria-label="{{ it.user.username }}">{% include "components/avatar.html" with u=it.user size="sm" %}</a>
+        <div class="feed-body">
+            <p class="feed-head"><a href="{% url 'accounts:profile' it.user.username %}">{{ it.user.username }}</a>
+            {% if it.kind == 'review' %}درباره‌ی <b>{{ it.entry.title }}</b> نوشت{% elif it.kind == 'read' %}<b>{{ it.entry.title }}</b> رو تموم کرد{% elif it.kind == 'reading' %}داره <b>{{ it.entry.title }}</b> رو می‌خونه{% elif it.kind == 'post' %}یه معرفی منتشر کرد{% else %}<b>{{ it.book.title }}</b> رو برای معاوضه گذاشت{% endif %}
+            <time class="muted small" datetime="{{ it.at|date:'c' }}">{{ it.at|ago }}</time></p>
+            {% if it.entry %}{% if it.entry.rating %}<p class="stars feed-stars" aria-label="{{ it.entry.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= it.entry.rating %}★{% else %}☆{% endif %}{% endfor %}</p>{% endif %}
+                {% if it.entry.review %}<blockquote class="feed-quote">{{ it.entry.review|truncatechars:320 }}</blockquote>{% endif %}<p class="small muted">{{ it.entry.author }}</p>
+            {% elif it.post %}{% include "components/post_mini.html" with p=it.post %}
+            {% else %}<a class="feed-book" href="{% url 'books:detail' it.book.pk %}"><strong>{{ it.book.title }}</strong><span class="muted small">{{ it.book.author }} · {{ it.book.city.name }}</span></a>{% endif %}
+        </div></li>{% endfor %}</ol>
+{% else %}{% url 'books:list' as list_url %}{% include "components/empty.html" with ill="books" title="فیدت خالیه" text="چند کتاب‌خوان رو دنبال کن تا ببینی چی می‌خونن." %}{% endif %}
+</div>
+{% if suggested %}<aside class="card feed-side" aria-labelledby="sug-h"><h2 id="sug-h" class="h3">کتاب‌خوان‌هایی که شاید دوست داشته باشی</h2>
+    <ul class="list-clean">{% for u in suggested %}<li class="sug-row"><a class="party" href="{% url 'accounts:profile' u.username %}">{% include "components/avatar.html" with u=u size="sm" %}<span><b>{{ u.username }}</b><small class="muted d-block">{% if u.common %}{{ u.common|fa }} کتاب مشترک{% else %}{{ u.shelf_n|fa }} کتاب تو قفسه{% endif %}</small></span></a>
+        <form method="post" action="{% url 'accounts:follow' u.username %}">{% csrf_token %}<button class="btn btn-sm">دنبال کردن</button></form></li>{% endfor %}</ul></aside>{% endif %}
+</div>
+{% endblock %}

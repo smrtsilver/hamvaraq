@@ -10,11 +10,13 @@
             <h1 class="mb-4">{{ owner.username }}</h1>
             <div class="cluster">{% reputation_badge owner %}{% if owner.city %}<span class="chip">{% include "components/icon.html" with name="pin" %}{{ owner.city.name }}، {{ owner.city.province.name }}</span>{% endif %}<span class="chip">عضو از {{ owner.date_joined|jlong }}</span></div>
             {% if owner.is_restricted %}<div class="alert alert-warning mb-0"><p>این کاربر موقتاً فقط می‌تونه کتاب بده.</p></div>{% endif %}
+            <p class="follow-line small muted"><b>{{ followers|fa }}</b> دنبال‌کننده · <b>{{ following|fa }}</b> دنبال‌شونده{% if goal %} · هدف {{ goal.year|fa }}: <b>{{ goal.done|fa }} از {{ goal.target|fa }}</b> کتاب{% endif %}</p>
             {% if badges %}<div class="badges-row mt-12">{% for ub in badges %}<span class="badge-item" title="{{ ub.badge.description }}">{% include "components/icon.html" with name="star" %}{{ ub.badge.name }}</span>{% endfor %}</div>{% endif %}
         </div>
         <div class="cluster">
             {% if user == owner %}<a class="btn btn-secondary btn-sm" href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
-            {% elif user.is_authenticated %}<a class="btn btn-ghost btn-sm" href="{% url 'trust:report' 'user' owner.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
+            {% elif user.is_authenticated %}<form method="post" action="{% url 'accounts:follow' owner.username %}" class="inline">{% csrf_token %}<button class="btn btn-sm{% if is_following %} btn-secondary{% endif %}" aria-pressed="{{ is_following|yesno:'true,false' }}">{% if is_following %}{% include "components/icon.html" with name="check" %} دنبال می‌کنی{% else %}{% include "components/icon.html" with name="plus" %} دنبال کردن{% endif %}</button></form>
+            <a class="btn btn-ghost btn-sm" href="{% url 'trust:report' 'user' owner.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
         </div>
     </div>
 </section>

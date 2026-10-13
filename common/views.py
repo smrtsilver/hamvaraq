@@ -86,6 +86,11 @@ def _member_home(request):
     new_books = decorate_cards(base[:10], user)
     if local:
         shelves.append({"title": "در شهر " + user.city.name, "sub": "کتاب‌های هم‌شهری‌هات", "books": decorate_cards(local, user), "more": reverse("books:list") + "?city=%d" % user.city_id})
+    from books.reading import recommendations
+
+    recs = recommendations(user, 10)
+    if recs:
+        shelves.append({"title": "پیشنهاد برای تو", "sub": "از روی قفسه‌ات", "books": decorate_cards(recs, user), "more": reverse("books:shelf")})
     shelves.append({"title": "تازه‌ها", "sub": "تازه‌ترین کتاب‌های ثبت‌شده", "books": new_books, "more": reverse("books:list")})
     hot = decorate_cards(demand, user)
     if hot:
