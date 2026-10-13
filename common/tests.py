@@ -22,6 +22,11 @@ from trust.services import apply_decision, reputation
 
 
 class Base(TestCase):
+    def _callSetUp(self):
+        from books.authors import invalidate
+        invalidate()                       # فهرست کش‌شده‌ی نویسنده‌ها نباید از یه تست به تست دیگه نشت کنه
+        super()._callSetUp()
+
     @classmethod
     def setUpTestData(cls):
         cls.isfahan = make_city("اصفهان")
@@ -1490,7 +1495,7 @@ class SuggestAndSettingsTests(Base):
         r = self.client.get(reverse("books:suggest"), {"kind": "title", "q": "كور"})  # ک عربی هم کار می‌کنه
         self.assertEqual(len(r.json()["items"]), 2)
         self.assertEqual(self.client.get(reverse("books:suggest"), {"q": "ب"}).json(), {"items": []})  # خیلی کوتاه
-        self.assertEqual(self.client.get(reverse("books:suggest"), {"kind": "author", "q": "هدا"}).json(), {"items": [{"author": "هدایت"}]})
+        self.assertEqual(self.client.get(reverse("books:suggest"), {"kind": "author", "q": "هدا"}).json(), {"items": [{"author": "هدایت", "count": 2}]})
         self.assertEqual(self.client.get(reverse("books:suggest"), {"q": "ناموجود"}).json(), {"items": []})
 
     def test_quick_search_books_and_limits(self):
