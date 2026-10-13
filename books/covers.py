@@ -65,7 +65,7 @@ def _ornament(d, key, w, h, s, accent):
     elif key == "paper":
         d.line((w * 0.3, h * 0.25, w * 0.7, h * 0.25), fill=a, width=max(1, round(2 * s)))
         d.line((w * 0.42, h * 0.27, w * 0.58, h * 0.27), fill=a, width=max(1, round(1 * s)))
-        d.line((w * 0.42, h * 0.80, w * 0.58, h * 0.80), fill=a, width=max(1, round(1 * s)))
+        d.line((w * 0.42, h * 0.87, w * 0.58, h * 0.87), fill=a, width=max(1, round(1 * s)))
         rnd = random.Random(5)
         for _ in range(int(900 * s * s)):
             d.point((rnd.random() * w, rnd.random() * h), fill=(120, 90, 40, 30))
@@ -80,9 +80,9 @@ def _ornament(d, key, w, h, s, accent):
         for i in range(3):
             d.arc((w * 0.1 - i * 30 * s, h * 0.78 - i * 20 * s, w * 0.9 + i * 30 * s, h * 1.2), 200, 340, fill=a, width=max(1, round(2 * s)))
     elif key == "sunset":
-        d.ellipse((w / 2 - 90 * s, h * 0.80 - 90 * s, w / 2 + 90 * s, h * 0.80 + 90 * s), fill=a + (230,))
+        d.ellipse((w / 2 - 70 * s, h * 0.87 - 70 * s, w / 2 + 70 * s, h * 0.87 + 70 * s), fill=a + (230,))
         for i in range(6):
-            y = h * 0.82 + i * 16 * s
+            y = h * 0.88 + i * 14 * s
             d.rectangle((0, y, w, y + 6 * s), fill=(120, 54, 112, 255))
     elif key == "kids":
         rnd = random.Random(9)
@@ -90,7 +90,7 @@ def _ornament(d, key, w, h, s, accent):
         for _ in range(26):
             r = rnd.uniform(8, 26) * s
             x, y = rnd.random() * w, rnd.random() * h
-            if 0.26 * h < y < 0.74 * h and 0.08 * w < x < 0.92 * w:
+            if 0.2 * h < y < 0.8 * h:
                 continue                              # وسط جلد جای عنوانه
             d.ellipse((x - r, y - r, x + r, y + r), fill=rnd.choice(colors) + (170,))
     elif key == "science":
@@ -104,9 +104,9 @@ def _ornament(d, key, w, h, s, accent):
 
 
 def render(key, title, author, width=600):
-    """تصویر RGB جلد با نسبت ۲:۳."""
+    """تصویر RGB جلد با نسبت ۳:۴ (هم‌اندازه‌ی کارت‌ها)."""
     k, _name, _cat, top, bottom, ink, accent = design(key)
-    w, h = width, round(width * 1.5)
+    w, h = width, round(width * 4 / 3)
     s = width / 600
     img = _gradient(w, h, top, bottom).convert("RGBA")
     layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -135,7 +135,8 @@ def render(key, title, author, width=600):
     # برند کوچک پایین جلد
     fb = _font(False, round(22 * s))
     sb = shape("هم‌ورق")
-    d.text(((w - fb.getlength(sb)) / 2, h - (96 if k in ("classic", "persian") else 64) * s), sb, font=fb, fill=ink + (150,))
+    by = 40 * s if k == "sunset" else h - (96 if k in ("classic", "persian") else 64) * s   # روی خورشید نیفته
+    d.text(((w - fb.getlength(sb)) / 2, by), sb, font=fb, fill=ink + (150,))
     return img.convert("RGB")
 
 
@@ -146,7 +147,7 @@ def preview_png(key, title, author, width=240):
 
 
 def as_upload(key, title, author):
-    """ContentFile جلد نهایی (JPEG ۹۰۰×۱۳۵۰) با نامی که طرح رو نگه می‌داره."""
+    """ContentFile جلد نهایی (JPEG ۹۰۰×۱۲۰۰) با نامی که طرح رو نگه می‌داره."""
     buf = io.BytesIO()
     render(key, title, author, 900).filter(ImageFilter.SMOOTH_MORE).save(buf, "JPEG", quality=88, optimize=True)
     return ContentFile(buf.getvalue(), name=f"{PREFIX}{key}-cover.jpg")

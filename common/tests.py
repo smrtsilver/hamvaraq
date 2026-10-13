@@ -890,6 +890,7 @@ class LifecycleTests(Base):
         self.assertEqual(self.client.get("/panel/").status_code, 200)
 
 
+import io
 import json
 import shutil
 import tempfile
@@ -2979,6 +2980,16 @@ class CoverDesignAlbumTests(Base):
         self.assertEqual(covers.key_of(b.cover.name), "noir")
         r = self.client.get(reverse("books:edit", args=[b.pk]))
         self.assertEqual(r.context["form"].initial["cover_design"], "noir")
+
+    def test_designed_cover_is_three_by_four_and_rebuild_command(self):
+        from django.core.management import call_command
+        self.post(cover_mode="design", cover_design="sunset")
+        b = Book.objects.get(title="سمفونی مردگان")
+        self.assertEqual((b.cover_w, b.cover_h), (900, 1200))                       # هم‌نسبت کارت‌ها، بدون برش
+        Book.objects.filter(pk=b.pk).update(cover_w=600)
+        call_command("rebuild_design_covers", stdout=io.StringIO())
+        b.refresh_from_db()
+        self.assertEqual((b.cover_w, b.cover_h), (900, 1200))
 
     def test_photo_mode_requires_photo_and_real_photo_wins(self):
         from books import covers
