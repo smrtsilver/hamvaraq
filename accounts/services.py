@@ -37,6 +37,8 @@ def anonymize_user(user):
     user.follower_set.all().delete()
     user.club_memberships.all().delete()
     user.club_posts.all().delete()
+    user.club_votes.all().delete()
+    user.club_proposals.all().delete()
     user.owned_clubs.update(is_active=False)
     user.notifications.all().delete()
     user.push_subscriptions.all().delete()

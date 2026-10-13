@@ -60,8 +60,14 @@ def _detail(request, qs, kind, name, url, desc, ld_type):
     page = Paginator(qs.select_related("city__province", "owner", "edition").order_by("status", "-created_at"), PER_PAGE).get_page(request.GET.get("page"))
     page.object_list = decorate_cards(page.object_list, request.user)
     ld = {"@context": "https://schema.org", "@type": ld_type, "name": name, "url": request.build_absolute_uri(url)}
+    from .models import ShelfEntry
+
+    names = set(qs.values_list("author", flat=True)[:50]) if kind == "authors" else set()
+    readers = ShelfEntry.objects.filter(author__in=names).values("user").distinct().count() if names else 0
+    cities = qs.values("city").distinct().count()
     return render(request, "books/facet_detail.html", {
         "kind": kind, "facet_name": name, "page": page, "qs": "", "desc": desc, "count": page.paginator.count,
+        "readers": readers, "cities": cities,
         "ld_json": json.dumps(ld, ensure_ascii=False).replace("<", "\\u003c")})
 
 
@@ -71,7 +77,7 @@ def author_detail(request, slug):
         raise Http404
     name = _display_name(qs.values_list("author", flat=True))
     return _detail(request, qs, "authors", name, reverse("author", args=[slug]),
-                   f"کتاب‌های {name} برای مبادله‌ی رایگان؛ بخوان، بسپار، دوباره بخوان تو هم‌ورق.", "Person")
+                   f"کتاب‌های {name} که تو قفسه‌های هم‌ورق منتظر خواننده‌ی بعدی‌ان.", "Person")
 
 
 def publisher_detail(request, slug):
@@ -80,4 +86,4 @@ def publisher_detail(request, slug):
         raise Http404
     name = _display_name(qs.values_list("edition__publisher", flat=True))
     return _detail(request, qs, "publishers", name, reverse("publisher", args=[slug]),
-                   f"کتاب‌های منتشرشده توسط {name} برای مبادله‌ی رایگان تو هم‌ورق.", "Organization")
+                   f"کتاب‌هایی از {name} که تو قفسه‌های هم‌ورق دست‌به‌دست می‌شن.", "Organization")

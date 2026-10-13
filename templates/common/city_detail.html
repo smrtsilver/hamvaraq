@@ -2,9 +2,12 @@
 {% block title %}کتاب‌های {{ city.name }} | هم‌ورق{% endblock %}
 {% block description %}{{ stats.exchanged|fa }} کتاب در {{ city.name }} دست‌به‌دست شده و {{ stats.available|fa }} کتاب برای مبادله موجوده.{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>{{ city.name }}</h1><p><a href="{% url 'province' city.province.pk %}">استان {{ city.province.name }}</a></p></div>
-    <a class="btn btn-secondary" href="{% url 'books:list' %}?province={{ city.province_id }}&city={{ city.pk }}">همه‌ی کتاب‌های {{ city.name }}</a></div>
-{% include "common/_place_stats.html" %}
+<section class="place-hero">
+    <span class="ph-badge ph-badge-pin" aria-hidden="true">{% include "components/icon.html" with name="pin" %}</span>
+    <div class="grow"><span class="ph-kicker"><a href="{% url 'province' city.province.pk %}">استان {{ city.province.name }}</a></span><h1>{{ city.name }}</h1>
+        <div class="ph-stats"><span><b>{{ stats.available|fa }}</b> کتاب موجود</span><span><b>{{ stats.exchanged|fa }}</b> دست‌به‌دست‌شده</span><span><b>{{ stats.users|fa }}</b> کتاب‌خوان</span></div></div>
+    <a class="btn btn-secondary btn-sm" href="{% url 'books:list' %}?province={{ city.province_id }}&amp;city={{ city.pk }}">همه‌ی کتاب‌های {{ city.name }}</a>
+</section>
 {% if top_categories %}<p class="mt-20">محبوب‌ترین دسته‌ها: {% for c in top_categories %}<span class="chip">{{ c.category__name }} <small>{{ c.n|fa }}</small></span> {% endfor %}</p>{% endif %}
-<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% include "components/book_grid.html" with books=latest %}</section>
+<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% if latest %}{% include "components/book_grid.html" with books=latest %}{% else %}{% url 'books:create' as cu %}{% include "components/empty.html" with ill="books" title="هنوز کتابی اینجا نیست" text="اولین کتاب این شهر رو تو بیار؛ شاید یه هم‌شهری منتظرشه." cta_url=cu cta_label="ثبت اولین کتاب" %}{% endif %}</section>
 {% endblock %}

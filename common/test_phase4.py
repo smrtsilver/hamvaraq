@@ -52,7 +52,7 @@ class FacetPageTests(Base):
         html = d.content.decode()
         ld = json.loads(html.split('application/ld+json">')[1].split("</script>")[0])
         self.assertEqual((ld["@type"], ld["name"]), ("Person", "صادق هدایت"))
-        self.assertTrue("کتاب‌های صادق هدایت برای مبادله‌ی رایگان" in html and 'aria-label="مسیر"' in html)
+        self.assertTrue("کتاب‌های صادق هدایت که تو قفسه‌های هم‌ورق" in html and 'aria-label="مسیر"' in html)
         self.assertTrue(f'href="{reverse("author", args=["صادق-هدایت"])}"' in self.client.get(self.b1.get_absolute_url()).content.decode())
 
     def test_hidden_banned_exchanged_books_do_not_appear_and_empty_author_404(self):
@@ -73,7 +73,7 @@ class FacetPageTests(Base):
         d = self.client.get(reverse("publisher", args=[ed.publisher_slug]))
         self.assertEqual([b.title for b in d.context["page"]], ["کلیدر"])
         html = d.content.decode()
-        self.assertTrue('"@type": "Organization"' in html and "منتشرشده توسط نشر فرهنگ معاصر" in html)
+        self.assertTrue('"@type": "Organization"' in html and "کتاب‌هایی از نشر فرهنگ معاصر" in html)
         self.assertEqual(self.client.get(reverse("publisher", args=["نامعلوم"])).status_code, 404)
 
     def test_sitemap_includes_author_and_publisher_urls_and_static_listing_pages(self):

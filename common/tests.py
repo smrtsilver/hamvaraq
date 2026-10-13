@@ -2846,3 +2846,49 @@ class SupportPorfamTests(Base):
         self.assertContains(r, "data-porfam")
         self.assertContains(r, "https://porofam.ir")
         self.assertContains(self.client.get("/books/"), "دوست و همراه ما")
+
+
+class NextIdeasTests(Base):
+    def test_shelf_cover_upload_and_fallback(self):
+        import io
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+
+        from books.models import ShelfEntry
+        e = ShelfEntry.objects.create(user=self.giver, title="سووشون", author="دانشور")
+        self.assertEqual(e.cover_url, "")
+        buf = io.BytesIO(); Image.new("RGB", (60, 90), "red").save(buf, "JPEG")
+        self.client.force_login(self.giver)
+        self.client.post(f"/books/shelf/{e.pk}/", {"reading_status": "read", "rating": "", "review": "", "note": "", "title": "سووشون", "author": "دانشور", "isbn": "",
+                                                   "cover": SimpleUploadedFile("c.jpg", buf.getvalue(), content_type="image/jpeg")})
+        e.refresh_from_db()
+        self.assertTrue(e.cover.name.startswith("shelf/"))
+        self.assertContains(self.client.get("/accounts/u/giver/"), e.cover.url)
+
+    def test_club_propose_vote_choose(self):
+        from clubs.models import Club, ClubMember, ClubVote
+        club = Club.objects.create(name="باشگاه", owner=self.giver)
+        ClubMember.objects.create(club=club, user=self.giver)
+        ClubMember.objects.create(club=club, user=self.taker)
+        self.client.force_login(self.taker)
+        self.client.post(f"/clubs/{club.slug}/propose/", {"title": "کلیدر", "author": "دولت‌آبادی"})
+        p = club.proposals.get()
+        self.client.post(f"/clubs/{club.slug}/vote/{p.pk}/")
+        self.client.post(f"/clubs/{club.slug}/vote/{p.pk}/")              # تکراری
+        self.assertEqual(ClubVote.objects.filter(club=club).count(), 1)
+        self.client.post(f"/clubs/{club.slug}/choose/{p.pk}/")             # فقط گرداننده
+        club.refresh_from_db()
+        self.assertEqual(club.current_title, "")
+        self.client.force_login(self.giver)
+        self.client.post(f"/clubs/{club.slug}/choose/{p.pk}/")
+        club.refresh_from_db()
+        self.assertEqual((club.current_title, club.proposals.count()), ("کلیدر", 0))
+
+    def test_feed_has_recommendations(self):
+        from books.models import ShelfEntry
+        ShelfEntry.objects.create(user=self.giver, title="سووشون", author="سیمین دانشور", rating=5)
+        Book.objects.create(owner=self.taker, title="جزیره سرگردانی", author="سیمین دانشور", city=self.tehran)
+        self.client.force_login(self.giver)
+        r = self.client.get("/accounts/feed/")
+        self.assertEqual([b.title for b in r.context["recs"]], ["جزیره سرگردانی"])

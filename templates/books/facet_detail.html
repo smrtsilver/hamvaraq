@@ -4,7 +4,12 @@
 {% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
 {% block content %}
 <nav class="small muted mb-18" aria-label="مسیر"><a href="{% if kind == 'authors' %}{% url 'authors' %}{% else %}{% url 'publishers' %}{% endif %}">{% if kind == 'authors' %}نویسنده‌ها{% else %}ناشران{% endif %}</a> / {{ facet_name }}</nav>
-<div class="page-head"><div><h1>{{ facet_name }}</h1><p>{{ count|fa }} کتاب تو هم‌ورق{% if kind == 'authors' %} از این نویسنده{% else %} از این ناشر{% endif %}.</p></div></div>
+<section class="place-hero">
+    <span class="ph-badge{% if kind == 'publishers' %} ph-badge-pub{% endif %}" aria-hidden="true">{{ facet_name|slice:":1" }}</span>
+    <div class="grow"><span class="ph-kicker">{% if kind == 'authors' %}نویسنده{% else %}ناشر{% endif %}</span><h1>{{ facet_name }}</h1>
+        <div class="ph-stats"><span><b>{{ count|fa }}</b> کتاب در قفسه‌ها</span><span><b>{{ cities|fa }}</b> شهر</span>{% if readers %}<span><b>{{ readers|fa }}</b> کتاب‌خوان تو قفسه‌شون دارن</span>{% endif %}</div></div>
+    {% if user.is_authenticated and kind == 'authors' %}<a class="btn btn-secondary btn-sm" href="{% url 'books:shelf_add' %}?author={{ facet_name|urlencode }}">{% include "components/icon.html" with name="plus" %} یه کتابش به قفسه‌ام</a>{% endif %}
+</section>
 {% include "components/book_grid.html" with books=page %}
 {% include "components/pagination.html" %}
 {% endblock %}

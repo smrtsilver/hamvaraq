@@ -2,8 +2,12 @@
 {% block title %}کتاب‌های استان {{ province.name }} | هم‌ورق{% endblock %}
 {% block description %}{{ stats.exchanged|fa }} کتاب در استان {{ province.name }} دست‌به‌دست شده و {{ stats.available|fa }} کتاب برای مبادله موجوده.{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>استان {{ province.name }}</h1></div><a class="btn btn-secondary" href="{% url 'books:list' %}?province={{ province.pk }}">همه‌ی کتاب‌ها</a></div>
-{% include "common/_place_stats.html" %}
+<section class="place-hero">
+    <span class="ph-badge ph-badge-pin" aria-hidden="true">{% include "components/icon.html" with name="pin" %}</span>
+    <div class="grow"><span class="ph-kicker">استان</span><h1>{{ province.name }}</h1>
+        <div class="ph-stats"><span><b>{{ stats.available|fa }}</b> کتاب موجود</span><span><b>{{ stats.exchanged|fa }}</b> دست‌به‌دست‌شده</span><span><b>{{ stats.users|fa }}</b> کتاب‌خوان</span></div></div>
+    <a class="btn btn-secondary btn-sm" href="{% url 'books:list' %}?province={{ province.pk }}">همه‌ی کتاب‌ها</a>
+</section>
 {% if cities %}<p class="mt-20">شهرها: {% for c in cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a> {% endfor %}</p>{% endif %}
-<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% include "components/book_grid.html" with books=latest %}</section>
+<section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% if latest %}{% include "components/book_grid.html" with books=latest %}{% else %}{% url 'books:create' as cu %}{% include "components/empty.html" with ill="books" title="هنوز کتابی اینجا نیست" text="اولین کتاب این استان رو تو بیار." cta_url=cu cta_label="ثبت اولین کتاب" %}{% endif %}</section>
 {% endblock %}

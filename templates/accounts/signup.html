@@ -5,6 +5,7 @@
 <div class="auth">
     {% include "accounts/_auth_promo.html" %}
     <div class="auth-form">
+        <div class="auth-mini" aria-hidden="true"><span class="auth-shelf">{% for c in "123456" %}<i></i>{% endfor %}</span><span class="auth-tag">{{ site.tagline }}</span></div>
         <h1>هم‌ورق شو</h1>
         <p class="muted">با ثبت‌نام ۱ امتیاز هدیه می‌گیری؛ همین الان می‌تونی اولین کتابت رو برداری.</p>
         <form method="post" id="signup-form" novalidate>{% csrf_token %}

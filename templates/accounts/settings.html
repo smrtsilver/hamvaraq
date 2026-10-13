@@ -3,13 +3,30 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="medium">
-    <div class="page-head"><div><h1>تنظیمات</h1><p>اطلاعات حسابت</p></div></div>
-    <form method="post" class="card" data-location-group novalidate>{% csrf_token %}
-        <div class="form-section reset-box"><h3>موقعیت</h3>
-            <p class="hint pull-up">اختیاریه؛ برای پیشنهاد نقطه‌ی تحویل و پیش‌فرض ثبت کتاب استفاده می‌شه.</p></div>
-        {% include "components/form.html" %}
-        <div class="form-actions"><button class="btn">ذخیره</button></div>
-    </form>
-    <p class="small mt-20"><a href="{% url 'accounts:delete' %}" class="link-danger">حذف حساب</a></p>
+<section class="place-hero settings-hero">
+    {% include "components/avatar.html" with u=user size="lg" %}
+    <div class="grow"><span class="ph-kicker">حساب من</span><h1>{{ user.username }}</h1>
+        <div class="ph-stats"><span>عضو از {{ user.date_joined|jlong }}</span><span><b>{{ user.points|fa }}</b> امتیاز</span><span><b>{{ user.shelf.count|fa }}</b> کتاب تو قفسه</span></div></div>
+    <a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' user.username %}">دیدن پروفایل</a>
+</section>
+<nav class="set-tiles" aria-label="میان‌برهای حساب">
+    <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %}<span>قفسه‌ی من</span></a>
+    <a href="{% url 'books:shelf_stats' %}">{% include "components/icon.html" with name="chart" %}<span>آمار و هدف</span></a>
+    <a href="{% url 'books:highlights' %}">{% include "components/icon.html" with name="pen" %}<span>نقل‌قول‌ها</span></a>
+    <a href="{% url 'accounts:points' %}">{% include "components/icon.html" with name="star" %}<span>امتیاز من</span></a>
+    <a href="{% url 'accounts:stats' %}">{% include "components/icon.html" with name="eye" %}<span>بازدیدها</span></a>
+    <a href="{% url 'books:shelf_export' %}">{% include "components/icon.html" with name="download" %}<span>خروجی قفسه</span></a>
+</nav>
+<form method="post" class="card set-card" data-location-group novalidate>{% csrf_token %}
+    <h2 class="h3">اطلاعات حساب</h2>
+    <p class="hint">ایمیل فقط برای بازیابی رمزه؛ شهر برای پیشنهاد نقطه‌ی تحویل و پیش‌فرض ثبت کتاب. هر دو اختیاری‌ان.</p>
+    {% include "components/form.html" %}
+    <div class="form-actions"><button class="btn">{% include "components/icon.html" with name="check" %} ذخیره</button></div>
+</form>
+<section class="card set-card set-privacy" aria-labelledby="priv-h"><h2 id="priv-h" class="h3">حریم خصوصی</h2>
+    <ul class="list-clean small"><li>شماره و آدرست هیچ‌جا ازت خواسته نمی‌شه.</li><li>یادداشت‌های خصوصی قفسه و نقل‌قول‌های خصوصی فقط برای خودت نمایش داده می‌شن.</li><li>کسایی که دنبالت می‌کنن فقط کتاب‌های تموم‌شده، نقدها و معرفی‌هات رو می‌بینن.</li></ul></section>
+<section class="card set-card set-danger" aria-labelledby="dz-h"><h2 id="dz-h" class="h3">منطقه‌ی خطر</h2>
+    <p class="small muted">با حذف حساب، قفسه، نقل‌قول‌ها و یادداشت‌هات پاک می‌شن و نامت ناشناس می‌شه. برگشت‌پذیر نیست.</p>
+    <a href="{% url 'accounts:delete' %}" class="btn btn-ghost btn-sm link-danger">{% include "components/icon.html" with name="trash" %} حذف حساب</a></section>
 </div>
 {% endblock %}
