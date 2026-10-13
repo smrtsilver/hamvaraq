@@ -21,6 +21,7 @@ from analytics.tracking import track
 
 from . import catalog
 from . import isbn as isbn_lookup
+from .iran_isbn import hyphenate
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
 from .listing import active_chips, decorate_cards
@@ -269,12 +270,12 @@ def isbn_view(request):
         return JsonResponse({"error": "not_found"}, status=404)
     edition = catalog.resolve(isbn13)
     if not edition:
-        return JsonResponse({"error": "not_found", "isbn": isbn13}, status=404)
+        return JsonResponse({"error": "not_found", "isbn": isbn13, "isbn_display": hyphenate(isbn13)}, status=404)
     user = request.user
     mine = Book.objects.filter(owner=user).filter(Q(isbn=isbn13) | Q(edition=edition)).count()
     elsewhere = Book.objects.filter(status=Book.Status.AVAILABLE).exclude(owner=user).filter(Q(isbn=isbn13) | Q(edition=edition)).count()
     return JsonResponse({
-        "isbn": isbn13, "title": edition.title, "subtitle": edition.subtitle, "author": edition.author_line, "authors": edition.authors,
+        "isbn": isbn13, "isbn_display": hyphenate(isbn13), "title": edition.title, "subtitle": edition.subtitle, "author": edition.author_line, "authors": edition.authors,
         "translators": edition.translators, "publisher": edition.publisher, "year": edition.year, "year_calendar": edition.year_calendar,
         "edition_no": edition.edition_no, "volume": edition.volume, "pages": edition.pages, "language": edition.language,
         "cover_url": edition.cover_url, "source": edition.source, "confidence": edition.confidence, "verified": edition.verified,

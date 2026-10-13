@@ -242,7 +242,11 @@ CANCEL_AFTER_ACCEPT_FLAG = env.int("CANCEL_AFTER_ACCEPT_FLAG", default=3)   # ل
 CARD_X_ACCEL_PREFIX = env("CARD_X_ACCEL_PREFIX", default="")
 # CSP: اول Report-Only (تخلف‌ها تو لاگ csp)؛ بعد از چند روز بدون تخلف CSP_ENFORCE=True
 CSP_ENFORCE = env.bool("CSP_ENFORCE", default=False)
-ISBN_BUDGET = env.float("ISBN_BUDGET", default=3.0)                    # ثانیه؛ کل زمانی که یه استعلام شابک می‌تونه request رو نگه داره
+ISBN_BUDGET = env.float("ISBN_BUDGET", default=5.0)   # ثانیه؛ کل زمانی که یه استعلام شابک می‌تونه request رو نگه داره
+# منبع‌های استعلام شابک (ترتیب اولویت ثابته: opac، ketab، nlai، openlibrary، google). گوگل از ایران ۴۰۳ می‌ده پس پیش‌فرض خاموشه.
+ISBN_SOURCES = env.list("ISBN_SOURCES", default=["opac", "ketab", "nlai", "openlibrary"])
+if IS_TEST:
+    ISBN_SOURCES = ["nlai", "openlibrary", "google"]   # تست‌های قدیمی همین سه‌تا رو mock می‌کنن؛ تست منبع‌های ایرانی override می‌کنه
 ISBN_BREAKER_FAILS = env.int("ISBN_BREAKER_FAILS", default=3)
 ISBN_BREAKER_COOLDOWN = env.int("ISBN_BREAKER_COOLDOWN", default=300)  # ثانیه
 GOOGLE_BOOKS_API_KEY = env("GOOGLE_BOOKS_API_KEY", default="")  # اختیاری؛ بدون کلید سهمیه‌ی Google Books خیلی کمه

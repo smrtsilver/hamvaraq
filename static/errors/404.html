@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FBF7EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1713" media="(prefers-color-scheme: dark)">
+<title>پیدا نشد | هم‌ورق</title>
+<!-- فقط برای ۴۰۴ِ /static/ و /media/ که nginx مستقیم سرو می‌کنه؛ صفحه‌های سایت ۴۰۴ِ خود جنگو رو دارن -->
+<style>
+  /* این صفحه رو خودِ nginx مستقیم سرو می‌کنه (نه جنگو)، برای همون چند ثانیه‌ای که برنامه داره
+     دوباره بالا میاد و 502/503/504 می‌ده. هیچ وابستگی‌ای به استاتیک‌ها و فونت‌های سایت نداره. */
+  :root { color-scheme: light dark; --bg:#FBF7EF; --card:#fff; --ink:#16221D; --muted:#5b6b64; --green:#1F6F54; --amber:#E0A43A; --line:#e8e1d2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0E1713; --card:#15211c; --ink:#eef3ef; --muted:#9db0a6; --line:#24352d; } }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:24px; background:var(--bg); color:var(--ink);
+         font-family: Vazirmatn, "Vazir", Tahoma, "Segoe UI", sans-serif; text-align:center; line-height:1.8; }
+  .card { width:min(440px,100%); padding:36px 28px 30px; border-radius:24px; background:var(--card); border:1px solid var(--line);
+          box-shadow:0 20px 50px -24px rgba(22,34,29,.35); }
+  .logo { width:84px; height:84px; margin:0 auto 14px; animation: float 2.6s ease-in-out infinite; }
+  .logo svg { width:100%; height:100%; }
+  h1 { margin:0 0 6px; font-size:1.35rem; }
+  p { margin:0; color:var(--muted); }
+  .bar { position:relative; height:6px; margin:22px auto 16px; width:72%; border-radius:99px; background:var(--line); overflow:hidden; }
+  .bar::after { content:""; position:absolute; inset:0; width:40%; border-radius:inherit; background:linear-gradient(90deg,var(--green),var(--amber));
+                animation: slide 1.4s ease-in-out infinite; }
+  .small { font-size:.85rem; }
+  a.btn { display:inline-block; margin-top:18px; padding:10px 22px; border-radius:99px; background:var(--green); color:#fff; text-decoration:none; font-weight:700; }
+  @keyframes slide { 0% { transform:translateX(160%); } 100% { transform:translateX(-260%); } }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { .logo, .bar::after { animation:none; } }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="logo" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 50C21 43 11 43 4 46V20C11 17 22 17 32 24Z" fill="#1F6F54"/><path d="M32 50C43 43 53 43 60 46V20C53 17 42 17 32 24Z" fill="#E0A43A"/><path d="M32 24C32 14 37 8 48 6C48 16 43 23 32 24Z" fill="#2F9E73"/><path d="M32 23C35 18 39 13 44 10" fill="none" stroke="#FBF7EF" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+  <h1>این فایل پیدا نشد</h1>
+  <p>شاید عکس یا فایل جابه‌جا شده یا دیگه وجود نداره.</p>
+  
+  <a class="btn" href="/">برو به هم‌ورق</a>
+</main>
+</body>
+</html>

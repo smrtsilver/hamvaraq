@@ -290,6 +290,20 @@ def _compact(record):
     return {k: v for k, v in record.items() if v not in ("", None, [])}
 
 
+def _opac(isbn, timeout):
+    """فهرستگان کتابخانه‌ی ملی (فیپای کتاب‌های تازه)؛ books/iran_isbn.py"""
+    from . import iran_isbn
+
+    return iran_isbn.opac(isbn, timeout)
+
+
+def _ketab(isbn, timeout):
+    """خانه‌ی کتاب (مرجع صدور شابک ایران)؛ books/iran_isbn.py"""
+    from . import iran_isbn
+
+    return iran_isbn.ketab(isbn, timeout)
+
+
 def _open_library(isbn, timeout):
     info = _fetch(API.format(isbn=isbn), timeout).get(f"ISBN:{isbn}")
     if not (info and info.get("title")):
@@ -326,7 +340,9 @@ def _google(isbn, timeout):
 
 
 # ---------------------------------------------------------------- ادغام و اطمینان
-SOURCE_NAMES = ("nlai", "openlibrary", "google")     # ترتیب = اولویت پیش‌فرض (کتاب فارسی: کتابخانه‌ی ملی بهتره)
+# ترتیب = اولویت ادغام (کتاب فارسی: منبع‌های ایرانی بهترن). کدوم‌ها واقعاً پرسیده بشن از settings.ISBN_SOURCES میاد
+SOURCE_NAMES = ("opac", "ketab", "nlai", "openlibrary", "google")
+PRIMARY_SOURCES = ("opac", "ketab", "nlai")      # رکورد کامل از هر کدوم ← منتظر بقیه نمی‌مونیم
 FIELD_PRIORITY = {"cover_url": ("openlibrary", "google")}     # جلد: Open Library بهتر از گوگل
 MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "year", "year_calendar", "edition_no", "volume",
                 "pages", "language", "subjects", "description", "cover_url")
@@ -397,6 +413,12 @@ def breaker_record(name, ok):
         cache.set(key, state, 3600)
 
 
+def active_sources():
+    """منبع‌هایی که پرسیده می‌شن، به ترتیب اولویت SOURCE_NAMES (ISBN_SOURCES تو .env؛ گوگل از ایران ۴۰۳ می‌ده)."""
+    wanted = list(getattr(settings, "ISBN_SOURCES", SOURCE_NAMES))
+    return [n for n in SOURCE_NAMES if n in wanted]
+
+
 def _budget():
     return float(getattr(settings, "ISBN_BUDGET", 3.0))
 
@@ -416,9 +438,10 @@ def lookup_full(raw, timeout=None):
         return cached or None
     budget = float(timeout) if timeout else _budget()
     deadline = time.monotonic() + budget
-    funcs = {"nlai": _nlai, "openlibrary": _open_library, "google": _google}     # موقع صدا زدن خونده می‌شن (تست‌ها جایگزین می‌کنن)
-    pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in SOURCE_NAMES if not breaker_open(name)}
-    results, failed = {}, len(pending) < len(SOURCE_NAMES)
+    funcs = {"opac": _opac, "ketab": _ketab, "nlai": _nlai, "openlibrary": _open_library, "google": _google}   # موقع صدا زدن خونده می‌شن (تست‌ها جایگزین می‌کنن)
+    active = active_sources()
+    pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in active if not breaker_open(name)}
+    results, failed = {}, len(pending) < len(active)
     while pending:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -434,8 +457,8 @@ def lookup_full(raw, timeout=None):
                     results[name] = None
                     failed = True
                     breaker_record(name, False)
-        if "nlai" in results and _complete(results["nlai"]):
-            # رکورد کامل ملی دارید؛ برای جلد و تأیید دوم فقط یه مهلت کوتاه به بقیه می‌دیم نه کل بودجه
+        if any(_complete(results.get(n)) for n in PRIMARY_SOURCES):
+            # رکورد کامل از یه منبع ایرانی دارید؛ برای جلد و تأیید دوم فقط یه مهلت کوتاه به بقیه می‌دیم نه کل بودجه
             deadline = min(deadline, time.monotonic() + GRACE_AFTER_COMPLETE)
     for name in pending:                 # بودجه تموم شد: منابع معطل شکست حساب می‌شن (thread‌شون خودش با timeout تموم می‌شه)
         failed = True

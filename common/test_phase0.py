@@ -254,7 +254,7 @@ class IsbnBudgetTests(Base):
         from django.conf import settings
         src = pathlib.Path("docker/entrypoint.prod.sh").read_text(encoding="utf-8")
         self.assertIn("--worker-class gthread", src)
-        self.assertEqual(settings.ISBN_BUDGET, 3.0)
+        self.assertEqual(settings.ISBN_BUDGET, 5.0)
 
 
 class CardCacheTests(Base):

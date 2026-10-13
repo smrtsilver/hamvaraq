@@ -144,7 +144,10 @@
         try {
             const r = await fetch(input.dataset.isbnUrl + "?isbn=" + encodeURIComponent(value), {credentials: "same-origin"});
             if (mine !== seq) return;
+            // شکل استاندارد خط‌تیره‌دار (کاربر هر جور نوشته باشه) رو تو فیلد نشون می‌دیم
+            const showStd = (d) => { if (d && d.isbn_display && isbn13(input.value) === d.isbn) { input.value = d.isbn_display; input.dataset.looked = input.value; } };
             if (r.status === 404) {
+                showStd(await r.clone().json().catch(() => null));
                 const items = [line("isbn-warn", "این شابک هنوز تو منبع‌های آنلاین (کتابخانه‌ی ملی و…) ثبت نشده؛ معمولاً یعنی چاپ تازه‌ست.")];
                 const fb = fallback(input, scope, title, author, clean);
                 items.push(fb || line("isbn-note", "عنوان و نویسنده رو خودت بنویس؛ برای نفر بعدی ذخیره می‌شه."));
@@ -153,6 +156,7 @@
             }
             if (!r.ok) { show(box, [line("isbn-err", (await r.json().catch(() => ({}))).message || "استعلام ناموفق بود؛ دستی پر کن.")]); return; }
             const d = await r.json();
+            showStd(d);
             if (title && !title.value) title.value = d.title;
             if (author && !author.value) author.value = d.author;
             const items = [];
