@@ -1,0 +1,5 @@
+<a class="post-mini" href="{{ p.get_absolute_url }}">
+    <span class="pm-cover">{% if p.book and p.book.cover %}<img src="{{ p.book.thumb_url }}" alt="" loading="lazy" width="72" height="108">{% elif p.cover %}<img src="{{ p.cover.url }}" alt="" loading="lazy" width="72" height="108">{% else %}{% include "components/icon.html" with name="pen" %}{% endif %}</span>
+    <span class="pm-body"><strong class="pm-title">{{ p.title }}</strong><span class="pm-book">{{ p.display_book_title|truncatechars:30 }}</span>
+        <span class="pm-meta">{% if p.rating %}<span class="stars" aria-label="{{ p.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= p.rating %}★{% else %}☆{% endif %}{% endfor %}</span>{% endif %}<span>{{ p.reading_minutes|fa }} دقیقه</span></span></span>
+</a>

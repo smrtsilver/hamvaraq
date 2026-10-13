@@ -13,7 +13,7 @@
     <p class="small"><a href="{% url 'announcements:list' %}">اطلاعیه‌ها</a></p>
     <div class="cluster mb-8"><span class="pill pill-green">{{ item.get_kind_display }}</span>{% if item.is_online %}<span class="pill pill-blue">آنلاین</span>{% endif %}{% if item.is_past and not item.is_news %}<span class="pill">برگزار شد</span>{% endif %}{% if item.is_featured %}<span class="pill pill-amber">ویژه</span>{% endif %}{% if item.status == 'published' %}<span class="pill">{% include "components/icon.html" with name="eye" %} {{ item.view_count|fa }} بازدید</span>{% endif %}</div>
     <h1 class="fs-3xl">{{ item.title }}</h1>
-    <p class="muted fs-lg">{{ item.summary }}</p>
+    <p class="lead-box">{{ item.summary }}</p>
     {% if item.cover %}<div class="cover-wide"><img src="{{ item.cover.url }}" alt="{{ item.title }}" fetchpriority="high"></div>{% endif %}
 
     <div class="grid-2 ai-start my-20">
@@ -29,7 +29,7 @@
             {% if user.is_authenticated and not item.is_past %}<form method="post" action="{% url 'announcements:bookmark' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-block">{% include "components/icon.html" with name="bell" %} {% if bookmarked %}یادآوری فعاله؛ برداشتن{% else %}قبل از شروع بهم یادآوری کن{% endif %}</button></form>{% endif %}{% endif %}
         </div></div>
     </div>
-    {% if item.body %}<div class="rich" data-collapse{% if item.body|length > 1400 %} data-long{% endif %}>{{ item.body|richtext }}</div>{% endif %}
+    {% if item.body %}<section class="prose-card" aria-labelledby="ev-body-h"><h2 id="ev-body-h" class="desc-h">درباره‌ی این رویداد</h2><div class="rich rich-sm" data-collapse{% if item.body|length > 1400 %} data-long{% endif %}>{{ item.body|richtext }}</div></section>{% endif %}
     <div class="cluster mt-20">
         {% if mine and item.submitted_by == user %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' item.pk %}">ویرایش</a>
         {% elif user.is_authenticated and item.status == 'published' %}<a class="muted small" href="{% url 'trust:report' 'announcement' item.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}

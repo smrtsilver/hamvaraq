@@ -37,11 +37,13 @@ def profile(request, username):
     from exchanges.models import Exchange
 
     owner = get_object_or_404(User.objects.select_related("city__province"), username=username, deleted_at__isnull=True)
-    shelf = owner.books.exclude(status=Book.Status.RESERVED).select_related("city").order_by("-created_at")
+    shelf_qs = owner.books.exclude(status=Book.Status.RESERVED)
+    shelf = list(shelf_qs.select_related("city").order_by("-created_at")[:120])
     done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
     return render(request, "accounts/profile.html", {
         "owner": owner,
         "books": shelf,
+        "shelf_count": shelf_qs.count() if len(shelf) == 120 else len(shelf),
         "available": [b for b in shelf if b.status == Book.Status.AVAILABLE],
         "given": done.filter(owner=owner).count(),
         "received": done.filter(requester=owner).count(),

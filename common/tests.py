@@ -2538,3 +2538,18 @@ class AnalyticsTests(Base):
         self.assertContains(self.client.get(self.b.get_absolute_url()), "بازدید یکتا")
         self.client.logout()
         self.assertEqual(self.client.get(reverse("accounts:stats")).status_code, 302)
+
+
+class WoodenShelfTests(Base):
+    def test_profile_shelf_renders_spines_with_dialog_data(self):
+        self.book(title="سووشون", description="داستانی از شیراز")
+        r = self.client.get(f"/accounts/u/{self.giver.username}/")
+        self.assertContains(r, 'class="wshelf"')
+        self.assertContains(r, 'data-title="سووشون"')
+        self.assertContains(r, 'data-desc="داستانی از شیراز"')
+        self.assertContains(r, "data-wshelf-more")
+
+    def test_profile_shelf_is_capped(self):
+        Book.objects.bulk_create([Book(owner=self.giver, title=f"ک{i}", author="الف", city=self.isfahan) for i in range(130)])
+        r = self.client.get(f"/accounts/u/{self.giver.username}/")
+        self.assertEqual(len(r.context["books"]), 120)

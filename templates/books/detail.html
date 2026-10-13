@@ -49,7 +49,7 @@
             {% if book.category %}<div class="fact"><span>دسته</span><strong>{{ book.category }}</strong></div>{% endif %}
             {% if book.isbn %}<div class="fact"><span>شابک</span><strong dir="ltr" class="bidi-plain">{{ book.isbn }}</strong></div>{% endif %}
         </div>
-        {% if book.description %}<p>{{ book.description|linebreaksbr }}</p>{% endif %}
+        {% if book.description %}<section class="desc-block" aria-labelledby="desc-h"><h2 id="desc-h" class="desc-h">درباره‌ی این نسخه</h2><div class="rich rich-sm" data-collapse{% if book.description|length > 600 %} data-long{% endif %}>{{ book.description|linebreaks }}</div></section>{% endif %}
 
         <div class="cta-bar{% if book.status == 'available' and not is_owner %} has-fixed{% endif %}">
         {% if is_owner %}
@@ -93,10 +93,10 @@
 
 {% if posts or can_write_post %}<section class="section-sm"><div class="section-head"><div><h2>معرفی‌ها</h2><p>کتاب‌خوان‌ها درباره‌ی این کتاب نوشتن</p></div>
     {% if can_write_post %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:create' %}?book={{ book.pk }}">{% include "components/icon.html" with name="pen" %} یه معرفی بنویس</a>{% endif %}</div>
-    {% if posts %}<div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
+    {% if posts %}<div class="hscroll">{% for p in posts %}{% include "components/post_mini.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
 
-{% if owner_books %}<section class="section-sm"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.username }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
-    {% include "components/book_grid.html" with books=owner_books %}</section>{% endif %}
+{% if owner_books %}<section class="section-sm owner-more"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.username }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
+    <div class="hv-shelf-track" tabindex="0" role="list" aria-label="کتاب‌های دیگر {{ book.owner.username }}">{% for b in owner_books %}<div class="hv-shelf-item" role="listitem">{% include "components/book_card.html" %}</div>{% endfor %}</div></section>{% endif %}
 
 {% if similar %}<section class="section-sm"><div class="section-head"><div><h2>هم‌سلیقه‌ها</h2><p>کسایی که این کتاب رو داشتن، اینا رو هم دارن</p></div></div>
     {% include "components/book_grid.html" with books=similar %}</section>{% endif %}

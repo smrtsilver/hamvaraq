@@ -22,14 +22,12 @@
     <div class="stat"><strong>{{ given|fa }}</strong><span>کتاب داده</span></div>
     <div class="stat"><strong>{{ received|fa }}</strong><span>کتاب گرفته</span></div>
     <div class="stat"><strong>{{ owner.points|fa }}</strong><span>امتیاز</span></div>
-    <div class="stat"><strong>{{ books|length|fa }}</strong><span>کتاب تو قفسه</span></div>
+    <div class="stat"><strong>{{ shelf_count|fa }}</strong><span>کتاب تو قفسه</span></div>
 </div>
 
 <section class="section-sm"><div class="section-head"><h2>قفسه‌ی {{ owner.username }}</h2></div>
-{% if books %}<div class="bookshelf" tabindex="0" role="list" aria-label="قفسه‌ی {{ owner.username }}">{% for b in books %}
-    <a class="sb" role="listitem" href="{% url 'books:detail' b.pk %}">
-        <span class="sb-cover">{% if b.cover %}<img src="{{ b.thumb_url }}" alt="" loading="lazy" width="120" height="180">{% else %}<span class="sb-fallback">{{ b.title|truncatechars:30 }}</span>{% endif %}{% if b.status == 'exchanged' %}<small class="sb-tag">در دست</small>{% endif %}</span>
-        <strong class="sb-title">{{ b.title }}</strong><span class="sb-author">{{ b.author }}</span></a>{% endfor %}</div>
+{% if books %}<div class="wshelf" data-wshelf data-rows="2" aria-label="قفسه‌ی چوبی {{ owner.username }}"><div class="wshelf-in"><div class="wshelf-books" role="list">{% for b in books %}<a class="sp{% if b.title|length > 30 %} sp-l{% elif b.title|length < 12 %} sp-s{% endif %}" role="listitem" href="{% url 'books:detail' b.pk %}" data-sp data-title="{{ b.title }}" data-author="{{ b.author }}" data-city="{{ b.city.name }}" data-cond="{{ b.get_condition_display }}" data-status="{{ b.get_status_display }}" data-added="{{ b.created_at|jdate }}" data-desc="{{ b.description|truncatechars:200 }}"{% if b.cover %} data-cover="{{ b.thumb_url }}"{% endif %}><span class="sp-b"><span class="sp-t">{{ b.title }}</span><span class="sp-a">{{ b.author }}</span>{% if b.status == 'exchanged' %}<i class="sp-x" aria-label="در دست"></i>{% endif %}</span></a>{% endfor %}</div></div>
+    <button type="button" class="btn btn-secondary btn-sm wshelf-more" data-wshelf-more hidden aria-expanded="false">مشاهده‌ی بیشتر</button></div>
 {% else %}{% include "components/empty.html" with ill="books" title="قفسه خالیه" text="هنوز کتابی تو این قفسه نیست." %}{% endif %}
 </section>
 {% if available %}<section class="section-sm"><div class="section-head"><div><h2>برای مبادله موجوده</h2><p>روی هر کتاب بزن و درخواست بده</p></div></div>{% include "components/book_grid.html" with books=available %}</section>{% endif %}
