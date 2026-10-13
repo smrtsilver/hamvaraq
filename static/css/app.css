@@ -1404,8 +1404,8 @@ a.sup-tier:hover{text-decoration:none;color:inherit;transform:translateY(-3px);b
 .hvsel-btn:disabled{opacity:.55;cursor:not-allowed}
 .hvsel-btn.is-empty .hvsel-val{color:var(--ink-3)}
 .hvsel-val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hvsel-chev{flex:none;width:10px;height:10px;border-inline-start:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-3px) rotate(-45deg);transition:transform var(--motion,.18s) var(--ease)}
-.hvsel.is-open .hvsel-chev{transform:translateY(2px) rotate(135deg)}
+.hvsel-chev{flex:none;width:9px;height:9px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:translateY(-3px) rotate(45deg);transition:transform var(--motion,.18s) var(--ease)}
+.hvsel.is-open .hvsel-chev{transform:translateY(2px) rotate(-135deg)}
 .hvsel.has-error .hvsel-btn,.has-error .hvsel-btn{border-color:var(--danger)}
 .hvsel-list{position:absolute;z-index:90;inset-inline:0;top:calc(100% + 6px);max-height:min(300px,50vh);overflow:auto;overscroll-behavior:contain;margin:0;padding:6px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-3);transform-origin:top;animation:hvsel-in .16s var(--ease)}
 .hvsel.drop-up .hvsel-list{top:auto;bottom:calc(100% + 6px);transform-origin:bottom}
