@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load cover_tags %}
 {% block title %}{{ book.title }} | هم‌ورق{% endblock %}
-{% block description %}{{ book.title }} از {{ book.author }} — {{ book.get_condition_display }}، {{ book.city.name }}. رایگان با امتیاز هم‌ورق مبادله کن.{% endblock %}
+{% block description %}{{ book.title }} از {{ book.author }} — {{ book.get_condition_display }}، {{ book.city.name }}. با امتیاز هم‌ورق برش دار.{% endblock %}
 {% block og_type %}book{% endblock %}
 {% block og_title %}{{ book.title }} | هم‌ورق{% endblock %}
 {% block og_description %}{{ book.author }} · {{ book.city.name }} · {{ book.get_condition_display }}{% endblock %}

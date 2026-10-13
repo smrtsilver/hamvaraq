@@ -1,36 +1,121 @@
 {
   "id": "/",
-  "name": "هم‌ورق — مبادله‌ی رایگان کتاب",
+  "name": "هم‌ورق — کتاب‌ها دست‌به‌دست",
   "short_name": "هم‌ورق",
-  "description": "بخوان، بسپار، دوباره بخوان؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها",
+  "description": "هر کتاب، یه سفر تازه؛ کتاب‌ها رو بین کتاب‌خوان‌ها دست‌به‌دست کن",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "fa",
   "background_color": "#FBF7EF",
   "theme_color": "#1F6F54",
-  "categories": ["books", "education", "social"],
+  "categories": [
+    "books",
+    "education",
+    "social"
+  ],
   "icons": [
-    {"src": "/static/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "/static/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "/static/brand/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "/static/brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/brand/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    {"name": "ثبت کتاب", "short_name": "ثبت کتاب", "description": "یه کتاب برای مبادله بذار", "url": "/books/new/?source=shortcut",
-     "icons": [{"src": "/static/brand/icon-192.png", "sizes": "192x192", "type": "image/png"}]},
-    {"name": "مبادله‌های من", "short_name": "مبادله‌ها", "description": "درخواست‌ها و چت‌ها", "url": "/exchanges/?source=shortcut",
-     "icons": [{"src": "/static/brand/icon-192.png", "sizes": "192x192", "type": "image/png"}]},
-    {"name": "جستجوی کتاب", "short_name": "کتاب‌ها", "description": "کتاب‌های موجود برای مبادله", "url": "/books/?source=shortcut",
-     "icons": [{"src": "/static/brand/icon-192.png", "sizes": "192x192", "type": "image/png"}]}
+    {
+      "name": "ثبت کتاب",
+      "short_name": "ثبت کتاب",
+      "description": "یه کتاب برای مبادله بذار",
+      "url": "/books/new/?source=shortcut",
+      "icons": [
+        {
+          "src": "/static/brand/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "مبادله‌های من",
+      "short_name": "مبادله‌ها",
+      "description": "درخواست‌ها و چت‌ها",
+      "url": "/exchanges/?source=shortcut",
+      "icons": [
+        {
+          "src": "/static/brand/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "جستجوی کتاب",
+      "short_name": "کتاب‌ها",
+      "description": "کتاب‌های موجود برای مبادله",
+      "url": "/books/?source=shortcut",
+      "icons": [
+        {
+          "src": "/static/brand/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ],
   "screenshots": [
-    {"src": "/static/brand/screenshots/wide-1.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "صفحه‌ی اصلی هم‌ورق"},
-    {"src": "/static/brand/screenshots/wide-2.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "کتاب‌های موجود برای مبادله"},
-    {"src": "/static/brand/screenshots/narrow-1.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "صفحه‌ی اصلی"},
-    {"src": "/static/brand/screenshots/narrow-2.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "جستجو و فیلتر کتاب"},
-    {"src": "/static/brand/screenshots/narrow-3.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "صفحه‌ی کتاب"}
+    {
+      "src": "/static/brand/screenshots/wide-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "صفحه‌ی اصلی هم‌ورق"
+    },
+    {
+      "src": "/static/brand/screenshots/wide-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "کتاب‌های موجود برای مبادله"
+    },
+    {
+      "src": "/static/brand/screenshots/narrow-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "صفحه‌ی اصلی"
+    },
+    {
+      "src": "/static/brand/screenshots/narrow-2.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "جستجو و فیلتر کتاب"
+    },
+    {
+      "src": "/static/brand/screenshots/narrow-3.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "صفحه‌ی کتاب"
+    }
   ]
 }

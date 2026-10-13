@@ -222,7 +222,7 @@ def story(request):
         data.update(title=book.title, author=book.author, cover=book.cover.url if book.cover else "", slug=f"book-{book.pk}", book=book.pk,
                     city=book.city.name, condition=book.get_condition_display())
         if data["mode"] == "book" and not data["text"]:
-            data["text"] = book.description[:220] if book.description else "این کتاب رو رایگان بگیر؛ با یه امتیاز."
+            data["text"] = book.description[:220] if book.description else "این کتاب منتظر خواننده‌ی بعدیشه."
     if not data["title"] and data["mode"] != "quote":
         from django.http import Http404
         raise Http404

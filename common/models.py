@@ -61,16 +61,16 @@ class MeetingPoint(models.Model):
 class SiteSetting(models.Model):
     """تنظیمات تک‌رکوردی سایت: متن لندینگ، فوتر و شبکه‌های اجتماعی؛ بدون دیپلوی از ادمین قابل تغییره."""
 
-    tagline = models.CharField(max_length=120, default="بخوان، بسپار، دوباره بخوان", verbose_name="شعار")
-    hero_title = models.CharField(max_length=200, default="کتاب‌ها برای خوانده‌شدن‌اند، نه ماندن روی قفسه",
+    tagline = models.CharField(max_length=120, default="هر کتاب، یه سفر تازه", verbose_name="شعار")
+    hero_title = models.CharField(max_length=200, default="کتابی که خوندی، منتظر خواننده‌ی بعدیشه",
                                   verbose_name="تیتر اصلی لندینگ")
     hero_subtitle = models.TextField(
-        default="هم‌ورق جاییه که کتاب‌خوان‌ها کتاب‌هاشون رو رایگان دست‌به‌دست می‌کنن. کتابی که خوندی رو بسپار، کتاب بعدیت رو بگیر؛ بدون پول، فقط با امتیاز.",
+        default="هم‌ورق خونه‌ی کتاب‌خوان‌هاست: کتابی که تموم کردی رو بسپار، کتاب بعدیت رو از قفسه‌ی یه هم‌شهری بردار و ردّ سفرش رو از شهری به شهری دنبال کن.",
         verbose_name="زیرعنوان لندینگ")
     cta_title = models.CharField(max_length=200, default="هم‌ورق شو", verbose_name="تیتر دعوت پایانی")
-    cta_text = models.TextField(default="ثبت‌نام رایگانه و ۱ امتیاز هدیه داره؛ همین الان اولین کتابت رو بگیر.",
+    cta_text = models.TextField(default="با ثبت‌نام اولین امتیاز رو هدیه می‌گیری؛ شاید کتاب بعدیت همین الان تو قفسه‌ی یه هم‌شهری منتظرت باشه.",
                                 verbose_name="متن دعوت پایانی")
-    footer_text = models.CharField(max_length=300, default="هم‌ورق؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها.", verbose_name="متن فوتر")
+    footer_text = models.CharField(max_length=300, default="هم‌ورق؛ جایی که کتاب‌ها از دستی به دستی سفر می‌کنن.", verbose_name="متن فوتر")
     telegram_url = models.URLField(blank=True, verbose_name="کانال تلگرام")
     instagram_url = models.URLField(blank=True, verbose_name="اینستاگرام")
     contact_email = models.EmailField(blank=True, verbose_name="ایمیل تماس")

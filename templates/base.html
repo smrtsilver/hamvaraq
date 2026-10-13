@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("hv-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
-    <title>{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب{% endblock %}</title>
-    <meta name="description" content="{% block description %}هم‌ورق؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها. بخوان، بسپار، دوباره بخوان؛ بدون پول، فقط با امتیاز.{% endblock %}">
+    <title>{% block title %}هم‌ورق | کتاب‌ها دست‌به‌دست، قصه‌ها ادامه‌دار{% endblock %}</title>
+    <meta name="description" content="{% block description %}هم‌ورق؛ کتابی که خوندی رو بسپار، کتاب بعدیت رو بردار. جامعه‌ی کتاب‌خوان‌هایی که قفسه‌هاشون رو با هم شریک می‌شن.{% endblock %}">
     {% block robots %}{% endblock %}
     {% if view_token %}<meta name="hv-view" content="{{ view_token }}" data-url="{% url 'analytics:hit' %}">{% endif %}
     <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}">
     <meta property="og:site_name" content="هم‌ورق">
     <meta property="og:locale" content="fa_IR">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}هم‌ورق | مبادله‌ی رایگان کتاب{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}بخوان، بسپار، دوباره بخوان؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها.{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}هم‌ورق | کتاب‌ها دست‌به‌دست، قصه‌ها ادامه‌دار{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}هر کتاب، یه سفر تازه؛ کتاب‌ها رو بین کتاب‌خوان‌ها دست‌به‌دست کن.{% endblock %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     {% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'brand/og-image.png' %}">{% endblock %}
     <meta name="twitter:card" content="summary_large_image">

@@ -121,7 +121,7 @@ def render_card(book, site_url=None):
     _pill(d, W / 2 + 190, y + 120, book.get_condition_display(), f, (224, 164, 58, 230), (42, 29, 0))
 
     d.rounded_rectangle((120, H - 330, W - 120, H - 110), 80, fill=CREAM)
-    _center(d, H - 305, "این کتاب رو رایگان بگیر", _font(True, 56), DARK)
+    _center(d, H - 305, "کتاب بعدیت شاید همین باشه", _font(True, 56), DARK)
     _center(d, H - 210, site_url, _font(False, 42), GREEN)
 
     out = io.BytesIO()
@@ -134,7 +134,7 @@ def _center_in(draw, width, y, text, font, fill):
     draw.text(((width - font.getlength(shaped)) / 2, y), shaped, font=font, fill=fill)
 
 
-CARD_TEMPLATE_VERSION = "2"      # طراحی کارت عوض شد این رو بالا ببر تا همه‌ی کارت‌های کش‌شده دوباره ساخته بشن
+CARD_TEMPLATE_VERSION = "3"      # طراحی کارت عوض شد این رو بالا ببر تا همه‌ی کارت‌های کش‌شده دوباره ساخته بشن
 
 
 def card_version(book, site_url=None):

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب؛ {{ site.tagline }}{% endblock %}
-{% block description %}هم‌ورق جاییه که کتاب‌خوان‌ها کتاب‌هاشون رو رایگان دست‌به‌دست می‌کنن. با ثبت‌نام ۱ امتیاز هدیه بگیر، کتاب بسپار و کتاب بعدیت رو بگیر؛ بدون پول.{% endblock %}
+{% block title %}هم‌ورق | {{ site.tagline }}{% endblock %}
+{% block description %}هم‌ورق خونه‌ی کتاب‌خوان‌هاست؛ کتابی که خوندی رو بسپار، کتاب بعدیت رو بردار و قفسه‌ات رو با بقیه شریک شو.{% endblock %}
 {% block main_class %}main-bleed{% endblock %}
 {% block head_extra %}
 <script type="application/ld+json">{{ faq_ld|safe }}</script>
@@ -14,7 +14,7 @@
             <h1>{{ site.hero_title }}</h1>
             <p class="lead">{{ site.hero_subtitle }}</p>
             <div class="cluster"><a class="btn btn-lg" href="{% url 'accounts:signup' %}">{{ site.cta_title }}</a><a class="lp-link" href="{% url 'books:list' %}">دیدن کتاب‌ها {% include "components/icon.html" with name="chevron-left" %}</a></div>
-            <p class="note">{% include "components/icon.html" with name="gift" %} ثبت‌نام رایگانه و ۱ امتیاز هدیه داره · بدون شماره و آدرس</p>
+            <p class="note">{% include "components/icon.html" with name="gift" %} با ثبت‌نام اولین امتیاز هدیه‌ست · بدون شماره و آدرس</p>
         </div>
         <div class="lp-hero-art">{% include "components/ill_hero.html" %}</div>
     </div>
@@ -68,6 +68,6 @@
 
 <section class="lp-section pt-0"><div class="container">
     <div class="cta-band"><h2>{{ site.cta_title }}</h2><p>{{ site.cta_text }}</p>
-        <a class="btn btn-lg btn-accent" href="{% url 'accounts:signup' %}">ساخت حساب رایگان</a></div>
+        <a class="btn btn-lg btn-accent" href="{% url 'accounts:signup' %}">ساخت حساب کتاب‌خوانی</a></div>
 </div></section>
 {% endblock %}

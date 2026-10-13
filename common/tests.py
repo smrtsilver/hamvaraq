@@ -1516,7 +1516,7 @@ class SuggestAndSettingsTests(Base):
         from common.models import SiteSetting
         s = SiteSetting.load()
         self.assertEqual(s.pk, 1)
-        self.assertIn("بخوان", s.tagline)
+        self.assertIn("سفر", s.tagline)
         s2 = SiteSetting(tagline="شعار تازه"); s2.save()
         self.assertEqual(SiteSetting.objects.count(), 1)
         self.assertEqual(SiteSetting.load().tagline, "شعار تازه")  # کش بعد از ذخیره پاک می‌شه
@@ -2807,3 +2807,22 @@ class PanelBulkTests(Base):
         r = self.client.get("/panel/")
         self.assertIn("kpi", r.context)
         self.assertEqual(self.client.get("/panel/clubs/").status_code, 200)
+
+
+class SloganTests(Base):
+    MONEY = ("پول", "درآمد", "سود", "سرمایه", "خرید", "فروش", "رایگان", "تومان")
+
+    def test_public_slogans_are_money_free(self):
+        from common.content import FEATURES, STEPS
+        from common.models import SiteSetting
+        s = SiteSetting.load()
+        texts = [s.tagline, s.hero_title, s.hero_subtitle, s.cta_title, s.cta_text, s.footer_text]
+        texts += [t for _i, t, d in FEATURES for t in (t, d)] + [t for _i, t, d in STEPS for t in (t, d)]
+        for t in texts:
+            for w in self.MONEY:
+                self.assertNotIn(w, t, f"«{w}» در «{t}»")
+        r = self.client.get("/")
+        html = r.content.decode()
+        head = html.split("</head>")[0]
+        for w in ("رایگان", "پول"):
+            self.assertNotIn(w, head)
