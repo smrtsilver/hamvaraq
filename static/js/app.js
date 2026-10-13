@@ -74,6 +74,7 @@ document.addEventListener("click", (e) => {
 document.querySelectorAll("[data-share]").forEach((btn) => {
     if (!navigator.share && !(navigator.clipboard && navigator.clipboard.writeText)) return;
     btn.hidden = false;
+    document.querySelectorAll("[data-share-fallback]").forEach((a) => { a.hidden = true; });
     btn.addEventListener("click", async () => {
         const data = {title: btn.dataset.shareTitle, url: btn.dataset.shareUrl};
         try {

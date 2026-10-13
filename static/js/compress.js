@@ -1,4 +1,4 @@
-// فشرده‌سازی عکس سمت کلاینت پیش از آپلود: حداکثر ۱۶۰۰ پیکسل، JPEG با کیفیت ۸۲ (اینترنت ضعیف و حجم آپلود کمتر).
+// فشرده‌سازی عکس سمت کلاینت پیش از آپلود: حداکثر ۱۶۰۰ پیکسل، WebP (یا JPEG) با کیفیت ۸۲ (اینترنت ضعیف و حجم آپلود کمتر).
 // فایل‌هایی که مرورگر نمی‌تونه باز کنه (مثل HEIC) یا کوچک‌ترن همون‌طور می‌مونن؛ سرور خودش هم دوباره پردازش می‌کنه.
 (() => {
     const MAX = 1600, QUALITY = 0.82, SKIP_BELOW = 300 * 1024;
@@ -18,9 +18,15 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
         bmp.close && bmp.close();
-        const blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg", QUALITY));
+        // اول WebP (کوچک‌تر)؛ اگه مرورگر پشتیبانی نکرد (type برنمی‌گرده webp) JPEG
+        let blob = await new Promise((r) => canvas.toBlob(r, "image/webp", QUALITY));
+        let ext = "webp";
+        if (!blob || blob.type !== "image/webp") {
+            blob = await new Promise((r) => canvas.toBlob(r, "image/jpeg", QUALITY));
+            ext = "jpg";
+        }
         if (!blob || blob.size >= file.size) return file;
-        return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg", lastModified: Date.now()});
+        return new File([blob], file.name.replace(/\.\w+$/, "") + "." + ext, {type: blob.type, lastModified: Date.now()});
     }
 
     document.addEventListener("change", async (e) => {

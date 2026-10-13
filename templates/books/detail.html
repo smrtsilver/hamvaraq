@@ -66,6 +66,7 @@
             <p>با درخواست، ۱ امتیاز از حسابت <strong>نگه داشته</strong> می‌شه (خرج نمی‌شه). اگه صاحب کتاب رد کنه، مبادله لغو بشه یا {{ expire_days|fa }} روز بی‌جواب بمونه، امتیاز برمی‌گرده. بعد از تحویل موفق و تأیید دو طرف، امتیاز به صاحب کتاب می‌رسه.</p></details>{% endif %}
         <div class="cluster small">
             <button type="button" class="link btn-link" data-share data-share-title="{{ book.title }}" data-share-url="{{ request.build_absolute_uri }}" hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
+            <a class="link" data-share-fallback rel="noopener" target="_blank" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode:'' }}&amp;text={{ book.title|urlencode }}">{% include "components/icon.html" with name="share" %} ارسال در تلگرام</a>
             <a href="{% url 'books:card' book.pk %}?download=1" class="link">{% include "components/icon.html" with name="download" %} کارت استوری</a>
             {% if user.is_authenticated and not is_owner %}<a href="{% url 'trust:report' 'book' book.pk %}" class="muted">{% include "components/icon.html" with name="flag" %} گزارش کتاب</a>{% endif %}
         </div>

@@ -24,6 +24,8 @@
             box.className = "isbn-status";
             box.setAttribute("role", "status");
             box.setAttribute("aria-live", "polite");
+            box.id = (input.id || "isbn") + "-status";
+            input.setAttribute("aria-describedby", box.id);
             field.append(box);
         }
         return box;
