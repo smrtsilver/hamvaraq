@@ -96,7 +96,9 @@ def grant_welcome(user, key):
         used = User.objects.filter(signup_ip_hash=key, welcome_granted=True, date_joined__gte=since).exclude(pk=user.pk).count()
         if used >= settings.WELCOME_MAX_PER_IP:
             return 0
-    user.points += settings.WELCOME_POINTS
+    from common import points
+
+    points.apply(user, settings.WELCOME_POINTS, "welcome")
     user.welcome_granted = True
-    user.save(update_fields=["points", "welcome_granted"])
+    user.save(update_fields=["welcome_granted"])
     return settings.WELCOME_POINTS

@@ -1,12 +1,12 @@
 """منطق مبادله. همه‌ی تغییر امتیاز و وضعیت کتاب فقط از این‌جا انجام می‌شه."""
 
 from django.db import transaction
-from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.badges import check_badges
 from accounts.models import User
+from common import points
 from books.models import Book, BookJourney
 from notifications.models import Notification
 from notifications.services import notify as _notify
@@ -52,15 +52,14 @@ def request_book(book_id, requester):
         raise ExchangeError("این کتاب مال کسیه که از همین شبکه‌ی اینترنت وارد می‌شه. اول یه کتاب به یه نفر دیگه بده، بعد می‌تونی از ایشون هم بگیری.")
     if Exchange.objects.filter(book=book, requester=requester, status__in=Exchange.ACTIVE).exists():
         raise ExchangeError("برای این کتاب قبلاً درخواست دادی.")
-    requester.points -= 1
-    requester.save(update_fields=["points"])
     exchange = Exchange.objects.create(book=book, requester=requester, owner=book.owner)
+    points.apply(requester, -1, "request_hold", exchange=exchange, note=book.title)
     notify(book.owner, f"{requester.username} کتاب «{book.title}» رو درخواست داد.", _url(exchange))
     return exchange
 
 
 def _refund(exchange):
-    User.objects.filter(pk=exchange.requester_id).update(points=F("points") + 1)
+    points.apply(exchange.requester_id, +1, "request_refund", exchange=exchange, note=exchange.book.title)
 
 
 def _get_locked(exchange_id):
@@ -150,7 +149,7 @@ def _complete(ex):
     ex.status = Exchange.Status.COMPLETED
     ex.completed_at = timezone.now()
     ex.save()
-    User.objects.filter(pk=giver.pk).update(points=F("points") + 1)
+    points.apply(giver.pk, +1, "exchange_reward", exchange=ex, note=book.title)
     BookJourney.objects.create(book=book, exchange=ex, from_city=book.city, to_city=receiver.city)
     book.owner = receiver
     book.status = Book.Status.EXCHANGED

@@ -60,6 +60,16 @@ def settings_view(request):
 
 
 @login_required
+def my_points(request):
+    """تاریخچه‌ی امتیاز: هر تغییر با دلیل و موجودی بعدش."""
+    from django.core.paginator import Paginator
+
+    entries = request.user.point_entries.select_related("exchange__book")
+    page = Paginator(entries, 30).get_page(request.GET.get("page"))
+    return render(request, "accounts/points.html", {"page": page, "qs": ""})
+
+
+@login_required
 def my_stats(request):
     from analytics.services import user_stats
 

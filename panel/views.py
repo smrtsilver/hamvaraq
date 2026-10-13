@@ -12,6 +12,7 @@ from announcements import services as ann_services
 from announcements.models import Announcement
 from books.models import Book
 from challenges.models import Challenge
+from common import points
 from common.models import AuditLog, SiteSetting
 from common.stats import collect
 from exchanges import services as ex_services
@@ -226,7 +227,7 @@ def user_action(request, pk):
         notify(u, "محدودیت حساب تو برداشته شد.", kind="report")
     elif do == "points":
         delta = form.cleaned_data["delta"]
-        u.points += delta
+        points.apply(u, delta, "admin_adjust", note=f"{request.user.username}: {note}")
         notify(u, f"مدیریت امتیازت رو {'+' if delta > 0 else ''}{delta} تغییر داد: {note}", kind="report")
         note = f"{delta:+d}؛ {note}"
     u.save()

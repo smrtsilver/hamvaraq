@@ -755,3 +755,4 @@ input[aria-invalid=true]{border-color:var(--danger)}
 /* ---------- صفحه‌ی نویسنده/ناشر ---------- */
 .facet-grid{list-style:none;margin:0 0 24px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
 .facet-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;text-decoration:none;color:var(--ink)}.facet-item:hover{text-decoration:none}
+.c-plus{color:var(--primary)}.c-minus{color:var(--danger)}

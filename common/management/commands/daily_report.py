@@ -2,6 +2,8 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 
+from common import points
+
 from common.stats import collect
 
 
@@ -22,6 +24,7 @@ class Command(BaseCommand):
             f"گیرکرده: درخواست‌های بی‌پاسخ {s['exchanges']['stale_requested']}، تأییدشده‌های معلق {s['exchanges']['stale_accepted']}",
             f"اختلاف باز: {s['exchanges']['disputed']}",
             f"صف تأیید: معرفی {s['queues']['posts']}، اطلاعیه {s['queues']['announcements']}",
+            f"دفتر امتیاز: {len(points.audit())} حساب ناهمخوان",
             f"گزارش باز: {s['reports']['open']}، در بررسی: {s['reports']['reviewing']}"
             + (f" (قدیمی‌ترین {s['reports']['oldest_days']} روزه)" if s["reports"]["oldest_days"] is not None else ""),
             f"حساب مشکوک: {len(s['suspicious'])}",

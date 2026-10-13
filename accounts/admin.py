@@ -11,6 +11,16 @@ class HamVaraqUserAdmin(UserAdmin):
     readonly_fields = UserAdmin.readonly_fields + ("network_id", "welcome_granted", "deleted_at")
     actions = ["anonymize"]
 
+    def save_model(self, request, obj, form, change):
+        """تغییر دستی امتیاز تو فرم ادمین هم تو دفتر ثبت بشه (مجموع دفتر = امتیاز)."""
+        from .models import PointEntry
+
+        old = User.objects.filter(pk=obj.pk).values_list("points", flat=True).first() if change else None
+        super().save_model(request, obj, form, change)
+        if change and old is not None and old != obj.points:
+            PointEntry.objects.create(user=obj, delta=obj.points - old, reason=PointEntry.Reason.ADMIN_ADJUST,
+                                      note=f"ادمین {request.user.username}", balance_after=obj.points)
+
     @admin.action(description="ناشناس‌سازی حساب (به‌جای حذف؛ تاریخچه می‌مونه)")
     def anonymize(self, request, queryset):
         from .services import AccountError, anonymize_user

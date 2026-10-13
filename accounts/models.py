@@ -73,3 +73,33 @@ class UserBadge(models.Model):
         ordering = ["awarded_at"]
         verbose_name = "نشان کاربر"
         verbose_name_plural = "نشان‌های کاربر"
+
+
+class PointEntry(models.Model):
+    """دفتر امتیاز: هر تغییر امتیاز یک ردیف؛ مجموع delta ها همیشه برابر User.points است (common/points.py)."""
+
+    class Reason(models.TextChoices):
+        OPENING = "opening", "موجودی اولیه"
+        WELCOME = "welcome", "هدیه‌ی ثبت‌نام"
+        REQUEST_HOLD = "request_hold", "نگه‌داشتن امتیاز درخواست"
+        REQUEST_REFUND = "request_refund", "برگشت امتیاز درخواست"
+        EXCHANGE_REWARD = "exchange_reward", "پاداش مبادله‌ی موفق"
+        ADMIN_ADJUST = "admin_adjust", "تغییر توسط مدیریت"
+        RECONCILE = "reconcile", "اصلاح دفتر"
+
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="point_entries", verbose_name="کاربر")
+    delta = models.IntegerField(verbose_name="تغییر")
+    reason = models.CharField(max_length=20, choices=Reason.choices, verbose_name="دلیل")
+    exchange = models.ForeignKey("exchanges.Exchange", null=True, blank=True, on_delete=models.PROTECT, related_name="point_entries", verbose_name="مبادله")
+    note = models.CharField(max_length=200, blank=True, verbose_name="توضیح")
+    balance_after = models.IntegerField(verbose_name="موجودی بعد از تغییر")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="زمان")
+
+    class Meta:
+        ordering = ["-id"]
+        indexes = [models.Index(fields=["user", "-id"])]
+        verbose_name = "ردیف دفتر امتیاز"
+        verbose_name_plural = "دفتر امتیاز"
+
+    def __str__(self):
+        return f"{self.user} {self.delta:+d} ({self.get_reason_display()})"
