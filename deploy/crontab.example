@@ -1,0 +1,14 @@
+# crontab -e روی سرور (مسیر پروژه رو عوض کن). ساعت‌ها به وقت سرور.
+PROJECT=/home/ubuntu/hamvaraq
+DC="docker compose -f docker-compose.prod.yml"
+
+# هر ۶ ساعت: چرخه‌ی عمر مبادله‌ها (یادآوری، انقضا، اختلاف خودکار)
+0 */6 * * *  cd $PROJECT && $DC exec -T web python manage.py expire_exchanges >> logs/cron.log 2>&1
+# هر روز ۰۷:۳۰: یادآوری رویدادهای فرهنگی فردا
+30 7 * * *   cd $PROJECT && $DC exec -T web python manage.py announcement_reminders >> logs/cron.log 2>&1
+# هر روز ۰۸:۰۰: گزارش روزانه به ایمیل مدیرها
+0 8 * * *    cd $PROJECT && $DC exec -T web python manage.py daily_report --email >> logs/cron.log 2>&1
+# هر شب ۰۳:۱۰: بکاپ دیتابیس و عکس‌ها؛ بعدش کپی بیرون از سرور (rclone/scp رو با مقصد خودت عوض کن)
+10 3 * * *   cd $PROJECT && $DC exec -T web python manage.py backup_db --media >> logs/cron.log 2>&1 && ./scripts/backup_verify.sh >> logs/cron.log 2>&1
+# هر ۵ دقیقه: سلامت سایت (۵۰۳ یعنی دیتابیس قطعه)؛ خروجی غیرصفر رو مانیتورت بگیره
+*/5 * * * *  curl -fsS -m 10 http://127.0.0.1:8000/healthz/ > /dev/null || echo "$(date -Is) healthz FAILED" >> $PROJECT/logs/health.log

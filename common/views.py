@@ -90,7 +90,16 @@ def page_not_found(request, exception=None):
 
 
 def healthz(request):
-    return HttpResponse("ok")
+    """سلامت واقعی: اتصال دیتابیس رو هم امتحان می‌کنه (قطع باشه ۵۰۳ می‌ده تا مانیتور و داکر بفهمن)."""
+    from django.db import connection
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        return HttpResponse("db down", status=503, content_type="text/plain")
+    return HttpResponse("ok", content_type="text/plain")
 
 
 def city_list(request):

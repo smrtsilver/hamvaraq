@@ -17,10 +17,11 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 _INSECURE_KEY = "django-insecure-hamvaraq-dev-key-change-me"
 SECRET_KEY = env("SECRET_KEY", default=_INSECURE_KEY)
-DEBUG = env.bool("DEBUG", default=True)
+# پیش‌فرض امن: بدون .env سرور تو حالت پروداکشن بالا می‌آد (توسعه‌دهنده .env.example رو کپی می‌کنه که DEBUG=True داره)
+DEBUG = env.bool("DEBUG", default=False)
 
 # با DEBUG=False و کلید پیش‌فرض سرور بالا نمیاد
-if not DEBUG and SECRET_KEY == _INSECURE_KEY:
+if not DEBUG and not IS_TEST and SECRET_KEY == _INSECURE_KEY:
     raise ImproperlyConfigured("SECRET_KEY واقعی رو تو .env پروداکشن ست کن.")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
@@ -32,7 +33,7 @@ SESSION_COOKIE_HTTPONLY = True
 DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
-if not DEBUG:
+if not DEBUG and not IS_TEST:
     # تا وقتی nginx+SSL نداری USE_HTTPS=False بذار
     USE_HTTPS = env.bool("USE_HTTPS", default=True)
     if USE_HTTPS:
@@ -135,6 +136,8 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "hv_cache",
+        # پیش‌فرض ۳۰۰ ورودیه و شمارنده‌های محدودیت نرخ و کش شابک بی‌صدا حذف می‌شدن
+        "OPTIONS": {"MAX_ENTRIES": 50000, "CULL_FREQUENCY": 4},
     }
 }
 

@@ -123,3 +123,31 @@ class BannedOwnerTests(Base):
         User.objects.filter(pk=self.giver.pk).update(status="banned")
         User.objects.filter(pk=self.giver.pk).update(status="active")
         self.assertTrue(Book.objects.filter(pk=book.pk).exists())
+
+
+class InfraTests(Base):
+    def test_cache_does_not_evict_throttle_counters_beyond_300_keys(self):
+        from django.conf import settings
+        from django.core.cache import cache
+        opts = settings.CACHES["default"]["OPTIONS"]
+        self.assertGreaterEqual(opts["MAX_ENTRIES"], 50000)
+        self.assertEqual(opts["CULL_FREQUENCY"], 4)
+        cache.clear()
+        cache.set("thr:login:ip1:1", 7, 600)
+        for i in range(400):
+            cache.set(f"isbn:{i}", {"t": i}, 600)
+        self.assertEqual(cache.get("thr:login:ip1:1"), 7)
+        self.assertEqual(cache.get("isbn:0"), {"t": 0})
+
+    def test_healthz_checks_database(self):
+        from unittest import mock
+        r = self.client.get("/healthz/")
+        self.assertEqual((r.status_code, r.content), (200, b"ok"))
+        with mock.patch("django.db.backends.base.base.BaseDatabaseWrapper.cursor", side_effect=Exception("db gone")):
+            r = self.client.get("/healthz/")
+        self.assertEqual(r.status_code, 503)
+
+    def test_debug_defaults_to_false_in_settings_source(self):
+        import pathlib
+        src = pathlib.Path("HamVaraqDjangoServer/settings.py").read_text(encoding="utf-8")
+        self.assertIn('DEBUG = env.bool("DEBUG", default=False)', src)
