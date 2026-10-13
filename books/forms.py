@@ -33,9 +33,16 @@ class MultipleImageField(forms.ImageField):
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 
+ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP", "MPO"}       # MPO = JPEG دوربین بعضی گوشی‌ها
+
+
 def _check_size(f):
     if f and hasattr(f, "size") and f.size > MAX_UPLOAD_BYTES:
         raise forms.ValidationError("حجم هر عکس باید کمتر از ۵ مگابایت باشه.")
+    img = getattr(f, "image", None)                      # ImageField خودش فایل رو با Pillow باز کرده
+    fmt = getattr(img, "format", None)
+    if fmt and fmt.upper() not in ALLOWED_FORMATS:
+        raise forms.ValidationError("فقط عکس جی‌پی‌جی، پی‌ان‌جی یا وب‌پی؛ این فرمت پشتیبانی نمی‌شه.")
 
 
 class AuthorDedupMixin:
@@ -60,8 +67,11 @@ class AuthorDedupMixin:
 
 
 class BookForm(AuthorDedupMixin, LocationMixin, PersianFormMixin, forms.ModelForm):
-    extra_photos = MultipleImageField(required=False, label="عکس‌های بیشتر",
-                                      help_text=f"تا {BookPhoto.MAX_EXTRA} عکس دیگه (پشت جلد، وضعیت داخل کتاب…)")
+    cover_mode = forms.ChoiceField(choices=[("design", "طرح آماده"), ("photo", "عکس خودم")], initial="design", required=False,
+                                   widget=forms.RadioSelect, label="جلد کتاب")
+    cover_design = forms.ChoiceField(choices=[], required=False, widget=forms.RadioSelect, label="طرح جلد")
+    extra_photos = MultipleImageField(required=False, label="عکس‌های واقعی کتاب (اختیاری)",
+                                      help_text=f"تا {BookPhoto.MAX_EXTRA} عکس از خود کتاب (جلد، پشت جلد، عطف، صفحه‌ها)؛ هر کدوم حداکثر ۵ مگابایت (عکس معمولی گوشی؛ جی‌پی‌جی، پی‌ان‌جی یا وب‌پی). تو صفحه‌ی کتاب برای همه نمایش داده می‌شن.")
 
     class Meta:
         model = Book
@@ -75,10 +85,16 @@ class BookForm(AuthorDedupMixin, LocationMixin, PersianFormMixin, forms.ModelFor
         _isbn_widget(self.fields["isbn"], self.fields["title"], self.fields["author"])
         # تعداد جای خالی با توجه به عکس‌های فعلی (تو ویرایش)
         self.existing_extra = self.instance.photos.count() if self.instance.pk else 0
-        self.fields["cover"].help_text = "عکس اصلی؛ بدون اطلاعات مکانی و فشرده ذخیره می‌شه."
+        self.fields["cover"].help_text = "عکس اصلی خودت؛ بدون اطلاعات مکانی و فشرده ذخیره می‌شه."
+        self.fields["cover"].label = "عکس جلد"
+        from . import covers
 
-    def clean(self):
-        return self.clean_location(super().clean())
+        self.fields["cover_design"].choices = [(k, n) for k, n, *_ in covers.DESIGNS]
+        current = self.instance.cover.name if self.instance.pk and self.instance.cover else ""
+        designed = covers.key_of(current)
+        if not self.is_bound:
+            self.initial["cover_mode"] = "photo" if current and not designed else "design"
+            self.initial["cover_design"] = designed or covers.KEYS[0]
 
     def clean_isbn(self):
         return _clean_isbn(self.cleaned_data.get("isbn"))
@@ -90,6 +106,24 @@ class BookForm(AuthorDedupMixin, LocationMixin, PersianFormMixin, forms.ModelFor
             return process_upload(cover)
         return cover
 
+    def clean(self):
+        from . import covers
+
+        data = self.clean_location(super().clean())
+        # عکس تازه‌ی جلد انتخاب شده؟ یعنی «عکس خودم» (حتی بدون JS یا اگه دکمه‌ی حالت عوض نشده)
+        mode = "photo" if isinstance(self.files.get("cover"), UploadedFile) else (data.get("cover_mode") or "design")
+        if mode == "design" and not self.data.get("cover_mode") and self.instance.pk and self.instance.cover \
+                and not covers.key_of(self.instance.cover.name):
+            mode = "photo"                     # فرم قدیمی بدون انتخاب حالت: عکس واقعی فعلی دست نخوره
+        data["cover_mode"] = mode
+        if mode == "photo":
+            has_real = self.instance.pk and self.instance.cover and not covers.key_of(self.instance.cover.name)
+            if not data.get("cover") and not has_real:
+                self.add_error("cover", "عکس جلد رو انتخاب کن، یا برو سراغ «طرح آماده».")
+        elif not data.get("cover_design"):
+            data["cover_design"] = "classic"
+        return data
+
     def clean_extra_photos(self):
         photos = self.cleaned_data.get("extra_photos") or []
         room = BookPhoto.MAX_EXTRA - self.existing_extra
@@ -99,8 +133,21 @@ class BookForm(AuthorDedupMixin, LocationMixin, PersianFormMixin, forms.ModelFor
             _check_size(p)
         return [process_upload(p) for p in photos]
 
+    def apply_cover_design(self):
+        """طرح آماده: جلد از نو ساخته می‌شه اگه کتاب تازه‌ست، طرح عوض شده، یا عنوان/نویسنده‌ی جلد طراحی‌شده تغییر کرده."""
+        from . import covers
+
+        d = self.cleaned_data
+        if d.get("cover_mode") != "design":
+            return
+        old = covers.key_of(self.instance.cover.name) if self.instance.cover else None
+        if (not self.instance.pk or old != d["cover_design"] or {"title", "author"} & set(self.changed_data)
+                or not self.instance.cover):
+            self.instance.cover = covers.as_upload(d["cover_design"], d.get("title"), d.get("author"))
+
     def save(self, commit=True):
         self.instance.city = self.cleaned_data["city"]
+        self.apply_cover_design()
         book = super().save(commit=commit)
         if commit:
             self.save_extra_photos(book)

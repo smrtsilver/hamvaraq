@@ -947,7 +947,7 @@ class PhotoTests(Base):
         self.post_book(cover=_jpeg(800, 600), extra_photos=[_jpeg(500, 500), _jpeg(500, 500)])
         b = Book.objects.get(title="عکسی")
         self.assertEqual(b.photos.count(), 2)
-        self.assertContains(self.client.get(reverse("books:detail", args=[b.pk])), "data-gallery-thumb")
+        self.assertContains(self.client.get(reverse("books:detail", args=[b.pk])), "data-lb-src")
         # سقف ۴ عکس اضافه (۲ تا هست، ۳ تا دیگه نمی‌شه)
         r = self.client.post(reverse("books:edit", args=[b.pk]), {
             "title": "عکسی", "author": "ن", "condition": "used", "city": self.isfahan.pk,
@@ -2858,6 +2858,7 @@ class SupportPorfamTests(Base):
         self.assertContains(self.client.get("/books/"), "دوست و همراه ما")
 
 
+@override_settings(MEDIA_ROOT=_MEDIA)
 class NextIdeasTests(Base):
     def test_shelf_cover_upload_and_fallback(self):
         import io
@@ -2955,3 +2956,56 @@ class DedupTests(Base):
         Edition.objects.create(isbn13="9786007547717", title="ت", publisher="نشر ققنوس")
         Edition.objects.create(isbn13="9789643112402", title="ث", publisher="نشر قُقنوس")       # اعراب
         self.assertEqual(Edition.objects.values("publisher_slug").distinct().count(), 1)      # همون یه صفحه‌ی ناشر
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class CoverDesignAlbumTests(Base):
+    def post(self, **extra):
+        self.client.force_login(self.giver)
+        data = {"title": "سمفونی مردگان", "author": "عباس معروفی", "condition": "used", "city": self.isfahan.pk, **extra}
+        return self.client.post(reverse("books:create"), data)
+
+    def test_default_is_designed_cover_and_regenerates_on_title_change(self):
+        from books import covers
+        self.assertEqual(self.post(cover_mode="design", cover_design="noir").status_code, 302)
+        b = Book.objects.get(title="سمفونی مردگان")
+        self.assertEqual(covers.key_of(b.cover.name), "noir")
+        self.assertTrue(b.cover_thumb)                                              # بند‌انگشتی هم ساخته شد
+        old = b.cover.name
+        self.client.post(reverse("books:edit", args=[b.pk]), {"title": "سال بلوا", "author": "عباس معروفی", "condition": "used",
+                                                              "city": self.isfahan.pk, "cover_mode": "design", "cover_design": "noir"})
+        b.refresh_from_db()
+        self.assertNotEqual(b.cover.name, old)                                      # عنوان عوض شد ← جلد تازه
+        self.assertEqual(covers.key_of(b.cover.name), "noir")
+        r = self.client.get(reverse("books:edit", args=[b.pk]))
+        self.assertEqual(r.context["form"].initial["cover_design"], "noir")
+
+    def test_photo_mode_requires_photo_and_real_photo_wins(self):
+        from books import covers
+        r = self.post(cover_mode="photo")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("cover", r.context["form"].errors)
+        self.post(cover_mode="design", cover=_jpeg(800, 1200))                      # عکس انتخاب‌شده یعنی «عکس خودم»
+        self.assertIsNone(covers.key_of(Book.objects.get(title="سمفونی مردگان").cover.name))
+
+    def test_preview_endpoint(self):
+        r = self.client.get(reverse("books:cover_preview", args=["persian"]), {"t": "کلیدر", "a": "دولت‌آبادی"})
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "image/png"))
+        self.assertEqual(self.client.get("/books/cover-preview/nope.png").status_code, 404)
+
+    def test_album_format_limit_move_and_empty(self):
+        self.post(cover_mode="design", extra_photos=[_jpeg(400, 400), _jpeg(400, 400, fmt="PNG")])
+        b = Book.objects.get(title="سمفونی مردگان")
+        self.assertEqual(b.photos.count(), 2)
+        r = self.client.post(reverse("books:edit", args=[b.pk]), {"title": "سمفونی مردگان", "author": "عباس معروفی", "condition": "used",
+                                                                  "city": self.isfahan.pk, "cover_mode": "design", "cover_design": "classic",
+                                                                  "extra_photos": [_jpeg(300, 300, fmt="GIF", exif=False)]})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("فرمت", str(r.context["form"].errors))
+        first, second = list(b.photos.all())
+        self.client.post(reverse("books:photo_move", args=[second.pk]), {"dir": "up"})
+        self.assertEqual([p.pk for p in b.photos.all()], [second.pk, first.pk])
+        html = self.client.get(b.get_absolute_url()).content.decode()
+        self.assertEqual(html.count("data-lb-src"), 2)
+        other = Book.objects.create(owner=self.giver, title="بی‌عکس", author="ن", city=self.isfahan)
+        self.assertNotContains(self.client.get(other.get_absolute_url()), 'class="album"')   # بدون عکس: بدون جعبه‌ی خالی

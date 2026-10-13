@@ -143,7 +143,7 @@ def book_create(request):
         check_badges(request.user)
         messages.success(request, "کتاب ثبت شد.")
         return redirect("books:detail", book.pk)
-    return render(request, "books/form.html", {"form": form, "title": "قرار دادن برای معاوضه" if entry else "ثبت کتاب", "quality_weights": QUALITY_WEIGHTS, "shelf_entry": entry})
+    return render(request, "books/form.html", {"form": form, "title": "قرار دادن برای معاوضه" if entry else "ثبت کتاب", "quality_weights": QUALITY_WEIGHTS, "shelf_entry": entry, **_cover_ctx()})
 
 
 @login_required
@@ -156,7 +156,7 @@ def book_edit(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         return redirect("books:detail", pk)
-    return render(request, "books/form.html", {"form": form, "title": "ویرایش کتاب", "quality_weights": QUALITY_WEIGHTS, "existing_cover": bool(book.cover)})
+    return render(request, "books/form.html", {"form": form, "title": "ویرایش کتاب", "quality_weights": QUALITY_WEIGHTS, "existing_cover": bool(book.cover), **_cover_ctx()})
 
 
 @login_required
@@ -354,6 +354,29 @@ def _book_ld(book, request):
     return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
 
 
+def _cover_ctx():
+    from . import covers
+
+    return {"cover_designs": [(k, n, c) for k, n, c, *_ in covers.DESIGNS], "cover_categories": covers.CATEGORIES}
+
+
+@login_required
+@require_POST
+def photo_move(request, pk):
+    """جابه‌جایی عکس در آلبوم (جلو/عقب)؛ ترتیب از position موجود."""
+    photo = get_object_or_404(BookPhoto.objects.select_related("book"), pk=pk, book__owner=request.user)
+    photos = list(photo.book.photos.all())
+    i = photos.index(photo)
+    j = i - 1 if request.POST.get("dir") == "up" else i + 1
+    if 0 <= j < len(photos):
+        photos[i], photos[j] = photos[j], photos[i]
+        for n, p in enumerate(photos):
+            if p.position != n:
+                p.position = n
+                p.save(update_fields=["position"])
+    return redirect("books:edit", photo.book_id)
+
+
 @login_required
 @require_POST
 def photo_delete(request, pk):
@@ -427,3 +450,27 @@ def suggest(request):
         if len(items) == 8:
             break
     return JsonResponse({"items": items})
+
+
+@throttle("coverpreview", 240, 60, by="auto", methods=("GET",))
+def cover_preview(request, key):
+    """پیش‌نمایش طرح جلد با عنوان/نویسنده‌ی تایپ‌شده؛ همون تابعی که فایل نهایی رو می‌سازه (کش یک‌روزه)."""
+    import hashlib
+
+    from django.core.cache import cache
+    from django.http import Http404
+
+    from . import covers
+
+    if key not in covers.KEYS:
+        raise Http404
+    title = request.GET.get("t", "")[:120].strip() or "عنوان کتاب"
+    author = request.GET.get("a", "")[:80].strip() or "نویسنده"
+    ck = "cvp:" + hashlib.sha1(f"{key}|{title}|{author}".encode()).hexdigest()
+    data = cache.get(ck)
+    if data is None:
+        data = covers.preview_png(key, title, author, 240)
+        cache.set(ck, data, 86400)
+    resp = HttpResponse(data, content_type="image/png")
+    resp["Cache-Control"] = "public, max-age=86400"
+    return resp

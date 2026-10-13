@@ -24,10 +24,12 @@ urlpatterns = [
     path("wishlist/", views.wishlist, name="wishlist"),
     path("wishlist/<int:pk>/delete/", views.wishlist_delete, name="wishlist_delete"),
     path("photo/<int:pk>/delete/", views.photo_delete, name="photo_delete"),
+    path("photo/<int:pk>/move/", views.photo_move, name="photo_move"),
     path("<int:pk>/", views.book_detail, name="detail"),
     path("<int:pk>/edit/", views.book_edit, name="edit"),
     path("<int:pk>/delete/", views.book_delete, name="delete"),
     path("<int:pk>/review/", views.review_save, name="review"),
     path("<int:pk>/card.png", views.book_card_png, name="card"),
+    path("cover-preview/<str:key>.png", views.cover_preview, name="cover_preview"),
     path("<int:pk>/relist/", views.book_relist, name="relist"),
 ]

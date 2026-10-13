@@ -16,14 +16,31 @@
         </div>
         <div class="form-section"><h2 class="h3">۲. کتاب کجاست؟</h2>
             <div class="form-grid"><div>{% include "components/field.html" with field=form.province %}</div><div>{% include "components/field.html" with field=form.city %}</div></div></div>
-        <div class="form-section"><h2 class="h3">۳. عکس و توضیح</h2>
-            {% if form.instance.pk and form.instance.photos.all %}<div class="field"><label>عکس‌های فعلی</label><div class="thumbs jc-start">
-                {% for p in form.instance.photos.all %}<form method="post" action="{% url 'books:photo_delete' p.pk %}" class="stack-center">{% csrf_token %}<img src="{{ p.image.url }}" alt="" class="thumb-sm"><button class="link link-danger small">حذف</button></form>{% endfor %}</div></div>{% endif %}
-            <div class="form-grid"><div>{% include "components/field.html" with field=form.cover %}</div><div>{% include "components/field.html" with field=form.extra_photos %}</div></div>
+        <div class="form-section"><h2 class="h3">۳. جلد، عکس و توضیح</h2>
+            <fieldset class="cover-picker" data-cover-picker data-preview-url="{% url 'books:cover_preview' 'KEY' %}">
+                <legend class="field-legend">جلد کتاب</legend>
+                <div class="seg cover-mode" role="radiogroup" aria-label="نوع جلد">{% for r in form.cover_mode %}<label>{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+                <p class="hint">طرح‌های آماده با اسم کتابت ساخته می‌شن و قفسه‌ها رو یکدست و زیبا نگه می‌دارن؛ عکس‌های واقعی رو می‌تونی پایین‌تر به آلبوم اضافه کنی.</p>
+                <div class="cp-design" data-cover-panel="design">
+                    <div class="cp-cats" role="group" aria-label="دسته‌ی طرح"><button type="button" class="chip" data-cp-cat="" aria-pressed="true">همه</button>{% for c in cover_categories %}<button type="button" class="chip" data-cp-cat="{{ c }}" aria-pressed="false">{{ c }}</button>{% endfor %}</div>
+                    <div class="cp-grid" role="radiogroup" aria-label="طرح جلد">{% for k, name, cat in cover_designs %}{% for r in form.cover_design %}{% if r.data.value == k %}
+                        <label class="cp-item" data-cp-item="{{ cat }}">{{ r.tag }}<img src="{% url 'books:cover_preview' k %}?t={{ form.title.value|default:''|urlencode }}&amp;a={{ form.author.value|default:''|urlencode }}" alt="" width="120" height="180" loading="lazy" decoding="async" data-cp-img="{{ k }}"><span>{{ name }}</span></label>{% endif %}{% endfor %}{% endfor %}</div>
+                </div>
+                <div class="cp-photo" data-cover-panel="photo">{% include "components/field.html" with field=form.cover %}</div>
+            </fieldset>
+            {% if form.instance.pk and form.instance.photos.all %}<div class="field"><span class="field-legend">آلبوم فعلی ({{ form.instance.photos.count|fa }} از ۴)</span><div class="album-edit">
+                {% for p in form.instance.photos.all %}<div class="ae-item"><img src="{{ p.image.url }}" alt="عکس {{ forloop.counter|fa }}" width="96" height="128" loading="lazy">
+                    <div class="ae-acts">{% if not forloop.first %}<button class="icon-btn" form="ph-move-{{ p.pk }}-up" aria-label="جابه‌جایی به جلو">{% include "components/icon.html" with name="chevron-right" %}</button>{% endif %}
+                    {% if not forloop.last %}<button class="icon-btn" form="ph-move-{{ p.pk }}-down" aria-label="جابه‌جایی به عقب">{% include "components/icon.html" with name="chevron-left" %}</button>{% endif %}
+                    <button class="icon-btn link-danger" form="ph-del-{{ p.pk }}" aria-label="حذف عکس">{% include "components/icon.html" with name="trash" %}</button></div></div>{% endfor %}</div></div>{% endif %}
+            <div class="album-drop" data-album-drop>{% include "components/field.html" with field=form.extra_photos %}<p class="album-hint" aria-hidden="true">{% include "components/icon.html" with name="camera" %} عکس‌ها رو اینجا بکش یا بزن تا از گالری/دوربین انتخاب کنی</p><div class="album-previews" data-album-previews aria-live="polite"></div></div>
             {% include "components/field.html" with field=form.description %}
         </div>
         <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ذخیره</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div>
     </form>
+    {% if form.instance.pk %}{% for p in form.instance.photos.all %}<form id="ph-del-{{ p.pk }}" method="post" action="{% url 'books:photo_delete' p.pk %}" hidden data-confirm="این عکس حذف بشه؟">{% csrf_token %}</form>
+        <form id="ph-move-{{ p.pk }}-up" method="post" action="{% url 'books:photo_move' p.pk %}" hidden>{% csrf_token %}<input type="hidden" name="dir" value="up"></form>
+        <form id="ph-move-{{ p.pk }}-down" method="post" action="{% url 'books:photo_move' p.pk %}" hidden>{% csrf_token %}<input type="hidden" name="dir" value="down"></form>{% endfor %}{% endif %}
     <aside class="listing-preview" aria-label="پیش‌نمایش کارت کتاب">
         <p class="lpv-title">پیش‌نمایش</p>
         <div class="lp-card"><div class="lp-cover"><img alt="" hidden><span class="lp-ph">{% include "components/icon.html" with name="book" %}</span></div>
@@ -34,4 +51,4 @@
 </div>
 {{ quality_weights|json_script:"hv-quality" }}
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script><script src="{% static 'js/preview.js' %}" defer></script><script src="{% static 'js/stepper.js' %}" defer></script><script src="{% static 'js/compress.js' %}" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script><script src="{% static 'js/preview.js' %}" defer></script><script src="{% static 'js/cover-picker.js' %}" defer></script><script src="{% static 'js/stepper.js' %}" defer></script><script src="{% static 'js/compress.js' %}" defer></script>{% endblock %}

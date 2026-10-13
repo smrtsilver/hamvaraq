@@ -33,19 +33,6 @@
         setTimeout(close, t.classList.contains("toast-error") ? 9000 : 6000);
     });
 
-    // ---- گالری عکس کتاب ----
-    document.querySelectorAll("[data-gallery]").forEach((g) => {
-        const main = g.querySelector("[data-gallery-main]");
-        g.querySelectorAll("[data-gallery-thumb]").forEach((b) => b.addEventListener("click", () => {
-            main.src = b.dataset.src;
-            const pic = main.closest("picture");
-            if (pic) pic.querySelectorAll("source").forEach((s) => s.remove());      // وگرنه srcset ِ WebP روی src جدید غالب می‌شه
-            main.removeAttribute("srcset");
-            g.querySelectorAll("[data-gallery-thumb]").forEach((x) => x.removeAttribute("aria-current"));
-            b.setAttribute("aria-current", "true");
-        }));
-    });
-
     // ---- پیام‌های اعتبارسنجی فارسی (مرورگر به زبان خودش انگلیسی نشون می‌ده) ----
     document.addEventListener("invalid", (e) => {
         const el = e.target, v = el.validity;
