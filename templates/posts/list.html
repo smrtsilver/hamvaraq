@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-head"><div><h1>معرفی کتاب</h1><p>کتاب‌خوان‌ها درباره‌ی کتاب‌هایی که خوندن می‌نویسن.</p></div>
     <a class="btn" href="{% if user.is_authenticated %}{% url 'posts:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="pen" %} یه کتاب معرفی کن</a></div>
-<form method="get" class="filterbar" role="search" aria-label="فیلتر معرفی‌ها">
+<form method="get" class="filterbar" data-fold role="search" aria-label="فیلتر معرفی‌ها">
     <div class="field field-wide"><label for="pq">جستجو</label><input id="pq" type="search" name="q" value="{{ q }}" placeholder="عنوان، کتاب یا نویسنده" autocomplete="off"></div>
     <div class="field"><label for="ps">مرتب‌سازی</label><select id="ps" name="sort"><option value="new"{% if sort == 'new' %} selected{% endif %}>جدیدترین</option><option value="popular"{% if sort == 'popular' %} selected{% endif %}>پربازدیدترین</option></select></div>
     <div class="filterbar-actions"><button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button></div>

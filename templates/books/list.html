@@ -6,7 +6,7 @@
     <div><h1>کتاب‌ها</h1><p>کتابی که می‌خوای رو پیدا کن و درخواست بده.</p></div>
     <a class="btn btn-secondary" href="{% if user.is_authenticated %}{% url 'books:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="plus" %} کتاب می‌دم</a>
 </div>
-<form method="get" class="filterbar" data-location-group role="search" aria-label="فیلتر کتاب‌ها">
+<form method="get" class="filterbar" data-fold data-location-group role="search" aria-label="فیلتر کتاب‌ها">
     {% for field in form %}{% include "components/field.html" %}{% endfor %}
     <div class="filterbar-actions"><button class="btn">{% include "components/icon.html" with name="search" %} جستجو</button></div>
 </form>

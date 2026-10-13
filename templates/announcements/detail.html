@@ -29,7 +29,7 @@
             {% if user.is_authenticated and not item.is_past %}<form method="post" action="{% url 'announcements:bookmark' item.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-block">{% include "components/icon.html" with name="bell" %} {% if bookmarked %}یادآوری فعاله؛ برداشتن{% else %}قبل از شروع بهم یادآوری کن{% endif %}</button></form>{% endif %}{% endif %}
         </div></div>
     </div>
-    {% if item.body %}<div class="rich">{{ item.body|richtext }}</div>{% endif %}
+    {% if item.body %}<div class="rich" data-collapse{% if item.body|length > 1400 %} data-long{% endif %}>{{ item.body|richtext }}</div>{% endif %}
     <div class="cluster mt-20">
         {% if mine and item.submitted_by == user %}<a class="btn btn-secondary btn-sm" href="{% url 'announcements:edit' item.pk %}">ویرایش</a>
         {% elif user.is_authenticated and item.status == 'published' %}<a class="muted small" href="{% url 'trust:report' 'announcement' item.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}

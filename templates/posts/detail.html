@@ -22,7 +22,7 @@
         {% if post.book.status == 'available' %}<span class="btn btn-sm">{% include "components/icon.html" with name="swap" %} درخواست این کتاب</span>{% endif %}</a>
     {% else %}<p class="muted">درباره‌ی کتاب «{{ post.book_title }}» از {{ post.book_author }}</p>{% endif %}
 
-    <div class="rich">{{ post.body|richtext }}</div>
+    <div class="rich" data-collapse{% if post.body|length > 1400 %} data-long{% endif %}>{{ post.body|richtext }}</div>
     {% if tags %}<p class="cluster mt-24">{% for t in tags %}<a class="chip" href="{% url 'posts:list' %}?tag={{ t.pk }}">{{ t.name }}</a>{% endfor %}</p>{% endif %}
 
     <div class="cluster mt-20">
@@ -31,6 +31,8 @@
         {% elif user.is_authenticated %}<a class="muted small" href="{% url 'trust:report' 'post' post.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
     </div>
 </article>
-{% if related %}<section class="section-sm"><div class="section-head"><h2>معرفی‌های مرتبط</h2></div><div class="post-grid">{% for p in related %}{% include "components/post_card.html" %}{% endfor %}</div></section>{% endif %}
-{% if more_by_author %}<section class="section-sm"><div class="section-head"><h2>بیشتر از {{ post.author.username }}</h2></div><div class="post-grid">{% for p in more_by_author %}{% include "components/post_card.html" %}{% endfor %}</div></section>{% endif %}
+{% if related or more_by_author %}<div class="post-more">
+{% if related %}<section class="section-sm"><div class="section-head"><h2>معرفی‌های مرتبط</h2></div><div class="hscroll">{% for p in related %}<div class="hscroll-item">{% include "components/post_card.html" %}</div>{% endfor %}</div></section>{% endif %}
+{% if more_by_author %}<section class="section-sm"><div class="section-head"><h2>بیشتر از {{ post.author.username }}</h2></div><div class="hscroll">{% for p in more_by_author %}<div class="hscroll-item">{% include "components/post_card.html" %}</div>{% endfor %}</div></section>{% endif %}
+</div>{% endif %}
 {% endblock %}

@@ -26,10 +26,10 @@
 </div>
 
 <section class="section-sm"><div class="section-head"><h2>قفسه‌ی {{ owner.username }}</h2></div>
-{% if books %}<div class="shelf">{% for b in books %}
-    <a class="spine" href="{% url 'books:detail' b.pk %}" title="{{ b.title }} — {{ b.author }}">
-        {% if b.cover %}<img src="{{ b.thumb_url }}" alt="{{ b.title }}" loading="lazy">{% else %}<span class="spine-title">{{ b.title|truncatechars:28 }}</span>{% endif %}
-        {% if b.status == 'exchanged' %}<small class="spine-tag">در دست</small>{% endif %}</a>{% endfor %}</div>
+{% if books %}<div class="bookshelf" tabindex="0" role="list" aria-label="قفسه‌ی {{ owner.username }}">{% for b in books %}
+    <a class="sb" role="listitem" href="{% url 'books:detail' b.pk %}">
+        <span class="sb-cover">{% if b.cover %}<img src="{{ b.thumb_url }}" alt="" loading="lazy" width="120" height="180">{% else %}<span class="sb-fallback">{{ b.title|truncatechars:30 }}</span>{% endif %}{% if b.status == 'exchanged' %}<small class="sb-tag">در دست</small>{% endif %}</span>
+        <strong class="sb-title">{{ b.title }}</strong><span class="sb-author">{{ b.author }}</span></a>{% endfor %}</div>
 {% else %}{% include "components/empty.html" with ill="books" title="قفسه خالیه" text="هنوز کتابی تو این قفسه نیست." %}{% endif %}
 </section>
 {% if available %}<section class="section-sm"><div class="section-head"><div><h2>برای مبادله موجوده</h2><p>روی هر کتاب بزن و درخواست بده</p></div></div>{% include "components/book_grid.html" with books=available %}</section>{% endif %}

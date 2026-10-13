@@ -5,7 +5,7 @@
 <div class="page-head"><div><h1>اطلاعیه‌های فرهنگی</h1><p>نمایشگاه، رونمایی، نشست نقد، کتاب‌خوانی جمعی و کارگاه؛ هر چی تو دنیای کتابه.</p></div>
     <a class="btn" href="{% if user.is_authenticated %}{% url 'announcements:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="plus" %} ثبت اطلاعیه</a></div>
 <nav class="tabs" aria-label="زمان"><a href="?{{ base_qs }}"{% if tab == 'upcoming' %} aria-current="page"{% endif %}>پیش‌رو</a><a href="?{% if base_qs %}{{ base_qs }}&{% endif %}tab=past"{% if tab == 'past' %} aria-current="page"{% endif %}>گذشته</a></nav>
-<form method="get" class="filterbar" data-location-group role="search" aria-label="فیلتر اطلاعیه‌ها">
+<form method="get" class="filterbar" data-fold data-location-group role="search" aria-label="فیلتر اطلاعیه‌ها">
     {% if tab == 'past' %}<input type="hidden" name="tab" value="past">{% endif %}
     {% for field in form %}{% if field.name != 'online' %}{% include "components/field.html" %}{% endif %}{% endfor %}
     {% include "components/field.html" with field=form.online %}
