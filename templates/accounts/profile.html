@@ -33,6 +33,6 @@
 {% else %}{% include "components/empty.html" with ill="books" title="قفسه خالیه" text="هنوز کتابی تو این قفسه نیست." %}{% endif %}
 </section>
 {% if highlights %}<section class="section-sm" aria-labelledby="hl-h"><div class="section-head"><h2 id="hl-h">نقل‌قول‌های محبوب {{ owner.username }}</h2></div>
-    <div class="hscroll">{% for h in highlights %}<figure class="hl hl-card"><blockquote>{{ h.text|truncatechars:240 }}</blockquote><figcaption><b>{{ h.title }}</b>{% if h.author %} · {{ h.author }}{% endif %}</figcaption></figure>{% endfor %}</div></section>{% endif %}
+    <div class="hscroll" tabindex="0">{% for h in highlights %}<figure class="hl hl-card"><blockquote>{{ h.text|truncatechars:240 }}</blockquote><figcaption><b>{{ h.title }}</b>{% if h.author %} · {{ h.author }}{% endif %}</figcaption></figure>{% endfor %}</div></section>{% endif %}
 {% if available %}<section class="section-sm"><div class="section-head"><div><h2>برای مبادله موجوده</h2><p>روی هر کتاب بزن و درخواست بده</p></div></div>{% include "components/book_grid.html" with books=available %}</section>{% endif %}
 {% endblock %}

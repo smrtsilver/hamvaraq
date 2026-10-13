@@ -16,6 +16,15 @@
     <div class="stat"><strong>{{ d.exchanges.completed7|fa }}</strong><span>مبادله‌ی موفق در ۷ روز</span></div>
     <div class="stat"><strong>{{ d.exchanges.stale_requested|fa }}</strong><span>درخواست بی‌پاسخ · {{ d.exchanges.stale_accepted|fa }} تأییدشده‌ی معطل</span></div>
 </div>
+<h2 class="mt-28">کتاب‌خوانی و جامعه</h2>
+<div class="kpi-grid">
+    <div class="kpi"><span>کتاب در قفسه‌ها</span><b>{{ kpi.shelf|fa }}</b><small>+{{ kpi.shelf7|fa }} این هفته</small></div>
+    <div class="kpi"><span>کتاب تموم‌شده</span><b>{{ kpi.read7|fa }}</b><small>۷ روز اخیر</small></div>
+    <div class="kpi"><span>هدف سالانه</span><b>{{ kpi.goals|fa }}</b><small>کاربر</small></div>
+    <div class="kpi"><span>باشگاه فعال</span><b>{{ kpi.clubs|fa }}</b><small><a href="{% url 'panel:clubs' %}">مدیریت</a></small></div>
+    <div class="kpi"><span>دنبال کردن</span><b>{{ kpi.follows|fa }}</b><small>رابطه</small></div>
+    <div class="kpi"><span>نقل‌قول</span><b>{{ kpi.highlights|fa }}</b><small>ذخیره‌شده</small></div>
+</div>
 <h2 class="mt-28">حساب‌های مشکوک <span class="pill">{{ d.suspicious|length|fa }}</span></h2>
 <p class="muted">فقط سرنخ برای بررسی دستیه، نه حکم.</p>
 <ul class="list-clean card">{% for u, reasons in d.suspicious %}<li><a href="{% url 'panel:user' u.pk %}">{{ u.username }}</a> <span class="small muted">{{ reasons|join:"؛ " }}</span></li>{% empty %}<li class="muted">موردی نیست.</li>{% endfor %}</ul>

@@ -2776,3 +2776,34 @@ class LaterFeatureTests(Base):
         self.assertEqual((s["current"], s["today"]), (4, True))
         self.client.post("/books/shelf/today/")                                    # دوباره زدن تکراری نمی‌سازه
         self.assertEqual(ReadingDay.objects.filter(user=self.giver, day=today).count(), 1)
+
+
+class PanelBulkTests(Base):
+    def setUp(self):
+        self.staff = User.objects.create_user("boss2", password="x12345678", is_staff=True)
+
+    def test_bulk_requires_staff(self):
+        b = self.book()
+        self.client.force_login(self.giver)
+        r = self.client.post("/panel/books/bulk/", {"ids": [b.pk], "do": "delete"})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/accounts/login/", r.url)
+        self.assertIsNone(Book.all_objects.get(pk=b.pk).deleted_at)
+
+    def test_books_bulk_delete_restore_and_clubs(self):
+        from clubs.models import Club
+        from common.models import AuditLog
+        a, b = self.book(title="الف"), self.book(title="ب")
+        self.client.force_login(self.staff)
+        self.client.post("/panel/books/bulk/", {"ids": [a.pk, b.pk], "do": "delete", "note": "تکراری"})
+        self.assertEqual(Book.all_objects.filter(deleted_at__isnull=False).count(), 2)
+        self.assertTrue(AuditLog.objects.filter(action="حذف گروهی کتاب").exists())
+        self.client.post("/panel/books/bulk/", {"ids": [a.pk], "do": "restore"})
+        self.assertIsNone(Book.all_objects.get(pk=a.pk).deleted_at)
+        c = Club.objects.create(name="باشگاه", owner=self.giver)
+        self.client.post("/panel/clubs/bulk/", {"ids": [c.pk], "do": "deactivate"})
+        c.refresh_from_db()
+        self.assertFalse(c.is_active)
+        r = self.client.get("/panel/")
+        self.assertIn("kpi", r.context)
+        self.assertEqual(self.client.get("/panel/clubs/").status_code, 200)

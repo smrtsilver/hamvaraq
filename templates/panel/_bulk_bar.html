@@ -1,0 +1,7 @@
+<form id="bulk-form" method="post" action="{{ action }}" class="bulk-bar" data-bulk aria-label="عملیات گروهی">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <span class="bulk-count" data-bulk-count aria-live="polite">۰ انتخاب</span>
+    <label class="visually-hidden" for="bulk-do">عملیات</label>
+    <select id="bulk-do" name="do">{% for v, l in options %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+    {% if with_note %}<input name="note" placeholder="دلیل (اختیاری)" aria-label="دلیل" autocomplete="off">{% endif %}
+    <button class="btn btn-sm" data-confirm="روی همه‌ی موارد انتخاب‌شده انجام بشه؟">اجرا</button>
+</form>

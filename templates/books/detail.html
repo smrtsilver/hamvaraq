@@ -94,7 +94,7 @@
 
 {% if posts or can_write_post %}<section class="section-sm"><div class="section-head"><div><h2>معرفی‌ها</h2><p>کتاب‌خوان‌ها درباره‌ی این کتاب نوشتن</p></div>
     {% if can_write_post %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:create' %}?book={{ book.pk }}">{% include "components/icon.html" with name="pen" %} یه معرفی بنویس</a>{% endif %}</div>
-    {% if posts %}<div class="hscroll">{% for p in posts %}{% include "components/post_mini.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
+    {% if posts %}<div class="hscroll" tabindex="0">{% for p in posts %}{% include "components/post_mini.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
 
 {% if owner_books %}<section class="section-sm owner-more"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.username }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
     <div class="hv-shelf-track" tabindex="0" role="list" aria-label="کتاب‌های دیگر {{ book.owner.username }}">{% for b in owner_books %}<div class="hv-shelf-item" role="listitem">{% include "components/book_card.html" %}</div>{% endfor %}</div></section>{% endif %}

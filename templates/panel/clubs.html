@@ -1,0 +1,17 @@
+{% extends "panel/base.html" %}
+{% block ptitle %}باشگاه‌های کتاب{% endblock %}
+{% block panel %}
+<div class="page-head"><div><h1>باشگاه‌های کتاب</h1><p>غیرفعال‌سازی باشگاه‌های نامناسب؛ گفت‌وگوها از ادمین جنگو قابل حذفه.</p></div></div>
+<div class="ptabs"><a href="?{% if q %}q={{ q|urlencode }}{% endif %}"{% if not status %} aria-current="true"{% endif %}>همه</a><a href="?status=active"{% if status == 'active' %} aria-current="true"{% endif %}>فعال</a><a href="?status=inactive"{% if status == 'inactive' %} aria-current="true"{% endif %}>غیرفعال</a></div>
+{% include "panel/_search.html" with placeholder="نام باشگاه، کتاب یا گرداننده" keep=keep_status %}
+{% include "panel/_bulk_bar.html" with action=bulk_url options=bulk_opts with_note=1 %}
+<div class="ptable-wrap"><table class="table ptable" data-ptable><thead><tr><th class="sel"><input type="checkbox" data-select-all aria-label="انتخاب همه"></th><th>باشگاه</th><th>گرداننده</th><th>عضو</th><th>پیام</th><th>وضعیت</th><th>ساخت</th></tr></thead><tbody>
+{% for c in page %}<tr><td class="sel"><input type="checkbox" name="ids" value="{{ c.pk }}" form="bulk-form" aria-label="انتخاب {{ c.name }}"></td>
+    <td data-label="باشگاه"><a href="{{ c.get_absolute_url }}"><strong>{{ c.name|truncatechars:40 }}</strong></a>{% if c.current_title %}<br><span class="small muted">{{ c.current_title }}</span>{% endif %}</td>
+    <td data-label="گرداننده"><a href="{% url 'panel:user' c.owner.pk %}">{{ c.owner.username }}</a></td>
+    <td data-label="عضو">{{ c.n|fa }}</td><td data-label="پیام">{{ c.msgs|fa }}</td>
+    <td data-label="وضعیت"><span class="pill {% if c.is_active %}pill-green{% else %}pill-red{% endif %}">{% if c.is_active %}فعال{% else %}غیرفعال{% endif %}</span></td>
+    <td data-label="ساخت">{{ c.created_at|jdate }}</td></tr>
+{% empty %}<tr><td colspan="7" class="muted">باشگاهی نیست.</td></tr>{% endfor %}</tbody></table></div>
+{% include "components/pagination.html" %}
+{% endblock %}

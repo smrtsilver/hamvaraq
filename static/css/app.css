@@ -1174,3 +1174,24 @@ blockquote{font-feature-settings:"ss01"}
   .page-head .cluster .btn-secondary{flex:1 1 0;width:auto;min-width:0}
   .page-head .cluster .btn:not(.btn-secondary){flex:1 1 100%}
 }
+
+/* ===== پنل مدیریت: ابزار جدول، عملیات گروهی، KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-card)}
+.kpi span{font-size:var(--fs-xs);color:var(--ink-3);font-weight:700}.kpi b{font-size:1.6rem;color:var(--primary);line-height:1.3}.kpi small{color:var(--ink-3);font-size:var(--fs-xs)}
+.bulk-bar{position:sticky;top:calc(var(--header-h) + 6px);z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;margin:10px 0;border-radius:var(--r);background:var(--surface-2);border:1px dashed var(--line);transition:background var(--motion) var(--ease),border-color var(--motion)}
+.bulk-bar.is-active{background:var(--primary-soft);border-style:solid;border-color:var(--primary)}
+.bulk-bar select,.bulk-bar input{min-height:36px;padding:4px 10px;width:auto;flex:0 1 200px}
+.bulk-count{font-weight:800;font-size:var(--fs-sm);min-width:70px}
+.ptable th.sel,.ptable td.sel{width:36px;text-align:center}.ptable td.sel input,.ptable th.sel input{width:18px;height:18px}
+.ptable tr.is-selected td{background:color-mix(in srgb,var(--primary-soft) 70%,transparent)}
+.ptable.is-dense td,.ptable.is-dense th{padding-block:6px}
+.ptools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 8px}
+.ptools-views{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1}
+.view-chip{display:inline-flex;align-items:center;gap:2px}.chip-x-btn{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:1rem;min-width:28px;min-height:28px}
+.ptools-cols{position:relative}.ptools-cols summary{cursor:pointer;list-style:none;padding:6px 12px;border:1px solid var(--line);border-radius:var(--r-pill);font-size:var(--fs-sm);font-weight:700;background:var(--surface)}
+.ptools-cols summary::-webkit-details-marker{display:none}
+.ptools-menu{position:absolute;inset-inline-end:0;top:calc(100% + 6px);z-index:10;display:grid;gap:4px;min-width:180px;padding:10px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-2)}
+.ptools-menu label{display:flex;gap:8px;align-items:center;font-size:var(--fs-sm);cursor:pointer;min-height:32px}
+.panel-keys{margin:10px 0 0}kbd{display:inline-block;min-width:20px;padding:0 5px;border-radius:5px;border:1px solid var(--line-strong);background:var(--surface-2);font:700 .75rem/1.6 Vazirmatn,monospace;text-align:center}
+@media (max-width:640px){.ptable td.sel{position:absolute;inset-inline-end:10px;top:10px;width:auto}.ptable tr{position:relative}.ptable th.sel{display:none}}

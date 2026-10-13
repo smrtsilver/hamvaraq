@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{% block ptitle %}پنل مدیریت{% endblock %} | پنل هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex,nofollow">{% endblock %}
 {% block content %}
@@ -9,7 +10,9 @@
             <a href="{{ url }}"{% if key == active %} aria-current="page"{% endif %}>{% include "components/icon.html" with name=icon %}<span>{{ label }}</span>{% for k, n in nav_counts.items %}{% if k == key and n %}<b class="count">{{ n|fa }}</b>{% endif %}{% endfor %}</a>{% endfor %}
         </nav>
         <a class="panel-admin" href="{% url 'admin:index' %}">ابزار پیشرفته (ادمین جنگو)</a>
+        <p class="panel-keys small muted"><kbd>?</kbd> میان‌برها · <kbd>/</kbd> جستجو</p>
     </aside>
     <section class="panel-main">{% block panel %}{% endblock %}</section>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/panel.js' %}" defer></script>{% endblock %}

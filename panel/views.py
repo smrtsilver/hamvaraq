@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -50,7 +51,26 @@ def index(request):
     data = collect()
     peak = max([n for series in data["daily"].values() for _, n in series] + [1])
     data["daily"] = {k: [(d, n, round(100 * n / peak)) for d, n in v] for k, v in data["daily"].items()}
-    return page(request, "panel/index.html", {"d": data, "logs": AuditLog.objects.select_related("actor")[:8]}, "index")
+    return page(request, "panel/index.html", {"d": data, "logs": AuditLog.objects.select_related("actor")[:8], "kpi": community_kpis()}, "index")
+
+
+def community_kpis():
+    """شاخص‌های کتاب‌خوانی (قفسه، هدف، باشگاه، دنبال‌کردن)؛ با کش ۵ دقیقه‌ای تا داشبورد سبک بمونه."""
+    from django.core.cache import cache
+
+    def build():
+        from accounts.models import Follow
+        from books.models import Highlight, ReadingGoal, ShelfEntry
+        from clubs.models import Club
+
+        week = timezone.now() - timedelta(days=7)
+        return {
+            "shelf": ShelfEntry.objects.count(), "shelf7": ShelfEntry.objects.filter(created_at__gte=week).count(),
+            "read7": ShelfEntry.objects.filter(reading_status="read", finished_at__gte=week.date()).count(),
+            "goals": ReadingGoal.objects.count(), "clubs": Club.objects.filter(is_active=True).count(),
+            "follows": Follow.objects.count(), "highlights": Highlight.objects.count(),
+        }
+    return cache.get_or_set("panel:kpi", build, 300)
 
 
 # ---------------------------------------------------------------- آمار
@@ -273,7 +293,8 @@ def books(request):
             qs = qs.filter(status=status)
     qs = search_q(qs, request.GET.get("q"), ["title", "author", "isbn", "owner__username"])
     return page(request, "panel/books.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
-                                               "qs": _qs(request), "statuses": [*Book.Status.choices, ("deleted", "حذف‌شده")], "keep_status": {"status": status} if status else {}}, "books")
+                                               "qs": _qs(request), "statuses": [*Book.Status.choices, ("deleted", "حذف‌شده")], "keep_status": {"status": status} if status else {},
+                                               "bulk_url": reverse("panel:books_bulk"), "bulk_opts": [("delete", "حذف (پنهان از سایت)"), ("restore", "بازگردانی")]}, "books")
 
 
 @staff_required
@@ -301,6 +322,96 @@ def book_restore(request, pk):
     return back(request, "panel:books")
 
 
+# ---------------------------------------------------------------- عملیات گروهی
+BULK_MAX = 100
+
+
+def _bulk_ids(request):
+    ids = [int(i) for i in request.POST.getlist("ids") if str(i).isdigit()][:BULK_MAX]
+    if not ids:
+        fail(request, "چیزی انتخاب نشده.")
+    return ids
+
+
+@staff_required
+@require_POST
+def books_bulk(request):
+    ids, do, note = _bulk_ids(request), request.POST.get("do"), request.POST.get("note", "").strip()
+    done = 0
+    for book in Book.all_objects.filter(pk__in=ids).select_related("owner"):
+        if do == "delete" and not book.deleted_at and not book.exchanges.filter(status__in=Exchange.ACTIVE).exists():
+            book.soft_delete()
+            notify(book.owner, f"کتاب «{book.title}» از سایت حذف شد." + (f" دلیل: {note}" if note else ""), kind="report")
+            done += 1
+        elif do == "restore" and book.deleted_at:
+            book.restore()
+            done += 1
+    if done:
+        log(request, {"delete": "حذف گروهی کتاب", "restore": "بازگردانی گروهی کتاب"}.get(do, do), f"{done} کتاب", note)
+    messages.success(request, f"{done} کتاب انجام شد." if done else "موردی تغییر نکرد (کتاب‌های در مبادله رد می‌شن).")
+    return back(request, "panel:books")
+
+
+@staff_required
+@require_POST
+def posts_bulk(request):
+    ids, do = _bulk_ids(request), request.POST.get("do")
+    done = 0
+    for post in Post.objects.filter(pk__in=ids):
+        if do == "approve" and post.status != Post.Status.PUBLISHED:
+            post_services.publish(post)
+            done += 1
+    if done:
+        log(request, "تأیید گروهی معرفی", f"{done} معرفی")
+    messages.success(request, f"{done} معرفی تأیید شد.")
+    return back(request, "panel:posts")
+
+
+@staff_required
+@require_POST
+def announcements_bulk(request):
+    ids, do = _bulk_ids(request), request.POST.get("do")
+    done = 0
+    for item in Announcement.objects.filter(pk__in=ids):
+        if do == "approve" and item.status != Announcement.Status.PUBLISHED:
+            ann_services.publish(item)
+            done += 1
+    if done:
+        log(request, "تأیید گروهی اطلاعیه", f"{done} اطلاعیه")
+    messages.success(request, f"{done} اطلاعیه تأیید شد.")
+    return back(request, "panel:announcements")
+
+
+# ---------------------------------------------------------------- باشگاه‌ها
+@staff_required
+def clubs(request):
+    from clubs.models import Club
+
+    status = request.GET.get("status", "")
+    qs = Club.objects.select_related("owner", "city").annotate(n=Count("members", distinct=True), msgs=Count("posts", distinct=True))
+    if status == "inactive":
+        qs = qs.filter(is_active=False)
+    elif status == "active":
+        qs = qs.filter(is_active=True)
+    qs = search_q(qs, request.GET.get("q"), ["name", "owner__username", "current_title"])
+    return page(request, "panel/clubs.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
+                                               "qs": _qs(request), "keep_status": {"status": status} if status else {},
+                                               "bulk_url": reverse("panel:clubs_bulk"), "bulk_opts": [("deactivate", "غیرفعال‌سازی"), ("activate", "فعال‌سازی")]}, "clubs")
+
+
+@staff_required
+@require_POST
+def clubs_bulk(request):
+    from clubs.models import Club
+
+    ids, do = _bulk_ids(request), request.POST.get("do")
+    if do in ("activate", "deactivate"):
+        n = Club.objects.filter(pk__in=ids).update(is_active=(do == "activate"))
+        log(request, "فعال‌سازی باشگاه" if do == "activate" else "غیرفعال‌سازی باشگاه", f"{n} باشگاه", request.POST.get("note", ""))
+        messages.success(request, f"{n} باشگاه به‌روز شد.")
+    return back(request, "panel:clubs")
+
+
 # ---------------------------------------------------------------- معرفی‌ها
 @staff_required
 def posts(request):
@@ -310,7 +421,8 @@ def posts(request):
         qs = qs.filter(status=status)
     qs = search_q(qs, request.GET.get("q"), ["title", "author__username"])
     return page(request, "panel/posts.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
-                                               "qs": _qs(request), "item_tabs": list(Post.Status.choices), "keep_status": {"status": status}}, "posts")
+                                               "qs": _qs(request), "item_tabs": list(Post.Status.choices), "keep_status": {"status": status},
+                                               "bulk_url": reverse("panel:posts_bulk"), "bulk_opts": [("approve", "تأیید و انتشار")]}, "posts")
 
 
 @staff_required
@@ -347,7 +459,8 @@ def announcements(request):
         qs = qs.filter(status=status)
     qs = search_q(qs, request.GET.get("q"), ["title", "submitted_by__username"])
     return page(request, "panel/announcements.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
-                                                       "qs": _qs(request), "item_tabs": list(Announcement.Status.choices), "keep_status": {"status": status}}, "announcements")
+                                                       "qs": _qs(request), "item_tabs": list(Announcement.Status.choices), "keep_status": {"status": status},
+                                                       "bulk_url": reverse("panel:announcements_bulk"), "bulk_opts": [("approve", "تأیید و انتشار")]}, "announcements")
 
 
 @staff_required
