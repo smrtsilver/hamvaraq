@@ -280,20 +280,20 @@ class IsbnAndBulkTests(Base):
         self.assertIsNone(normalize("12345"))
 
     def test_lookup_parses_and_caches(self):
-        import io, json
         from unittest import mock
         from django.core.cache import cache
         from books import isbn
         cache.clear()
-        body = json.dumps({"ISBN:9780140328721": {"title": "Fantastic Mr Fox", "authors": [{"name": "Roald Dahl"}]}})
+        body = {"ISBN:9780140328721": {"title": "Fantastic Mr Fox", "authors": [{"name": "Roald Dahl"}]}}
         with (
             mock.patch("books.isbn._nlai", return_value=None),
-            mock.patch("urllib.request.urlopen", return_value=io.BytesIO(body.encode())) as m,
+            mock.patch("books.isbn._google", return_value=None),
+            mock.patch("books.isbn._fetch", return_value=body) as m,
         ):
             r = isbn.lookup("978-0-14-032872-1")
             isbn.lookup("9780140328721")
         self.assertEqual(r, {"isbn": "9780140328721", "title": "Fantastic Mr Fox", "author": "Roald Dahl"})
-        self.assertEqual(m.call_count, 1)
+        self.assertEqual(m.call_count, 1)                                  # دومی از کش اومد
 
     def test_lookup_uses_local_books_first(self):
         from unittest import mock
@@ -305,23 +305,25 @@ class IsbnAndBulkTests(Base):
         m.assert_not_called()
 
     def test_lookup_falls_back_to_google(self):
-        import io, json, urllib.error
+        import urllib.error
         from unittest import mock
         from django.core.cache import cache
         from books import isbn
         cache.clear()
-        g = json.dumps({"items": [{"volumeInfo": {"title": "کلیدر", "authors": ["دولت‌آبادی"]}}]})
+        g = {"isbn": "9789643051092", "title": "کلیدر", "author": "دولت‌آبادی"}
         with (
             mock.patch("books.isbn._nlai", return_value=None),
-            mock.patch("urllib.request.urlopen", side_effect=[io.BytesIO(b"{}"), io.BytesIO(g.encode())]),
+            mock.patch("books.isbn._open_library", return_value=None),
+            mock.patch("books.isbn._google", return_value=g),
         ):
             r = isbn.lookup("9789643051092")
         self.assertEqual(r["title"], "کلیدر")
+        cache.clear()
         with (
             mock.patch("books.isbn._nlai", return_value=None),
-            mock.patch("urllib.request.urlopen", side_effect=[urllib.error.URLError("x"), io.BytesIO(b"{}")]),
+            mock.patch("books.isbn._open_library", side_effect=urllib.error.URLError("x")),
+            mock.patch("books.isbn._google", return_value=None),
         ):
-            cache.clear()
             self.assertIsNone(isbn.lookup("9789643051099"))
             self.assertIsNone(cache.get("isbn:9789643051099"))  # با خطای شبکه نتیجه‌ی منفی کش نمی‌شه
 
@@ -331,7 +333,12 @@ class IsbnAndBulkTests(Base):
         from django.core.cache import cache
         from books import isbn
         cache.clear()
-        with mock.patch("urllib.request.urlopen", side_effect=urllib.error.URLError("x")):
+        err = urllib.error.URLError("x")
+        with (
+            mock.patch("books.isbn._nlai", side_effect=err),
+            mock.patch("books.isbn._open_library", side_effect=err),
+            mock.patch("books.isbn._google", side_effect=err),
+        ):
             self.assertIsNone(isbn.lookup("9780140328721"))
 
     def test_isbn_view_requires_login_and_404s(self):

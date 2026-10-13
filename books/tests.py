@@ -41,12 +41,16 @@ class NlaiLookupTests(TestCase):
 
     def test_lookup_uses_nlai_first(self):
         page = '<a href="/bibliography/2QwwS1wI/x/">x</a>'.encode()
-        with mock.patch.object(isbn, "_get", side_effect=[page, self.record]) as get:
+        with (
+            mock.patch.object(isbn, "_get", side_effect=[page, self.record]) as get,
+            mock.patch.object(isbn, "_open_library", return_value=None),
+            mock.patch.object(isbn, "_google", return_value=None),
+        ):
             result = isbn.lookup("۹۷۸-۶۰۰-۷۵۴۷-۷۱-۷")
         self.assertEqual(result["title"], "مدارس دوست‌داشتنی")
         self.assertEqual(get.call_count, 2)
 
     def test_network_error_not_cached(self):
-        with mock.patch("urllib.request.urlopen", side_effect=OSError):
+        with mock.patch("urllib.request.urlopen", side_effect=OSError), mock.patch.object(isbn, "_get", side_effect=OSError):
             self.assertIsNone(isbn.lookup("9786007547717"))
         self.assertIsNone(cache.get("isbn:9786007547717"))

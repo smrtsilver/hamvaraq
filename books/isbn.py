@@ -4,6 +4,9 @@
 
 import json
 import re
+import threading
+import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -95,18 +98,22 @@ def _get(url, timeout):
 
 
 def _nlai(isbn, timeout):
-    page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": isbn})), timeout).decode("utf-8", "replace")
+    """دو درخواست پشت هم (جستجو ← رکورد MARC)؛ جمعشون از بودجه‌ی timeout بیشتر نمی‌شه."""
+    deadline = time.monotonic() + timeout
+
+    def left():
+        return max(0.3, deadline - time.monotonic())
+
+    page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": isbn})), left()).decode("utf-8", "replace")
     uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[:NLAI_MAX_CANDIDATES]
     if not uids:
         return None
     qs = urllib.parse.urlencode([("uid", u) for u in uids])
-    for fields in parse_marc(_get(NLAI_MARC.format(qs=qs), timeout)):
+    for fields in parse_marc(_get(NLAI_MARC.format(qs=qs), left())):
         result = _from_marc(fields, isbn)
         if result:
             return result
     return None
-
-
 
 
 def _local(isbn):
@@ -133,8 +140,41 @@ def _google(isbn, timeout):
         return {"isbn": isbn, "title": info["title"], "author": ", ".join(info.get("authors") or [])}
 
 
-def lookup(raw, timeout=4):
-    """{'isbn','title','author'} یا None اگه پیدا نشد. خطای شبکه هم None می‌ده (و کش نمی‌شه)."""
+# ترتیب = اولویت منبع‌ها (کتابخانه‌ی ملی برای کتاب فارسی بهتره)
+SOURCE_NAMES = ("nlai", "openlibrary", "google")
+_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="isbn")
+_BREAKER_LOCK = threading.Lock()
+
+
+def _budget():
+    return float(getattr(settings, "ISBN_BUDGET", 3.0))
+
+
+def breaker_open(name):
+    """منبعی که پشت‌سرهم خراب بوده چند دقیقه کنار می‌ره تا هر درخواست منتظرش نمونه."""
+    state = cache.get(f"isbn:cb:{name}") or {}
+    return state.get("until", 0) > time.time()
+
+
+def breaker_record(name, ok):
+    key = f"isbn:cb:{name}"
+    with _BREAKER_LOCK:
+        if ok:
+            cache.delete(key)
+            return
+        state = cache.get(key) or {"fails": 0}
+        state["fails"] = state.get("fails", 0) + 1
+        if state["fails"] >= getattr(settings, "ISBN_BREAKER_FAILS", 3):
+            state = {"fails": 0, "until": time.time() + getattr(settings, "ISBN_BREAKER_COOLDOWN", 300)}
+        cache.set(key, state, 3600)
+
+
+def lookup(raw, timeout=None):
+    """
+    {'isbn','title','author'} یا None. منبع‌ها هم‌زمان و با بودجه‌ی زمانی کل (پیش‌فرض ۳ ثانیه) پرسیده می‌شن،
+    پس یه منبع کند هیچ‌وقت درخواست رو بیشتر از بودجه نگه نمی‌داره. نتیجه‌ی منفیِ ناشی از خطا/timeout کش نمی‌شه.
+    همه‌ی کار کش/دیتابیس تو همین thread انجام می‌شه؛ thread‌های شبکه فقط urllib صدا می‌زنن.
+    """
     isbn = normalize(raw)
     if not isbn:
         return None
@@ -145,15 +185,39 @@ def lookup(raw, timeout=4):
     cached = cache.get(key)
     if cached is not None:
         return cached or None
-    failed = False
-    for source in (_nlai, _open_library, _google):
-        try:
-            result = source(isbn, timeout)
-        except (urllib.error.URLError, TimeoutError, ValueError, OSError):
-            failed = True
-            continue
-        if result:
+    budget = float(timeout) if timeout else _budget()
+    deadline = time.monotonic() + budget
+    funcs = {"nlai": _nlai, "openlibrary": _open_library, "google": _google}     # موقع صدا زدن خونده می‌شن (تست‌ها می‌تونن جایگزین کنن)
+    order = list(SOURCE_NAMES)
+    pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in order if not breaker_open(name)}
+    results, failed = {}, len(pending) < len(order)    # منبع کنار گذاشته‌شده = جواب ناقص ⇒ منفی کش نشه
+    found = None
+    while pending and found is None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
             break
-    if result or not failed:
-        cache.set(key, result or {}, 60 * 60 * 24)
-    return result
+        done, _ = wait(list(pending.values()), timeout=remaining, return_when=FIRST_COMPLETED)
+        for name, fut in list(pending.items()):
+            if fut in done:
+                del pending[name]
+                try:
+                    results[name] = fut.result()
+                    breaker_record(name, True)
+                except Exception:        # خطای شبکه، تجزیه، هر چیزی؛ منبع خراب نباید سایت رو بزنه
+                    results[name] = None
+                    failed = True
+                    breaker_record(name, False)
+        for name in order:               # بالاترین منبعِ تمام‌شده‌ای که جواب داره، مگه منبعِ مهم‌تری هنوز تو راه باشه
+            if name in pending:
+                break
+            if results.get(name):
+                found = results[name]
+                break
+    for name in pending:                 # بودجه تموم شد: منابع معطل شکست حساب می‌شن (thread‌شون خودش با timeout تموم می‌شه)
+        failed = True
+        breaker_record(name, False)
+    if found is None:
+        found = next((results[n] for n in order if results.get(n)), None)
+    if found or not failed:
+        cache.set(key, found or {}, 60 * 60 * 24)
+    return found

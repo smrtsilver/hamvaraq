@@ -159,3 +159,99 @@ class SignalWiringTests(Base):
         from django.contrib.auth.signals import user_logged_in
         gc.collect()
         self.assertTrue(any(key[0] == "hv_remember_ip" for key, *_ in user_logged_in.receivers))
+
+
+class IsbnBudgetTests(Base):
+    """استعلام شابک: موازی، بودجه‌ی زمانی، منبع کند، و circuit breaker."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+    def slow(self, seconds, result=None):
+        import time
+
+        def source(isbn, timeout):
+            time.sleep(seconds)
+            return result
+        return source
+
+    def patch_sources(self, nlai=None, ol=None, google=None):
+        from unittest import mock
+        from books import isbn
+        noop = self.slow(0)
+        return (mock.patch.object(isbn, "_nlai", nlai or noop), mock.patch.object(isbn, "_open_library", ol or noop),
+                mock.patch.object(isbn, "_google", google or noop))
+
+    def run_patched(self, nlai=None, ol=None, google=None, **kw):
+        import contextlib
+        import time
+        from books import isbn
+        with contextlib.ExitStack() as stack:
+            for p in self.patch_sources(nlai, ol, google):
+                stack.enter_context(p)
+            start = time.monotonic()
+            result = isbn.lookup(kw.pop("isbn", "9786007547717"), **kw)
+            return result, time.monotonic() - start
+
+    def test_slow_sources_do_not_hold_the_request_beyond_budget(self):
+        hang = self.slow(4)
+        result, took = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.5)
+        self.assertIsNone(result)
+        self.assertLess(took, 1.2)
+        from django.core.cache import cache
+        self.assertIsNone(cache.get("isbn:9786007547717"))                      # timeout نتیجه‌ی منفیِ قطعی نیست
+
+    def test_two_back_to_back_slow_lookups_and_site_stays_responsive(self):
+        import time
+        hang = self.slow(3)
+        r1, t1 = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.4, isbn="9786007547717")
+        r2, t2 = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.4, isbn="9789643051092")
+        self.assertEqual((r1, r2), (None, None))
+        self.assertLess(t1 + t2, 1.5)
+        start = time.monotonic()
+        self.assertEqual(self.client.get("/healthz/").status_code, 200)         # thread‌های معطل سایت رو نگرفتن
+        self.assertLess(time.monotonic() - start, 0.5)
+
+    def test_priority_nlai_wins_even_if_google_is_faster_and_fast_exit(self):
+        nlai = lambda isbn, timeout: (__import__("time").sleep(0.15), {"isbn": isbn, "title": "ملی", "author": "الف"})[1]   # noqa: E731
+        google = lambda isbn, timeout: {"isbn": isbn, "title": "گوگل", "author": "ب"}                                          # noqa: E731
+        result, took = self.run_patched(nlai=nlai, google=google, timeout=2)
+        self.assertEqual(result["title"], "ملی")
+        self.assertLess(took, 1.0)
+        # اگه منبع مهم‌تر جوابی نداره، منبع بعدی گرفته می‌شه بدون اینکه کل بودجه صبر کنه
+        result, took = self.run_patched(ol=lambda isbn, timeout: {"isbn": isbn, "title": "اپن", "author": "ج"}, timeout=2, isbn="9789643051092")
+        self.assertEqual(result["title"], "اپن")
+        self.assertLess(took, 1.0)
+
+    def test_breaker_opens_after_three_failures_and_skips_the_source(self):
+        from books import isbn
+        calls = []
+
+        def broken(isbn_, timeout):
+            calls.append(1)
+            raise OSError("down")
+        for i in range(3):
+            self.run_patched(ol=broken, isbn=f"97896430510{i}2"[:13])
+        self.assertTrue(isbn.breaker_open("openlibrary"))
+        n = len(calls)
+        self.run_patched(ol=broken, isbn="9789643051092")
+        self.assertEqual(len(calls), n)                                           # دیگه صدا زده نمی‌شه
+        self.assertFalse(isbn.breaker_open("nlai"))
+        isbn.breaker_record("openlibrary", True)                                  # موفقیت بازش می‌گردونه
+        self.assertFalse(isbn.breaker_open("openlibrary"))
+
+    def test_negative_result_cached_only_when_all_sources_answered(self):
+        from django.core.cache import cache
+        self.run_patched(isbn="9789643051092")
+        self.assertEqual(cache.get("isbn:9789643051092"), {})
+        self.run_patched(ol=lambda i, t: (_ for _ in ()).throw(OSError()), isbn="9780140328721")
+        self.assertIsNone(cache.get("isbn:9780140328721"))
+
+    def test_entrypoint_uses_gthread_and_budget_setting_exists(self):
+        import pathlib
+        from django.conf import settings
+        src = pathlib.Path("docker/entrypoint.prod.sh").read_text(encoding="utf-8")
+        self.assertIn("--worker-class gthread", src)
+        self.assertEqual(settings.ISBN_BUDGET, 3.0)
