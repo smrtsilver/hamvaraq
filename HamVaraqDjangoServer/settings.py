@@ -234,6 +234,7 @@ WELCOME_WINDOW_DAYS = 30
 
 # ---- اعلان بیرون از سایت (Web Push) ----
 # بدون این کلیدها فقط اعلان داخل سایت کار می‌کنه. ساختن: python manage.py generate_vapid_keys
+HIGHLIGHTS_ENABLED = env.bool("HIGHLIGHTS_ENABLED", default=False)  # نقل‌قول‌های من؛ فعلاً خاموش
 WISHLIST_ENABLED = env.bool("WISHLIST_ENABLED", default=False)  # فعلاً «به‌زودی»؛ اطلاعات کتاب (شابک و ...) کامل بشه، روشنش می‌کنیم
 # کارت استوری از nginx سرو بشه: مثلاً /_cards/ (و location internal تو nginx؛ deploy/hamvaraq.nginx.conf.example)
 RELIST_REMIND_DAYS = env.int("RELIST_REMIND_DAYS", default=7)           # روز بعد از تحویل موفق تا یادآوری «دوباره بذارش»

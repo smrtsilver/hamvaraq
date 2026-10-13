@@ -12,10 +12,15 @@
 <nav class="set-tiles" aria-label="میان‌برهای حساب">
     <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %}<span>قفسه‌ی من</span></a>
     <a href="{% url 'books:shelf_stats' %}">{% include "components/icon.html" with name="chart" %}<span>آمار و هدف</span></a>
-    <a href="{% url 'books:highlights' %}">{% include "components/icon.html" with name="pen" %}<span>نقل‌قول‌ها</span></a>
+    <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %}<span>آگهی‌های من</span></a>
+    <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %}<span>معرفی‌های من</span></a>
+    <a href="{% url 'accounts:feed' %}">{% include "components/icon.html" with name="news" %}<span>فید</span></a>
+    <a href="{% url 'clubs:list' %}">{% include "components/icon.html" with name="chat" %}<span>باشگاه‌ها</span></a>
     <a href="{% url 'accounts:points' %}">{% include "components/icon.html" with name="star" %}<span>امتیاز من</span></a>
     <a href="{% url 'accounts:stats' %}">{% include "components/icon.html" with name="eye" %}<span>بازدیدها</span></a>
     <a href="{% url 'books:shelf_export' %}">{% include "components/icon.html" with name="download" %}<span>خروجی قفسه</span></a>
+    <a href="{% url 'support:mine' %}">{% include "components/icon.html" with name="flag" %}<span>گزارش‌های من</span></a>
+    <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %}<span>اعلان‌ها</span></a>
 </nav>
 <form method="post" class="card set-card" data-location-group novalidate>{% csrf_token %}
     <h2 class="h3">اطلاعات حساب</h2>

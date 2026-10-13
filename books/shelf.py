@@ -114,8 +114,17 @@ def mark_today(request):
     return redirect("books:shelf_stats" if request.POST.get("next") == "stats" else "books:shelf")
 
 
+def _highlights_on():
+    from django.conf import settings
+    from django.http import Http404
+
+    if not settings.HIGHLIGHTS_ENABLED:
+        raise Http404
+
+
 @login_required
 def highlights(request):
+    _highlights_on()
     from .forms import HighlightForm
     from .models import Highlight
 
@@ -142,6 +151,7 @@ def highlights(request):
 @login_required
 @require_POST
 def highlight_delete(request, pk):
+    _highlights_on()
     from .models import Highlight
 
     get_object_or_404(Highlight, pk=pk, user=request.user).delete()

@@ -66,19 +66,11 @@
                         <div class="menu-head"><strong>{{ user.public_name }}</strong><span>{{ user.points|fa }} امتیاز{% if user.city %} · {{ user.city.name }}{% endif %}</span></div>
                         <a href="{% url 'accounts:profile' user.username %}">{% include "components/icon.html" with name="user" %} پروفایل من</a>
                         <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %} قفسه‌ی من</a>
-                        <a href="{% url 'accounts:feed' %}">{% include "components/icon.html" with name="news" %} فید کتاب‌خوان‌ها</a>
-                        <a href="{% url 'clubs:list' %}">{% include "components/icon.html" with name="chat" %} باشگاه‌های کتاب</a>
-                        <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} آگهی‌های معاوضه‌ی من</a>
-                        <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
-                        <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>
+                        <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} آگهی‌های من</a>
+                        <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌ها{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'accounts:points' %}">{% include "components/icon.html" with name="star" %} امتیاز من</a>
-                        <a href="{% url 'accounts:stats' %}">{% include "components/icon.html" with name="chart" %} آمار من</a>
-                        <a href="{% url 'support:mine' %}">{% include "components/icon.html" with name="flag" %} گزارش‌های من</a>
-                        <a href="{% url 'books:bulk' %}">{% include "components/icon.html" with name="list" %} ثبت دسته‌ای</a>
-                        <a href="{% url 'posts:mine' %}">{% include "components/icon.html" with name="pen" %} معرفی‌های من</a>
                         {% if user.is_staff %}<a href="{% url 'announcements:create' %}">{% include "components/icon.html" with name="news" %} ثبت اطلاعیه</a>{% endif %}
-                        <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
-                        <a href="{% url 'notifications:settings' %}">{% include "components/icon.html" with name="bell" %} تنظیمات اعلان</a>
+                        <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات و بیشتر</a>
                         {% if user.is_staff %}<hr><a href="{% url 'panel:index' %}">{% include "components/icon.html" with name="sparkle" %} پنل مدیریت{% if staff_todo %} <span class="pill pill-amber">{{ staff_todo|fa }}</span>{% endif %}</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
                         <hr>
                         <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>{% include "components/icon.html" with name="logout" %} خروج</button></form>

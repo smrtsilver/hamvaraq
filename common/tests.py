@@ -1209,7 +1209,7 @@ class GuideTests(Base):
     def test_empty_search_suggests_next_steps(self):
         self.client.login(username="giver", password="x12345678")
         r = self.client.get(reverse("books:list"), {"q": "چیزی که نیست"})
-        self.assertContains(r, "لیست آرزو")
+        self.assertContains(r, "فیلترها رو کم کن")
 
 
 class ChatPrivacyTests(Base):
@@ -2755,6 +2755,7 @@ class LaterFeatureTests(Base):
     def setUp(self):
         self.client.force_login(self.giver)
 
+    @override_settings(HIGHLIGHTS_ENABLED=True)
     def test_highlight_needs_book_reference_and_shows_on_profile(self):
         from books.models import Highlight, ShelfEntry
         r = self.client.post("/books/highlights/", {"text": "بی‌ارجاع"})
