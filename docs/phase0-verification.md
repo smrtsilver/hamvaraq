@@ -19,7 +19,7 @@ docker compose -f docker-compose.prod.yml exec -T web python manage.py createcac
 | cron + بکاپ | `deploy/crontab.example` | `crontab -e` و مسیر پروژه را عوض کنید |
 
 ## برگشت (Rollback)
-1. کد: `git checkout <commit-قبلی> && ./update.sh prod` (مهاجرت‌ها برگشت‌پذیرند: `migrate books 0007` و همین‌طور `exchanges 0005`, `trust 0003`, `accounts 0006`).
+1. کد: `git checkout <commit-قبلی> && ./update.sh prod` (مهاجرت‌ها برگشت‌پذیرند: `migrate books 0007`، `migrate exchanges 0005`، `migrate trust 0003`، `migrate accounts 0003`).
 2. فقط gunicorn: `WEB_THREADS=1` و `--worker-class sync` را در entrypoint برگردانید.
 3. کارت‌ها: `rm -rf media/cards` و `CARD_X_ACCEL_PREFIX=` خالی.
 4. حذف نرم: برای بازگردانی کتاب: پنل ← کتاب‌ها ← «حذف‌شده» ← بازگردانی.
