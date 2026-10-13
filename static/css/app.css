@@ -1521,3 +1521,11 @@ input[type=range]{accent-color:var(--primary)}
   .profile-head .follow-line{margin:4px 0 0}
   .stats .stat{padding:10px 6px}.stats .stat strong{font-size:var(--fs-lg)}.stats .stat span{font-size:11px}
 }
+.seg-fill{max-width:100%;box-sizing:border-box}.seg-fill label{min-width:0}
+@media (max-width:380px){.seg-fill span{padding:8px 4px;font-size:var(--fs-xs)}}
+@media (max-width:640px){
+  .create-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+  .create-tile{padding:12px 8px!important;text-align:center;align-items:center}
+  .create-tile strong{font-size:var(--fs-xs)}.create-tile span{display:none}
+  .create-tile .i{width:20px;height:20px;margin-inline:auto}
+}
