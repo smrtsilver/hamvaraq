@@ -4,7 +4,7 @@
 <div class="page-head"><div><h1>کاربران</h1><p>جستجو، محدودیت، اخطار، مسدودسازی و تنظیم امتیاز.</p></div></div>
 <div class="ptabs">{% for v, l in user_tabs %}<a href="?{% if q %}q={{ q|urlencode }}&{% endif %}f={{ v }}"{% if f == v %} aria-current="true"{% endif %}>{{ l }}</a>{% endfor %}</div>
 {% include "panel/_search.html" with placeholder="نام کاربری یا ایمیل" keep=keep_f %}
-<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>کاربر</th><th>شهر</th><th>امتیاز</th><th>کتاب</th><th>وضعیت</th><th>عضویت</th><th></th></tr></thead><tbody>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>کاربر</th><th>شهر</th><th>امتیاز</th><th>کتاب</th><th>وضعیت</th><th>عضویت</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
 {% for u in page %}<tr>
     <td data-label="کاربر"><a href="{% url 'panel:user' u.pk %}"><strong>{{ u.username }}</strong></a>{% if u.is_staff %} <span class="pill pill-blue">مدیر</span>{% endif %}</td>
     <td data-label="شهر">{{ u.city.name|default:"—" }}</td><td data-label="امتیاز">{{ u.points|fa }}</td><td data-label="کتاب">{{ u.book_count|fa }}</td>

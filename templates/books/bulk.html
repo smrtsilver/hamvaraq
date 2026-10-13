@@ -8,7 +8,7 @@
     <form method="post" novalidate data-location-group>{% csrf_token %}
         <div class="card scan-card"><div><strong>اسکن پیوسته</strong><p class="muted small m-t2">دوربین باز می‌مونه؛ هر بارکدی که نشون بدی یه ردیف پر می‌کنه.</p></div>
             <button type="button" class="btn" data-scan-continuous hidden>{% include "components/icon.html" with name="camera" %} شروع اسکن</button></div>
-        <div class="card mt-16"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
+        <div class="card mt-16"><h2 class="h3">مشترک برای همه‌ی کتاب‌ها</h2>
             <div class="form-grid"><div>{% include "components/field.html" with field=common.province %}</div><div>{% include "components/field.html" with field=common.city %}</div></div>
             {% include "components/field.html" with field=common.condition %}</div>
         {{ rows.management_form }}

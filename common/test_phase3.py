@@ -179,3 +179,14 @@ class CoverImageTests(Base):
             b = self.make_book()
         self.assertTrue(b.cover)
         self.assertEqual(b.cover_webp.name, "")
+
+
+class FormUxTests(Base):
+    def test_book_form_loads_stepper_compress_scan_and_preview(self):
+        self.client.login(username="giver", password="x12345678")
+        page = self.client.get(reverse("books:create")).content.decode()
+        for needle in ("data-stepper", "js/stepper.js", "js/compress.js", "js/scan.js", "js/preview.js", "data-scan-target"):
+            self.assertTrue(needle in page, needle)
+        self.assertTrue('<h3>' not in page.split("form-layout")[1].split("</form>")[0])      # سرتیترها h2 (ترتیب درست heading)
+        posts = self.client.get(reverse("posts:create")).content.decode()
+        self.assertTrue("js/compress.js" in posts)

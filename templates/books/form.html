@@ -7,15 +7,15 @@
     <div class="page-head"><div><h1>{{ title }}</h1><p>اطلاعات دقیق و عکس خوب شانس مبادله رو بیشتر می‌کنه.</p></div></div>
     <form method="post" enctype="multipart/form-data" class="card" data-location-group data-isbn-scope data-preview data-stepper{% if existing_cover %} data-existing-cover="1"{% endif %} novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
-        <div class="form-section reset-box"><div class="cluster jc-between"><h3>۱. کدوم کتاب؟</h3>
+        <div class="form-section reset-box"><div class="cluster jc-between"><h2 class="h3">۱. کدوم کتاب؟</h2>
                 <button type="button" class="btn btn-secondary btn-sm" data-scan data-scan-target="{{ form.isbn.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} اسکن بارکد</button></div>
             {% include "components/field.html" with field=form.isbn %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.title %}</div><div>{% include "components/field.html" with field=form.author %}</div></div>
             <div class="form-grid"><div>{% include "components/field.html" with field=form.category %}</div><div>{% include "components/field.html" with field=form.condition %}</div></div>
         </div>
-        <div class="form-section"><h3>۲. کتاب کجاست؟</h3>
+        <div class="form-section"><h2 class="h3">۲. کتاب کجاست؟</h2>
             <div class="form-grid"><div>{% include "components/field.html" with field=form.province %}</div><div>{% include "components/field.html" with field=form.city %}</div></div></div>
-        <div class="form-section"><h3>۳. عکس و توضیح</h3>
+        <div class="form-section"><h2 class="h3">۳. عکس و توضیح</h2>
             {% if form.instance.pk and form.instance.photos.all %}<div class="field"><label>عکس‌های فعلی</label><div class="thumbs jc-start">
                 {% for p in form.instance.photos.all %}<form method="post" action="{% url 'books:photo_delete' p.pk %}" class="stack-center">{% csrf_token %}<img src="{{ p.image.url }}" alt="" class="thumb-sm"><button class="link link-danger small">حذف</button></form>{% endfor %}</div></div>{% endif %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.cover %}</div><div>{% include "components/field.html" with field=form.extra_photos %}</div></div>

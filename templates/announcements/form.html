@@ -6,15 +6,15 @@
     <div class="page-head"><div><h1>{{ title }}</h1><p>اتفاق فرهنگی‌ای که می‌دونی رو با بقیه‌ی کتاب‌خوان‌ها به اشتراک بذار. بعد از تأیید مدیریت منتشر می‌شه.</p></div></div>
     <form method="post" enctype="multipart/form-data" class="card" data-location-group novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
-        <div class="form-section reset-box"><h3>۱. چی هست؟</h3>
+        <div class="form-section reset-box"><h2 class="h3">۱. چی هست؟</h2>
             {% include "components/field.html" with field=form.title %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.kind %}</div><div>{% include "components/field.html" with field=form.organizer %}</div></div>
             {% include "components/field.html" with field=form.summary %}{% include "components/field.html" with field=form.body %}</div>
-        <div class="form-section"><h3>۲. کی؟</h3>{% include "components/field.html" with field=form.starts_at %}{% include "components/field.html" with field=form.ends_at %}</div>
-        <div class="form-section"><h3>۳. کجا؟</h3>{% include "components/field.html" with field=form.is_online %}
+        <div class="form-section"><h2 class="h3">۲. کی؟</h2>{% include "components/field.html" with field=form.starts_at %}{% include "components/field.html" with field=form.ends_at %}</div>
+        <div class="form-section"><h2 class="h3">۳. کجا؟</h2>{% include "components/field.html" with field=form.is_online %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.province %}</div><div>{% include "components/field.html" with field=form.city %}</div>
                 <div>{% include "components/field.html" with field=form.venue %}</div><div>{% include "components/field.html" with field=form.address %}</div></div></div>
-        <div class="form-section"><h3>۴. بقیه</h3>{% include "components/field.html" with field=form.link %}{% include "components/field.html" with field=form.is_free %}{% include "components/field.html" with field=form.price_note %}{% include "components/field.html" with field=form.cover %}</div>
+        <div class="form-section"><h2 class="h3">۴. بقیه</h2>{% include "components/field.html" with field=form.link %}{% include "components/field.html" with field=form.is_free %}{% include "components/field.html" with field=form.price_note %}{% include "components/field.html" with field=form.cover %}</div>
         <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ارسال برای بررسی</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div>
         <p class="hint">تبلیغ فروشگاهی، محتوای نامرتبط با کتاب و اطلاعات ناقص منتشر نمی‌شه. ثبت‌کننده تو برابر صحت اطلاعات مسئوله.</p>
     </form>

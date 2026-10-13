@@ -3,7 +3,7 @@
 {% block panel %}
 <div class="page-head"><div><h1>گزارش‌ها</h1><p>گزارش‌های کاربران درباره‌ی کاربر، کتاب، پیام، معرفی و اطلاعیه.</p></div></div>
 {% include "panel/_status_tabs.html" with current=status tabs=report_tabs %}
-<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>مورد</th><th>دلیل</th><th>گزارش‌دهنده</th><th>زمان</th><th>وضعیت</th><th></th></tr></thead><tbody>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>مورد</th><th>دلیل</th><th>گزارش‌دهنده</th><th>زمان</th><th>وضعیت</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
 {% for r in page %}<tr>
     <td data-label="مورد"><a href="{% url 'panel:report' r.pk %}"><strong>{{ r.target_label|truncatechars:50 }}</strong></a></td>
     <td data-label="دلیل">{{ r.get_reason_display }}</td><td data-label="گزارش‌دهنده">{{ r.reporter.username }}</td>

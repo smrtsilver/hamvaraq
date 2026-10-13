@@ -4,7 +4,7 @@
 <div class="page-head"><div><h1>اطلاعیه‌ها</h1><p>تأیید رویدادها و خبرهای فرهنگی.</p></div></div>
 {% include "panel/_status_tabs.html" with current=status tabs=item_tabs %}
 {% include "panel/_search.html" with placeholder="عنوان یا نام کاربر" keep=keep_status %}
-<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>ثبت‌کننده</th><th>وضعیت</th><th>زمان</th><th></th></tr></thead><tbody>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>ثبت‌کننده</th><th>وضعیت</th><th>زمان</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
 {% for p in page %}<tr>
     <td data-label="عنوان"><a href="{{ p.get_absolute_url }}"><strong>{{ p.title|truncatechars:50 }}</strong></a>{% if p.is_featured %} <span class="pill pill-amber">ویژه</span>{% endif %}{% if p.reject_reason %}<br><span class="small muted">رد: {{ p.reject_reason }}</span>{% endif %}</td>
     <td data-label="ثبت‌کننده">{% if p.submitted_by %}<a href="{% url 'panel:user' p.submitted_by.pk %}">{{ p.submitted_by.username }}</a>{% else %}—{% endif %}</td>

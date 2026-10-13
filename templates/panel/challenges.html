@@ -2,7 +2,7 @@
 {% block ptitle %}چالش‌ها{% endblock %}
 {% block panel %}
 <div class="page-head"><div><h1>چالش‌ها</h1><p>چالش‌های ماهانه و هدف‌های جمعی.</p></div><a class="btn" href="{% url 'panel:challenge_new' %}">{% include "components/icon.html" with name="plus" %} چالش تازه</a></div>
-<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>نوع</th><th>هدف</th><th>بازه</th><th>وضعیت</th><th></th></tr></thead><tbody>
+<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>عنوان</th><th>نوع</th><th>هدف</th><th>بازه</th><th>وضعیت</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
 {% for c in items %}<tr>
     <td data-label="عنوان"><strong>{{ c.title }}</strong><br><span class="small muted">{{ c.description }}</span></td><td data-label="نوع">{{ c.get_kind_display }}</td><td data-label="هدف">{{ c.target|fa }}</td>
     <td data-label="بازه">{{ c.starts_at|jdate }} تا {{ c.ends_at|jdate }}</td>
