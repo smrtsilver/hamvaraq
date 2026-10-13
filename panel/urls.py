@@ -18,6 +18,7 @@ urlpatterns = [
     path("users/<int:pk>/action/", views.user_action, name="user_action"),
     path("books/", views.books, name="books"),
     path("books/<int:pk>/delete/", views.book_delete, name="book_delete"),
+    path("books/<int:pk>/restore/", views.book_restore, name="book_restore"),
     path("posts/", views.posts, name="posts"),
     path("posts/<int:pk>/action/", views.post_action, name="post_action"),
     path("announcements/", views.announcements, name="announcements"),

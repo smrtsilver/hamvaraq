@@ -16,6 +16,17 @@ class Category(models.Model):
         return self.name
 
 
+class VisibleBookManager(models.Manager):
+    """
+    مدیر پیش‌فرض: فقط کتاب‌هایی که باید تو سایت دیده بشن (حذف‌نشده، صاحب فعال و غیرمسدود).
+    ادمین و پنل از Book.all_objects استفاده می‌کنن و دسترسی FK مثل Exchange.book از مدیر ساده‌ی پایه می‌گذره؛
+    پس تاریخچه‌ی مبادله حتی با کتاب پنهان کامل دیده می‌شه.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True).exclude(owner__is_active=False).exclude(owner__status="banned")
+
+
 class Book(models.Model):
     class Condition(models.TextChoices):
         NEW = "new", "نو"
@@ -39,9 +50,13 @@ class Book(models.Model):
     description = models.TextField(blank=True, verbose_name="توضیحات")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False, verbose_name="زمان حذف")
     # فیلدهای کمکی جستجو؛ خودکار از عنوان/نویسنده/شابک ساخته می‌شن
     search_text = models.TextField(blank=True, editable=False, verbose_name="متن جستجو")
     work_key = models.CharField(max_length=400, blank=True, db_index=True, editable=False, verbose_name="کلید کتاب")
+
+    objects = VisibleBookManager()
+    all_objects = models.Manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -62,6 +77,21 @@ class Book(models.Model):
         from django.urls import reverse
 
         return reverse("books:detail", args=[self.pk])
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
+
+    def soft_delete(self):
+        """حذف نرم: کتاب از سایت پنهان می‌شه ولی تاریخچه‌ی مبادله، رأی‌ها و نقدها سر جاشون می‌مونن."""
+        from django.utils import timezone
+
+        self.deleted_at = timezone.now()
+        Book.all_objects.filter(pk=self.pk).update(deleted_at=self.deleted_at)
+
+    def restore(self):
+        self.deleted_at = None
+        Book.all_objects.filter(pk=self.pk).update(deleted_at=None)
 
     def save(self, *args, **kwargs):
         if self.cover and not self.cover._committed:
@@ -146,7 +176,7 @@ class Review(models.Model):
     """نقد و ستاره؛ فقط کسی که کتاب رو از طریق یه مبادله‌ی کامل‌شده گرفته می‌تونه بنویسه."""
 
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="reviews", verbose_name="کتاب")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews", verbose_name="کاربر")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="reviews", verbose_name="کاربر")
     stars = models.PositiveSmallIntegerField(choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="ستاره")
     text = models.TextField(blank=True, max_length=1500, verbose_name="نقد")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")

@@ -1437,7 +1437,7 @@ class NoEnglishAuditTests(TestCase):
         t = Ticket.objects.create(user=self.a, subject="مشکل", message="پیام کافی برای تست", reply="پاسخ")
         r = Report.objects.create(reporter=self.a, target_user=self.b, reason="abuse", description="توهین")
         self.client.login(username="سارا", password="x12345678")
-        self.check(["/support/", "/support/?type=bug&from=/books/", "/support/mine/", t.get_absolute_url(), "/accounts/stats/"], "عضو پشتیبانی")
+        self.check(["/support/", "/support/?type=bug&from=/books/", "/support/mine/", t.get_absolute_url(), "/accounts/stats/", "/accounts/delete/"], "عضو پشتیبانی")
         self.client.login(username="مدیر", password="x12345678")
         self.check(["/panel/", "/panel/reports/", f"/panel/reports/{r.pk}/", "/panel/tickets/", f"/panel/tickets/{t.pk}/", "/panel/exchanges/",
                     "/panel/users/", f"/panel/users/{self.b.pk}/", "/panel/books/", "/panel/posts/", "/panel/announcements/", "/panel/challenges/",

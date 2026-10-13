@@ -36,7 +36,7 @@ def signup(request):
 def profile(request, username):
     from exchanges.models import Exchange
 
-    owner = get_object_or_404(User.objects.select_related("city__province"), username=username)
+    owner = get_object_or_404(User.objects.select_related("city__province"), username=username, deleted_at__isnull=True)
     shelf = owner.books.exclude(status=Book.Status.RESERVED).select_related("city").order_by("-created_at")
     done = Exchange.objects.filter(status=Exchange.Status.COMPLETED)
     return render(request, "accounts/profile.html", {
@@ -64,3 +64,26 @@ def my_stats(request):
     from analytics.services import user_stats
 
     return render(request, "accounts/stats.html", {"s": user_stats(request.user)})
+
+
+@login_required
+@throttle("account_delete", 5, 3600, by="user")
+def delete_account(request):
+    """حذف حساب = ناشناس‌سازی (تأیید با رمز)؛ تاریخچه‌ی مبادله‌ی دیگران دست‌نخورده می‌مونه."""
+    from django.contrib.auth import logout
+
+    from .services import AccountError, anonymize_user
+
+    if request.method == "POST":
+        if not request.user.check_password(request.POST.get("password", "")):
+            messages.error(request, "رمز اشتباهه.")
+        else:
+            try:
+                anonymize_user(request.user)
+            except AccountError as e:
+                messages.error(request, str(e))
+            else:
+                logout(request)
+                messages.success(request, "حساب تو حذف شد. ممنون که با هم‌ورق بودی.")
+                return redirect("home")
+    return render(request, "accounts/delete.html")

@@ -13,9 +13,9 @@ class Exchange(models.Model):
 
     ACTIVE = (Status.REQUESTED, Status.ACCEPTED)
 
-    book = models.ForeignKey("books.Book", on_delete=models.CASCADE, related_name="exchanges", verbose_name="کتاب")
-    requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requested_exchanges", verbose_name="درخواست‌دهنده")
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="owned_exchanges", verbose_name="صاحب کتاب")
+    book = models.ForeignKey("books.Book", on_delete=models.PROTECT, related_name="exchanges", verbose_name="کتاب")
+    requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="requested_exchanges", verbose_name="درخواست‌دهنده")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_exchanges", verbose_name="صاحب کتاب")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.REQUESTED, db_index=True, verbose_name="وضعیت")
     owner_confirmed = models.BooleanField(default=False, verbose_name="تأیید تحویل توسط صاحب")
     requester_confirmed = models.BooleanField(default=False, verbose_name="تأیید تحویل توسط گیرنده")
@@ -62,7 +62,7 @@ class Exchange(models.Model):
 
 class Message(models.Model):
     exchange = models.ForeignKey(Exchange, on_delete=models.CASCADE, related_name="messages", verbose_name="مبادله")
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="فرستنده")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", verbose_name="فرستنده")
     text = models.TextField(max_length=1000, verbose_name="پیام")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
 

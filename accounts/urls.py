@@ -28,6 +28,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("settings/", views.settings_view, name="settings"),
     path("stats/", views.my_stats, name="stats"),
+    path("delete/", views.delete_account, name="delete"),
     path("u/<str:username>/", views.profile, name="profile"),
     # بازیابی رمز با ایمیل (اختیاری)
     path("password-reset/", ThrottledPasswordResetView.as_view(

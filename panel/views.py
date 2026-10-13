@@ -239,27 +239,41 @@ def user_action(request, pk):
 # ---------------------------------------------------------------- کتاب‌ها
 @staff_required
 def books(request):
-    qs = Book.objects.select_related("owner", "city")
+    qs = Book.all_objects.select_related("owner", "city")
     status = request.GET.get("status", "")
-    if status in Book.Status.values:
-        qs = qs.filter(status=status)
+    if status == "deleted":
+        qs = qs.filter(deleted_at__isnull=False)
+    else:
+        qs = qs.filter(deleted_at__isnull=True)
+        if status in Book.Status.values:
+            qs = qs.filter(status=status)
     qs = search_q(qs, request.GET.get("q"), ["title", "author", "isbn", "owner__username"])
     return page(request, "panel/books.html", {"page": _paginate(request, qs.order_by("-created_at")), "status": status, "q": request.GET.get("q", ""),
-                                               "qs": _qs(request), "statuses": Book.Status.choices, "keep_status": {"status": status} if status else {}}, "books")
+                                               "qs": _qs(request), "statuses": [*Book.Status.choices, ("deleted", "حذف‌شده")], "keep_status": {"status": status} if status else {}}, "books")
 
 
 @staff_required
 @require_POST
 def book_delete(request, pk):
-    book = get_object_or_404(Book, pk=pk)
+    book = get_object_or_404(Book.all_objects, pk=pk)
     if book.exchanges.filter(status__in=Exchange.ACTIVE).exists():
         fail(request, "این کتاب مبادله‌ی در جریان داره؛ اول اون رو تموم یا لغو کن.")
     else:
         title, owner = book.title, book.owner
         log(request, "حذف کتاب", f"کتاب «{title}» ({owner.username})", request.POST.get("note", ""))
-        book.delete()
+        book.soft_delete()
         notify(owner, f"کتاب «{title}» از سایت حذف شد." + (f" دلیل: {request.POST['note']}" if request.POST.get("note") else ""), kind="report")
         messages.success(request, "کتاب حذف شد.")
+    return back(request, "panel:books")
+
+
+@staff_required
+@require_POST
+def book_restore(request, pk):
+    book = get_object_or_404(Book.all_objects, pk=pk)
+    book.restore()
+    log(request, "بازگردانی کتاب", f"کتاب «{book.title}»")
+    messages.success(request, "کتاب برگشت.")
     return back(request, "panel:books")
 
 

@@ -122,7 +122,7 @@ def book_delete(request, pk):
     if book.status == Book.Status.RESERVED or book.exchanges.filter(status=Exchange.Status.REQUESTED).exists():
         messages.error(request, "تا درخواست‌های باز بسته نشدن نمی‌شه کتاب رو حذف کرد.")
         return redirect("books:detail", pk)
-    book.delete()
+    book.soft_delete()          # تاریخچه‌ی مبادله، رأی و نقد می‌مونه؛ فقط از سایت پنهان می‌شه
     messages.success(request, "کتاب حذف شد.")
     return redirect("books:mine")
 

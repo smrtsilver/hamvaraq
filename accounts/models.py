@@ -21,11 +21,16 @@ class User(AbstractUser):
     # کنترل سوءاستفاده از امتیاز اولیه؛ هش آی‌پی (نه خود آی‌پی)، accounts/ip.py
     signup_ip_hash = models.CharField(max_length=64, blank=True, db_index=True, editable=False, verbose_name="هش شبکه‌ی ثبت‌نام")
     last_ip_hash = models.CharField(max_length=64, blank=True, editable=False, verbose_name="هش شبکه‌ی آخرین ورود")
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name="زمان حذف حساب")
     welcome_granted = models.BooleanField(default=False, verbose_name="امتیاز خوش‌آمد گرفته")
 
     class Meta:
         verbose_name = "کاربر"
         verbose_name_plural = "کاربرها"
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
 
     @property
     def is_restricted(self):

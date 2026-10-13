@@ -29,7 +29,15 @@ def _url(exchange):
 @transaction.atomic
 def request_book(book_id, requester):
     """امتیاز درخواست‌دهنده همون لحظه نگه داشته می‌شه تا خرجِ چند درخواست نشه."""
-    book = Book.objects.select_for_update().select_related("owner").get(pk=book_id)
+    try:
+        book = Book.all_objects.select_for_update().select_related("owner").get(pk=book_id)
+    except Book.DoesNotExist:
+        raise ExchangeError("این کتاب پیدا نشد.") from None
+    if book.is_deleted:
+        raise ExchangeError("این کتاب دیگه تو سایت نیست.")
+    owner = book.owner
+    if not owner.is_active or owner.status == User.Status.BANNED:
+        raise ExchangeError("صاحب این کتاب الان نمی‌تونه مبادله انجام بده.")
     requester = User.objects.select_for_update().get(pk=requester.pk)
     if book.owner_id == requester.pk:
         raise ExchangeError("کتاب خودت رو نمی‌تونی درخواست بدی.")

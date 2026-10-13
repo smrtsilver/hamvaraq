@@ -19,6 +19,13 @@ class ExchangeAdmin(admin.ModelAdmin):
     search_fields = ("book__title", "owner__username", "requester__username")
     inlines = [MessageInline]
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "book":     # کتاب پنهان/حذف‌شده هم باید قابل انتخاب و نمایش باشه
+            from books.models import Book
+
+            kwargs["queryset"] = Book.all_objects.all()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def get_inline_instances(self, request, obj=None):
         """چت فقط وقتی برای ادمین دیده می‌شه که اختلاف یا گزارشی روی پیام‌های همین مبادله باشه (حریم خصوصی)."""
         from trust.models import Report

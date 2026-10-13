@@ -12,8 +12,8 @@ class Vote(models.Model):
         OTHER = "other", "دلیل دیگر"
 
     exchange = models.ForeignKey("exchanges.Exchange", on_delete=models.CASCADE, related_name="votes", verbose_name="مبادله")
-    voter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_given", verbose_name="رأی‌دهنده")
-    target = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="votes_received", verbose_name="رأی‌گیرنده")
+    voter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="votes_given", verbose_name="رأی‌دهنده")
+    target = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="votes_received", verbose_name="رأی‌گیرنده")
     like = models.BooleanField(verbose_name="لایک")
     reason = models.CharField(max_length=14, choices=Reason.choices, blank=True, verbose_name="دلیل")
     comment = models.CharField(max_length=300, blank=True, verbose_name="توضیح")
