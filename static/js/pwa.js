@@ -44,8 +44,9 @@
     const DISMISS = "hv-install-dismissed-until";
     const snoozed = () => Number(store.get(DISMISS) || 0) > Date.now();
     const snooze = (days) => store.set(DISMISS, String(Date.now() + days * 864e5));
-    const visits = Number(sessionStorage.getItem("hv-pages") || 0) + 1;
-    try { sessionStorage.setItem("hv-pages", String(visits)); } catch (_) { /* بسته */ }
+    // شمارش بازدید پایدار (نه فقط همین نشست)؛ پیشنهاد از بازدید دوم به بعد
+    const visits = Number(store.get("hv-visits") || 0) + 1;
+    store.set("hv-visits", String(visits));
     const ready = () => visits >= 2;   // اولین بازدید مزاحم نمی‌شیم
 
     let deferred = null, shown = null;
@@ -58,10 +59,10 @@
             shown.remove();
             deferred.prompt();
             const choice = await deferred.userChoice;
-            if (choice.outcome !== "accepted") snooze(7);
+            if (choice.outcome !== "accepted") snooze(30);
             deferred = null;
         });
-        shown.querySelector("[data-later]").addEventListener("click", () => { snooze(3); shown.remove(); });
+        shown.querySelector("[data-later]").addEventListener("click", () => { snooze(30); shown.remove(); });
     });
     window.addEventListener("appinstalled", () => { if (shown) shown.remove(); });
 
@@ -70,6 +71,6 @@
     const safari = /safari/i.test(navigator.userAgent) && !/crios|fxios|edgios/i.test(navigator.userAgent);
     if (ios && safari && !snoozed() && ready()) {
         const el = bar('<span><strong>هم‌ورق رو به صفحه‌ی اصلی اضافه کن</strong><br><small>دکمه‌ی اشتراک‌گذاری <span aria-hidden="true">⬆️</span> رو بزن و «افزودن به صفحه‌ی اصلی» رو انتخاب کن.</small></span><span><button type="button" class="btn btn-sm btn-ghost" data-later>باشه</button></span>', "install");
-        el.querySelector("[data-later]").addEventListener("click", () => { snooze(14); el.remove(); });
+        el.querySelector("[data-later]").addEventListener("click", () => { snooze(30); el.remove(); });
     }
 })();
