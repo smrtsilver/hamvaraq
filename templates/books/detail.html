@@ -24,6 +24,14 @@
         </div>
         <h1 style="font-size:var(--fs-3xl);margin-bottom:4px">{{ book.title }}</h1>
         <p class="muted" style="font-size:var(--fs-lg)">{{ book.author }}</p>
+        {% if demand %}<p class="demand-line">{% include "components/icon.html" with name="heart" %} {{ demand|fa }} نفر دنبال این کتاب بوده‌ن</p>{% endif %}
+        {% with ed=book.edition %}{% if ed and ed.is_source_backed %}<dl class="biblio" aria-label="مشخصات چاپ">
+            {% if ed.publisher %}<div><dt>ناشر</dt><dd>{{ ed.publisher }}</dd></div>{% endif %}
+            {% if ed.translators %}<div><dt>مترجم</dt><dd>{{ ed.translators|join:"، " }}</dd></div>{% endif %}
+            {% if ed.year %}<div><dt>سال انتشار</dt><dd>{{ ed.year|fa }}{% if ed.year_calendar == 'jalali' %} (شمسی){% elif ed.year_calendar == 'gregorian' %} (میلادی){% endif %}</dd></div>{% endif %}
+            {% if ed.edition_no %}<div><dt>نوبت چاپ</dt><dd>{{ ed.edition_no }}</dd></div>{% endif %}
+            {% if ed.pages %}<div><dt>صفحه</dt><dd>{{ ed.pages|fa }}</dd></div>{% endif %}
+            {% if ed.isbn13 %}<div><dt>شابک</dt><dd dir="ltr">{{ ed.isbn13 }}</dd></div>{% endif %}</dl>{% endif %}{% endwith %}
 
         <div class="owner-card">
             <a href="{% url 'accounts:profile' book.owner.username %}" aria-label="پروفایل {{ book.owner.username }}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
@@ -44,6 +52,8 @@
 
         <div class="cta-bar">
         {% if is_owner %}
+            {% if quality %}<div class="q-box"><div class="q-line"><span class="meter" role="img" aria-label="کیفیت آگهی {{ quality.score|fa }} درصد"><i data-w="{{ quality.score }}"></i></span><strong>کیفیت آگهی: {{ quality.score|fa }}٪ · {{ quality.label }}</strong></div>
+                {% if quality.tips %}<ul class="q-tips">{% for t in quality.tips|slice:":3" %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
             <p class="small muted" style="width:100%;margin:0 0 8px">{% include "components/icon.html" with name="eye" %} {{ book.view_count|fa }} بازدید یکتا · <a href="{% url 'accounts:stats' %}">آمار من</a></p>
             {% if book.status == 'exchanged' %}<a class="btn" href="{% url 'books:relist' book.pk %}">{% include "components/icon.html" with name="swap" %} دوباره برای مبادله بذار</a>{% endif %}
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>

@@ -23,6 +23,8 @@ from . import catalog
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
+from .quality import WEIGHTS as QUALITY_WEIGHTS
+from .quality import listing_quality
 from .services import add_wish, demand_for, notify_wishlists, similar_books
 
 
@@ -73,6 +75,8 @@ def book_detail(request, pk):
         "journey": book.journey.select_related("from_city", "to_city"),
         "is_owner": user.is_authenticated and book.owner_id == user.pk,
         "my_request": my_request,
+        "demand": demand_for(book.isbn, book.title, book.author, exclude_user=book.owner),
+        "quality": listing_quality(book) if user.is_authenticated and book.owner_id == user.pk else None,
         "pending": book.exchanges.filter(status=Exchange.Status.REQUESTED).select_related("requester")
         if user.is_authenticated and book.owner_id == user.pk else [],
     }
@@ -100,7 +104,7 @@ def book_create(request):
         check_badges(request.user)
         messages.success(request, "کتاب ثبت شد.")
         return redirect("books:detail", book.pk)
-    return render(request, "books/form.html", {"form": form, "title": "ثبت کتاب"})
+    return render(request, "books/form.html", {"form": form, "title": "ثبت کتاب", "quality_weights": QUALITY_WEIGHTS})
 
 
 @login_required
@@ -113,7 +117,7 @@ def book_edit(request, pk):
     if request.method == "POST" and form.is_valid():
         form.save()
         return redirect("books:detail", pk)
-    return render(request, "books/form.html", {"form": form, "title": "ویرایش کتاب"})
+    return render(request, "books/form.html", {"form": form, "title": "ویرایش کتاب", "quality_weights": QUALITY_WEIGHTS, "existing_cover": bool(book.cover)})
 
 
 @login_required
@@ -151,7 +155,10 @@ def book_relist(request, pk):
 
 @login_required
 def my_books(request):
-    return render(request, "books/mine.html", {"books": request.user.books.select_related("city")})
+    books = list(request.user.books.select_related("city", "edition").prefetch_related("photos"))
+    for book in books:
+        book.quality = listing_quality(book)
+    return render(request, "books/mine.html", {"books": books, "show_quality": True})
 
 
 @login_required
@@ -177,7 +184,7 @@ def wishlist_delete(request, pk):
     return redirect("books:wishlist")
 
 
-BULK_ROWS = 8
+BULK_ROWS = 12      # اسکن پیوسته: ده کتاب پشت‌هم تو کمتر از دو دقیقه
 
 
 @login_required

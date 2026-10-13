@@ -58,3 +58,7 @@
     document.addEventListener("input", (e) => { if (e.target.setCustomValidity) e.target.setCustomValidity(""); }, true);
     document.addEventListener("change", (e) => { if (e.target.setCustomValidity) e.target.setCustomValidity(""); }, true);
 })();
+
+
+// نوار کیفیت آگهی: عرض از data-w (بدون style درون‌خطی)
+document.querySelectorAll(".meter i[data-w]").forEach((i) => { i.style.width = i.dataset.w + "%"; });

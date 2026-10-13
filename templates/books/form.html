@@ -2,11 +2,13 @@
 {% block title %}{{ title }} | هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
-<div class="medium">
+{% load static %}
+<div class="form-layout">
     <div class="page-head"><div><h1>{{ title }}</h1><p>اطلاعات دقیق و عکس خوب شانس مبادله رو بیشتر می‌کنه.</p></div></div>
-    <form method="post" enctype="multipart/form-data" class="card" data-location-group data-isbn-scope novalidate>{% csrf_token %}
+    <form method="post" enctype="multipart/form-data" class="card" data-location-group data-isbn-scope data-preview{% if existing_cover %} data-existing-cover="1"{% endif %} novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
-        <div class="form-section" style="border:0;margin:0;padding:0"><h3>۱. کدوم کتاب؟</h3>
+        <div class="form-section" style="border:0;margin:0;padding:0"><div class="cluster" style="justify-content:space-between"><h3>۱. کدوم کتاب؟</h3>
+                <button type="button" class="btn btn-secondary btn-sm" data-scan data-scan-target="{{ form.isbn.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} اسکن بارکد</button></div>
             {% include "components/field.html" with field=form.isbn %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.title %}</div><div>{% include "components/field.html" with field=form.author %}</div></div>
             <div class="form-grid"><div>{% include "components/field.html" with field=form.category %}</div><div>{% include "components/field.html" with field=form.condition %}</div></div>
@@ -21,5 +23,14 @@
         </div>
         <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ذخیره</button><a class="btn btn-ghost" href="javascript:history.back()">انصراف</a></div>
     </form>
+    <aside class="listing-preview" aria-label="پیش‌نمایش کارت کتاب">
+        <p class="lp-title">پیش‌نمایش</p>
+        <div class="lp-card"><div class="lp-cover"><img alt="" hidden><span class="lp-ph">{% include "components/icon.html" with name="book" %}</span></div>
+            <strong data-lp="title">عنوان کتاب</strong><span class="muted" data-lp="author">نویسنده</span>
+            <div class="lp-meta"><span class="chip" data-lp="condition"></span><span class="chip" data-lp="city"></span></div></div>
+        <div class="lp-quality"><span class="meter" aria-hidden="true"><i></i></span><p data-lp="score"></p><ul class="q-tips" data-lp="tips"></ul></div>
+    </aside>
 </div>
+{{ quality_weights|json_script:"hv-quality" }}
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script><script src="{% static 'js/preview.js' %}" defer></script>{% endblock %}

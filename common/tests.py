@@ -359,9 +359,9 @@ class IsbnAndBulkTests(Base):
         self.assertEqual((data["title"], data["publisher"], data["isbn"], data["confidence"]), ("T", "ناشر", "9780140328721", 60))
 
     def _bulk_data(self, rows):
-        data = {"city": self.isfahan.pk, "condition": "used", "form-TOTAL_FORMS": 8, "form-INITIAL_FORMS": 0,
-                "form-MIN_NUM_FORMS": 0, "form-MAX_NUM_FORMS": 8}
-        for i in range(8):
+        data = {"city": self.isfahan.pk, "condition": "used", "form-TOTAL_FORMS": 12, "form-INITIAL_FORMS": 0,
+                "form-MIN_NUM_FORMS": 0, "form-MAX_NUM_FORMS": 12}
+        for i in range(12):
             row = rows[i] if i < len(rows) else {}
             for k in ("isbn", "title", "author", "category"):
                 data[f"form-{i}-{k}"] = row.get(k, "")

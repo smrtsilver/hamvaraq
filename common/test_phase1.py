@@ -260,3 +260,54 @@ class DemandTests(Base):
             services.cancel(ex.pk, self.taker)
             self.assertEqual(demand_for("9780306406157", "بوف کور", "هدایت"), 1)
             self.assertEqual(demand_for("9780306406157", "بوف کور", "هدایت", exclude_user=self.taker), 0)
+
+
+class QualityAndUxTests(Base):
+    def test_quality_score_weights_and_tips(self):
+        from books.quality import WEIGHTS, listing_quality
+        bare = Book.objects.create(owner=self.giver, title="ک", author="ن", city=self.tehran)
+        q = listing_quality(bare)
+        self.assertEqual(q["score"], WEIGHTS["base"])
+        self.assertEqual((q["label"], len(q["tips"])), ("قابل بهبود", 5))
+        edition = catalog.record_user_entry(self.giver, "9780306406157", "ک", "ن")
+        rich = Book.objects.create(owner=self.giver, title="ک", author="ن", city=self.tehran, category=self.cat, description="توضیح کافی درباره‌ی وضعیت کتاب",
+                                   isbn="9780306406157", edition=edition)
+        q2 = listing_quality(rich)
+        self.assertEqual(q2["score"], WEIGHTS["base"] + WEIGHTS["description"] + WEIGHTS["category"] + WEIGHTS["edition_user"])
+        edition.source, edition.confidence = "nlai", 60
+        edition.save()
+        rich.refresh_from_db()
+        self.assertEqual(listing_quality(rich)["score"], q2["score"] - WEIGHTS["edition_user"] + WEIGHTS["edition_backed"])
+        self.assertEqual(sum(WEIGHTS[k] for k in ("base", "cover", "description", "category", "edition_backed", "photos")), 100)
+
+    def test_my_books_detail_and_form_expose_quality_demand_and_scan_ui(self):
+        book = self.book(title="کتاب من")
+        self.client.login(username="giver", password="x12345678")
+        self.assertContains(self.client.get(reverse("books:mine")), "کیفیت آگهی")
+        detail = self.client.get(book.get_absolute_url())
+        self.assertContains(detail, "کیفیت آگهی:")
+        form = self.client.get(reverse("books:create"))
+        for needle in ('data-scan', 'data-preview', 'id="hv-quality"', "پیش‌نمایش", "js/scan.js", "vendor/zxing/zxing-library.min.js"):
+            self.assertContains(form, needle)
+        bulk = self.client.get(reverse("books:bulk"))
+        self.assertContains(bulk, "data-scan-continuous")
+        self.assertEqual(bulk.content.decode().count("data-isbn-scope"), 12)
+
+    def test_demand_line_and_bibliographic_block_on_detail(self):
+        from exchanges import services
+        edition = catalog.record_user_entry(self.giver, "9786007547717", "مدارس", "ک")
+        edition.source, edition.publisher, edition.year, edition.year_calendar = "nlai", "نشر نمونه", 1392, "jalali"
+        edition.translators, edition.pages = ["مترجم"], 120
+        edition.save()
+        book = self.book(title="مدارس", isbn="9786007547717")
+        services.request_book(book.pk, self.taker)
+        self.client.login(username="giver", password="x12345678")
+        page = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertTrue("demand-line" in page and "۱ نفر دنبال" in page)       # صاحب کتاب تقاضا رو می‌بینه (خودش شمرده نمی‌شه)
+        third = User.objects.create_user("t3", password="x12345678", points=1)
+        services.request_book(book.pk, third)
+        self.client.login(username="taker", password="x12345678")
+        page = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertTrue("۲ نفر دنبال" in page)        # taker و third
+        for needle in ("نشر نمونه", "مترجم", "۱۳۹۲", "(شمسی)", "9786007547717"):
+            self.assertTrue(needle in page, needle)

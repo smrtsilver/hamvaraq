@@ -1,11 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}ثبت دسته‌ای کتاب | هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="medium">
     <div class="page-head"><div><h1>ثبت دسته‌ای</h1><p>چند کتاب رو یک‌جا ثبت کن. ردیف‌های خالی نادیده گرفته می‌شن و با شابک، عنوان و نویسنده خودکار پر می‌شه.</p></div></div>
     <form method="post" novalidate data-location-group>{% csrf_token %}
-        <div class="card"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
+        <div class="card scan-card"><div><strong>اسکن پیوسته</strong><p class="muted small" style="margin:2px 0 0">دوربین باز می‌مونه؛ هر بارکدی که نشون بدی یه ردیف پر می‌کنه.</p></div>
+            <button type="button" class="btn" data-scan-continuous hidden>{% include "components/icon.html" with name="camera" %} شروع اسکن</button></div>
+        <div class="card" style="margin-top:16px"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
             <div class="form-grid"><div>{% include "components/field.html" with field=common.province %}</div><div>{% include "components/field.html" with field=common.city %}</div></div>
             {% include "components/field.html" with field=common.condition %}</div>
         {{ rows.management_form }}
@@ -20,3 +23,4 @@
     </form>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script>{% endblock %}
