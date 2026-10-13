@@ -203,7 +203,7 @@ def _marc_record(fields, isbn):
         "edition_no": _clean(_sub(fields, "205", "a")), "volume": _clean(_sub(fields, "200", "h")),
         "pages": _int(_sub(fields, "215", "a")), "language": _clean(_sub(fields, "101", "a")),
         "subjects": [x for x in dict.fromkeys(_clean(v) for f in fields.get("606", []) if isinstance(f, list) for c, v in f if c == "a") if x][:8],
-        "description": _clean(_sub(fields, "330", "a")),
+        "description": _clean(_sub(fields, "330", "a")), "dewey": _clean(_sub(fields, "676", "a")),
     }
     return {k: v for k, v in record.items() if v not in ("", None, [])}
 
@@ -345,7 +345,7 @@ SOURCE_NAMES = ("opac", "ketab", "nlai", "openlibrary", "google")
 PRIMARY_SOURCES = ("opac", "ketab", "nlai")      # رکورد کامل از هر کدوم ← منتظر بقیه نمی‌مونیم
 FIELD_PRIORITY = {"cover_url": ("openlibrary", "google")}     # جلد: Open Library بهتر از گوگل
 MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "year", "year_calendar", "edition_no", "volume",
-                "pages", "language", "subjects", "description", "cover_url")
+                "pages", "language", "subjects", "description", "cover_url", "dewey")
 GRACE_AFTER_COMPLETE = 0.6    # ثانیه
 _POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="isbn")
 _BREAKER_LOCK = threading.Lock()

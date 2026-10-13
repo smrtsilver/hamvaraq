@@ -1,4 +1,7 @@
 /* صفحه‌ی خطای ۵۰۰ (templates/500.html)؛ هم‌طراح با static/errors/*.html که nginx سرو می‌کنه */
+@font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
 :root { color-scheme: light dark; --bg:#FBF7EF; --card:#fff; --ink:#16221D; --muted:#5b6b64; --green:#1F6F54; --amber:#E0A43A; --line:#e8e1d2; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0E1713; --card:#15211c; --ink:#eef3ef; --muted:#9db0a6; --line:#24352d; } }
   * { box-sizing: border-box; }

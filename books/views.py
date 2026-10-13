@@ -279,6 +279,7 @@ def isbn_view(request):
         "translators": edition.translators, "publisher": edition.publisher, "year": edition.year, "year_calendar": edition.year_calendar,
         "edition_no": edition.edition_no, "volume": edition.volume, "pages": edition.pages, "language": edition.language,
         "cover_url": edition.cover_url, "source": edition.source, "confidence": edition.confidence, "verified": edition.verified,
+        "category": _category_json(edition.subjects, (edition.provenance or {}).get("dewey", "")),
         "demand": demand_for(isbn13, edition.title, edition.author_line, exclude_user=user),
         "mine": mine, "available_elsewhere": elsewhere,
     })
@@ -298,9 +299,17 @@ def catalog_search(request):
         "title": r.get("title", ""), "subtitle": r.get("subtitle", ""), "author": "، ".join(r.get("authors", [])),
         "translators": r.get("translators", []), "publisher": r.get("publisher", ""), "year": r.get("year"),
         "year_calendar": r.get("year_calendar", ""), "edition_no": r.get("edition_no", ""), "volume": r.get("volume", ""),
-        "pages": r.get("pages"), "isbn": r.get("isbn", ""),
+        "pages": r.get("pages"), "isbn": r.get("isbn", ""), "category": _category_json(r.get("subjects"), r.get("dewey", "")),
     } for r in records]
     return JsonResponse({"items": items})
+
+
+def _category_json(subjects, dewey):
+    """دسته‌ی پیشنهادی از موضوع‌ها/رده‌ی دیویی (books/categorize.py) برای پر کردن خودکار فرم؛ None اگه مطمئن نبودیم."""
+    from .categorize import guess_category
+
+    cat = guess_category(subjects or [], dewey or "")
+    return {"id": cat.pk, "name": cat.name} if cat else None
 
 
 def _can_review(book, user):

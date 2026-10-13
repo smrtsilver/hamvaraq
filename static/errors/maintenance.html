@@ -9,8 +9,13 @@
 <meta name="theme-color" content="#0E1713" media="(prefers-color-scheme: dark)">
 <title>در حال به‌روزرسانی | هم‌ورق</title>
 <style>
+  /* همون فونت سایت؛ از مسیر استاتیک که nginx حتی وقتی برنامه پایینه سرو می‌کنه */
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+
   /* این صفحه رو خودِ nginx مستقیم سرو می‌کنه (نه جنگو)، برای همون چند ثانیه‌ای که برنامه داره
-     دوباره بالا میاد و 502/503/504 می‌ده. هیچ وابستگی‌ای به استاتیک‌ها و فونت‌های سایت نداره. */
+     دوباره بالا میاد و 502/503/504 می‌ده. فقط فونت سایت رو از /static/ می‌گیره (nginx مستقیم سرو می‌کنه)؛ بدون اون هم با Tahoma درست نشون داده می‌شه. */
   :root { color-scheme: light dark; --bg:#FBF7EF; --card:#fff; --ink:#16221D; --muted:#5b6b64; --green:#1F6F54; --amber:#E0A43A; --line:#e8e1d2; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0E1713; --card:#15211c; --ink:#eef3ef; --muted:#9db0a6; --line:#24352d; } }
   * { box-sizing: border-box; }

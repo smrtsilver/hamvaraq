@@ -150,11 +150,12 @@ def parse_opac(page, isbn13):
     year, calendar = _year_info(pub)
     edition = (rows.get("وضعیت ویراست") or [""])[0]
     subjects = [v.split("\n")[0].split(" -- ")[0] for v in rows.get("موضوع", [])][:6]
+    dewey = (rows.get("رده بندی دیویی") or rows.get("رده‌بندی دیویی") or [""])[0].split("\n")[0]
     return {k: v for k, v in {
         "isbn": isbn13, "title": title, "subtitle": subtitle.strip(" .:"), "authors": authors, "translators": translators,
         "publisher": publisher, "year": year, "year_calendar": calendar,
         "pages": _int((rows.get("مشخصات ظاهری") or [""])[0]), "edition_no": edition, "language": "per",
-        "subjects": [s for s in dict.fromkeys(subjects) if s],
+        "subjects": [s for s in dict.fromkeys(subjects) if s], "dewey": dewey,
     }.items() if v not in ("", None, [])}
 
 
@@ -206,6 +207,9 @@ def parse_ketab(page, isbn13):
         return None
     h1 = re.search(r'(?s)<h1[^>]*card-title[^>]*>(.*?)</h1>', page)
     title = _text(h1.group(1)) if h1 else ""
+    # موضوع زیر عنوان میاد: «داستان‌های کره‌ای - قرن 21م.» ← «داستان‌های کره‌ای»
+    sub = re.search(r'(?s)</h1>\s*<p class="card-text">(.*?)</p>', page)
+    subjects = [s for s in re.split(r"\s+-\s+", _text(sub.group(1)))[:1] if s] if sub else []
     if not title:
         return None
     authors, translators = [], []
@@ -226,7 +230,7 @@ def parse_ketab(page, isbn13):
         "isbn": isbn13, "title": title, "authors": list(dict.fromkeys(authors)), "translators": list(dict.fromkeys(translators)),
         "publisher": _text(rows.get("ناشر", "")), "year": year, "year_calendar": "jalali" if year and year < 1700 else ("gregorian" if year else ""),
         "pages": _int(pages.group(1)) if pages else None, "edition_no": f"چاپ {edition.group(1)}" if edition else "",
-        "language": _text(rows.get("زبان کتاب", "")),
+        "language": _text(rows.get("زبان کتاب", "")), "subjects": subjects, "dewey": _text(rows.get("کد دیویی", "")),
     }.items() if v not in ("", None, [])}
 
 

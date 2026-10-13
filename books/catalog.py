@@ -42,7 +42,8 @@ def upsert_from_sources(isbn13, data):
         setattr(edition, field, value)
     edition.source = "+".join(data["sources"])
     edition.confidence = data["confidence"]
-    edition.provenance = {"fields": data["provenance"], "sources": data["sources"], "fetched_at": timezone.now().timestamp(), "users": users}
+    edition.provenance = {"fields": data["provenance"], "sources": data["sources"], "fetched_at": timezone.now().timestamp(), "users": users,
+                          "dewey": data.get("dewey", "")}
     try:
         with transaction.atomic():
             edition.save()

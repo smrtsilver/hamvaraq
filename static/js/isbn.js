@@ -81,6 +81,14 @@
         el.dispatchEvent(new Event("change", {bubbles: true}));
     }
     document.addEventListener("input", (e) => { if (e.isTrusted && e.target.dataset && e.target.dataset.fromIsbn) delete e.target.dataset.fromIsbn; });
+    // دسته‌ی پیشنهادی سرور (از موضوع/رده‌ی دیویی)؛ فقط اگه کاربر خودش دسته‌ای انتخاب نکرده
+    function fillCategory(scope, cat) {
+        const sel = cat && scope.querySelector("select[name$=category]");
+        if (!sel || (sel.value && !sel.dataset.fromIsbn) || ![...sel.options].some((o) => o.value === String(cat.id))) return;
+        sel.value = String(cat.id);
+        sel.dataset.fromIsbn = "1";
+        sel.dispatchEvent(new Event("change", {bubbles: true}));      // combobox.js ظاهرش رو به‌روز می‌کنه
+    }
 
     // ---- آماده‌سازی هر فیلد شابک ----
     document.querySelectorAll("[data-isbn-url]").forEach((input) => {
@@ -180,6 +188,14 @@
         function pick(it, b) {
             lock(input, false);
             [[title, it.title], [author, it.author]].forEach(([el, v]) => { if (el && v) { delete el.dataset.fromIsbn; el.value = ""; fill(el, v); } });
+            // شابک خالی یا ناقص بود ← شابک همین چاپ؛ شابکِ معتبرِ خود کاربر (چاپ دیگه) دست نمی‌خوره
+            if (it.isbn && !isbn13(input.value)) {
+                input.value = it.isbn;
+                input.dataset.looked = input.value;            // همین الان اطلاعاتش رو داریم؛ دوباره استعلام لازم نیست
+                input.removeAttribute("aria-invalid");
+                input.dispatchEvent(new Event("change", {bubbles: false}));
+            }
+            fillCategory(scope, it.category);
             list.querySelectorAll(".isbn-fb-item").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
             say(it.isbn && isbn && it.isbn !== isbn
                 ? "پر شد ✓ (این رکورد مال چاپ دیگه‌ایه؛ شابک خودت حفظ می‌شه و برای بقیه هم ذخیره می‌شه)."
@@ -246,6 +262,7 @@
             lock(input, false);
             fill(title, d.title);
             fill(author, d.author);
+            fillCategory(scope, d.category);
             const items = [];
             const meta = [d.translators && d.translators.length ? "ترجمه‌ی " + d.translators.join("، ") : "", d.publisher,
                 d.year ? faNum(d.year) + (d.year_calendar === "jalali" ? " شمسی" : "") : "", d.pages ? faNum(d.pages) + " صفحه" : ""].filter(Boolean).join(" · ");

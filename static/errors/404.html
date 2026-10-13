@@ -9,6 +9,11 @@
 <title>پیدا نشد | هم‌ورق</title>
 <!-- فقط برای ۴۰۴ِ /static/ و /media/ که nginx مستقیم سرو می‌کنه؛ صفحه‌های سایت ۴۰۴ِ خود جنگو رو دارن -->
 <style>
+  /* همون فونت سایت؛ از مسیر استاتیک که nginx حتی وقتی برنامه پایینه سرو می‌کنه */
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("/static/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2") format("woff2");font-weight:800;font-display:swap}
+
   /* این صفحه رو خودِ nginx مستقیم سرو می‌کنه (نه جنگو)، برای همون چند ثانیه‌ای که برنامه داره
      دوباره بالا میاد و 502/503/504 می‌ده. هیچ وابستگی‌ای به استاتیک‌ها و فونت‌های سایت نداره. */
   :root { color-scheme: light dark; --bg:#FBF7EF; --card:#fff; --ink:#16221D; --muted:#5b6b64; --green:#1F6F54; --amber:#E0A43A; --line:#e8e1d2; }
