@@ -158,9 +158,13 @@ def parse_opac(page, isbn13):
     }.items() if v not in ("", None, [])}
 
 
+OPAC_VARIANTS = 3      # شکل استاندارد + دو جایگزین (هر کدوم ~۰٫۲ ثانیه)
+KETAB_VARIANTS = 2     # خانه‌ی کتاب کندتره (~۱٫۵ ثانیه برای هر شکل)
+
+
 def opac(isbn13, timeout):
-    """جستجوی دقیق شابک در OPAC؛ شکل استاندارد اول، بعد بقیه‌ی تقسیم‌ها تا تموم شدن بودجه."""
-    variants = hyphen_variants(isbn13)
+    """جستجوی دقیق شابک در OPAC؛ شکل استاندارد اول، بعد چند تقسیم دیگه تا تموم شدن بودجه."""
+    variants = hyphen_variants(isbn13)[:OPAC_VARIANTS]
     if not variants:
         return None
     end, left = _deadline(timeout)
@@ -228,7 +232,7 @@ def parse_ketab(page, isbn13):
 
 def ketab(isbn13, timeout):
     """جستجوی پیشرفته‌ی خانه‌ی کتاب با فیلد شابک (توکن ضد جعل + کوکی همان نشست) ← صفحه‌ی کتاب."""
-    variants = hyphen_variants(isbn13)
+    variants = hyphen_variants(isbn13)[:KETAB_VARIANTS]
     if not variants:
         return None
     end, left = _deadline(timeout)

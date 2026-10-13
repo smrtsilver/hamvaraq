@@ -135,3 +135,41 @@ class PipelineOrderTests(TestCase):
         google = mock.Mock(return_value=None)
         self._run(opac=mock.Mock(return_value=OPAC_REC), google=google)
         google.assert_not_called()
+
+
+@override_settings(ISBN_SOURCES=["opac", "ketab", "nlai", "openlibrary"], ISBN_BUDGET=5.0)
+class DecisiveNotFoundTests(TestCase):
+    """شابک ایرانی که opac و ketab بی‌خطا «نیست» گفتن: منتظر منبع کند نمی‌مونیم و «پیدا نشد» کش می‌شه."""
+
+    def setUp(self):
+        cache.clear()
+
+    def _slow(self, value=None, delay=2.0):
+        import time
+
+        def f(isbn, timeout):
+            time.sleep(delay)
+            return value
+        return f
+
+    def test_iranian_not_found_returns_fast_and_is_cached(self):
+        import time
+
+        with mock.patch.object(isbn_lib, "_opac", return_value=None), mock.patch.object(isbn_lib, "_ketab", return_value=None), \
+             mock.patch.object(isbn_lib, "_nlai", self._slow()), mock.patch.object(isbn_lib, "_open_library", self._slow()):
+            t = time.monotonic()
+            self.assertIsNone(isbn_lib.lookup_full("978-600-278-310-3"))
+            self.assertLess(time.monotonic() - t, 1.5)
+        self.assertEqual(cache.get("isbn2:9786002783103"), {})
+
+    def test_waits_for_slow_source_if_opac_errored(self):
+        late = {"isbn": "9786002783103", "title": "عنوان", "authors": ["نویسنده"], "publisher": "ناشر", "year": 1400}
+        with mock.patch.object(isbn_lib, "_opac", side_effect=OSError("down")), mock.patch.object(isbn_lib, "_ketab", return_value=None), \
+             mock.patch.object(isbn_lib, "_nlai", self._slow(late, 0.5)), mock.patch.object(isbn_lib, "_open_library", return_value=None):
+            self.assertEqual(isbn_lib.lookup_full("9786002783103")["title"], "عنوان")
+
+    def test_foreign_isbn_still_waits_for_open_library(self):
+        rec = {"isbn": "9780141036144", "title": "Nineteen eighty-four", "authors": ["George Orwell"]}
+        with mock.patch.object(isbn_lib, "_opac", return_value=None), mock.patch.object(isbn_lib, "_ketab", return_value=None), \
+             mock.patch.object(isbn_lib, "_nlai", return_value=None), mock.patch.object(isbn_lib, "_open_library", self._slow(rec, 0.5)):
+            self.assertEqual(isbn_lib.lookup_full("9780141036144")["title"], "Nineteen eighty-four")

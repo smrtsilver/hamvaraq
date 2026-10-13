@@ -442,6 +442,11 @@ def lookup_full(raw, timeout=None):
     active = active_sources()
     pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in active if not breaker_open(name)}
     results, failed = {}, len(pending) < len(active)
+    from .iran_isbn import hyphen_variants
+
+    # کتاب ایرانی: فهرستگان (opac) همه‌ی رکوردهای کتابخانه‌ی ملی جدید رو هم داره؛ اگه opac و ketab بی‌خطا گفتن «نیست»، nlai کند لازم نیست
+    decisive = [n for n in ("opac", "ketab") if n in pending] if hyphen_variants(isbn) else []
+    errored, skipped = set(), set()
     while pending:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -456,11 +461,17 @@ def lookup_full(raw, timeout=None):
                 except Exception:        # خطای شبکه، تجزیه، هر چیزی؛ منبع خراب نباید سایت رو بزنه
                     results[name] = None
                     failed = True
+                    errored.add(name)
                     breaker_record(name, False)
         if any(_complete(results.get(n)) for n in PRIMARY_SOURCES):
             # رکورد کامل از یه منبع ایرانی دارید؛ برای جلد و تأیید دوم فقط یه مهلت کوتاه به بقیه می‌دیم نه کل بودجه
             deadline = min(deadline, time.monotonic() + GRACE_AFTER_COMPLETE)
+        if decisive and pending and all(n in results and n not in errored for n in decisive) and not any(results.values()):
+            skipped = set(pending)           # جواب قطعی «نیست» از منبع‌های ایرانی؛ بقیه کنار می‌رن، شکست حساب نمی‌شن
+            break
     for name in pending:                 # بودجه تموم شد: منابع معطل شکست حساب می‌شن (thread‌شون خودش با timeout تموم می‌شه)
+        if name in skipped:
+            continue
         failed = True
         breaker_record(name, False)
     merged = merge_records(results)
