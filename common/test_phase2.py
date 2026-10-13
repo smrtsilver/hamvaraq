@@ -116,7 +116,7 @@ class CancelInfoTests(Base):
         services.accept(ex.pk, self.giver)
         self.client.login(username="taker", password="x12345678")
         page = self.client.get(reverse("exchanges:detail", args=[ex.pk])).content.decode()
-        self.assertTrue("cancel-form" in page and "دلیل لغو" in page)
+        self.assertTrue("ex-cancel" in page and "چرا لغو می‌کنی؟" in page)
         r = self.client.post(reverse("exchanges:cancel", args=[ex.pk]), {"reason": "نتونستیم هماهنگ کنیم"})
         self.assertEqual(r.status_code, 302)
         ex.refresh_from_db()
@@ -197,7 +197,7 @@ class PostalDeliveryTests(Base):
         from notifications.models import Notification
         self.client.login(username="giver", password="x12345678")
         page = self.client.get(reverse("exchanges:detail", args=[self.ex.pk])).content.decode()
-        self.assertTrue("postal-form" in page and "ارسال با پست" in page)
+        self.assertTrue("tracking_code" in page and "با پست می‌فرستی؟" in page)
         r = self.client.post(reverse("exchanges:postal", args=[self.ex.pk]), {"tracking_code": "۱۲۳۴-۵۶۷۸ ۹۰۱۲"})
         self.assertEqual(r.status_code, 302)
         self.ex.refresh_from_db()

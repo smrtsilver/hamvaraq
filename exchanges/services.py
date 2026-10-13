@@ -134,8 +134,8 @@ def set_postal(exchange_id, user, tracking_code):
     ex = _get_locked(exchange_id)
     if ex.owner_id != user.pk:
         raise ExchangeError("فقط صاحب کتاب می‌تونه ارسال پستی ثبت کنه.")
-    if ex.status != Exchange.Status.ACCEPTED or ex.disputed_at:
-        raise ExchangeError("ارسال فقط برای مبادله‌ی تأییدشده‌ی بدون اختلاف ثبت می‌شه.")
+    if ex.status != Exchange.Status.ACCEPTED:
+        raise ExchangeError("ارسال فقط برای مبادله‌ی تأییدشده ثبت می‌شه.")
     code = re.sub(r"[\s-]", "", normalize(tracking_code)).upper()
     if not re.fullmatch(r"[A-Z0-9]{8,30}", code):
         raise ExchangeError("کد رهگیری باید ۸ تا ۳۰ حرف و عدد (انگلیسی یا فارسی) باشه.")

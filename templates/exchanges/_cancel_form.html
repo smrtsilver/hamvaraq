@@ -1,4 +1,10 @@
-<form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="cancel-form" data-confirm="مبادله لغو بشه؟" data-confirm-label="لغو مبادله" data-cancel-label="بازگشت">{% csrf_token %}
-    <label class="visually-hidden" for="cr-{{ ex.pk }}">دلیل لغو</label>
-    <select id="cr-{{ ex.pk }}" name="reason"><option value="">دلیل لغو (اختیاری)</option><option>دیگه کتاب رو ندارم</option><option>نیازم نیست</option><option>طرف مقابل جواب نمی‌ده</option><option>نتونستیم هماهنگ کنیم</option><option>سایر</option></select>
-    <button class="btn btn-ghost link-danger">{{ label }}</button></form>
+<details class="ex-opt ex-cancel"><summary>{% include "components/icon.html" with name="x" %} {{ label }}</summary>
+<form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="ex-opt-body">{% csrf_token %}
+    <fieldset class="chip-pick"><legend class="small">چرا لغو می‌کنی؟</legend>
+    <label class="chip-opt"><input type="radio" name="reason" value="دیگه کتاب رو ندارم" required><span>دیگه کتاب رو ندارم</span></label>
+    <label class="chip-opt"><input type="radio" name="reason" value="نیازم نیست" required><span>نیازم نیست</span></label>
+    <label class="chip-opt"><input type="radio" name="reason" value="طرف مقابل جواب نمی‌ده" required><span>طرف مقابل جواب نمی‌ده</span></label>
+    <label class="chip-opt"><input type="radio" name="reason" value="نتونستیم هماهنگ کنیم" required><span>نتونستیم هماهنگ کنیم</span></label>
+    <label class="chip-opt"><input type="radio" name="reason" value="سایر" required><span>سایر</span></label>
+    </fieldset>
+    <button class="btn btn-danger btn-sm">{{ label }}</button></form></details>

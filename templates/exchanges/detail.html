@@ -32,43 +32,28 @@
 
     <section class="card">
     {% if ex.status == 'requested' %}
-        {% if is_owner %}<h3>درخواست جدید</h3><p>{{ ex.requester.public_name }} این کتاب رو می‌خواد. تأیید کنی، کتاب برای بقیه رزرو می‌شه.</p>
+        {% if is_owner %}<h3>درخواست جدید</h3><p>{{ ex.requester.public_name }} این کتاب رو می‌خواد. اگه تأیید کنی، کتاب مال ایشون می‌شه و بقیه‌ی درخواست‌ها خودکار رد می‌شن.</p>
             <div class="cta-bar m-0"><form method="post" action="{% url 'exchanges:accept' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">{% include "components/icon.html" with name="check" %} تأیید</button></form>
             <form method="post" action="{% url 'exchanges:reject' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-secondary">رد کردن</button></form></div>
         {% else %}<h3>منتظر تأیید صاحب کتاب</h3><p class="muted">۱ امتیازت نگه داشته شده؛ اگه رد بشه یا منقضی بشه برمی‌گرده.</p>
-            {% include "exchanges/_cancel_form.html" with label="لغو درخواست" %}{% endif %}
+            <div class="ex-opts">{% include "exchanges/_cancel_form.html" with label="لغو درخواست" %}</div>{% endif %}
     {% elif ex.status == 'accepted' %}
         <h3>هماهنگ کن و تحویل بده</h3>
-        <p>تو چت زمان و مکان یا روش ارسال رو مشخص کنید و بعد از تحویل هر دو نفر تأیید کنید.</p>
-        <p class="small muted">{% include "components/icon.html" with name="shield" %} تحویل حضوری رو تو مکان عمومی و شلوغ انجام بدید و اطلاعات شخصی تو چت ننویسید. <a href="{% url 'how_it_works' %}#safety" target="_blank">نکته‌های امن</a></p>
-        {% if ex.delivery == 'postal' %}<div class="callout good">{% include "components/icon.html" with name="gift" %}<div><strong>ارسال پستی</strong><p class="m-t6">کد رهگیری: <span dir="ltr" class="bidi-plain"><strong>{{ ex.tracking_code }}</strong></span>{% if ex.shipped_at %} · {{ ex.shipped_at|jdate }}{% endif %}</p></div></div>{% endif %}
-        {% if is_owner %}<form method="post" action="{% url 'exchanges:postal' ex.pk %}" class="postal-form">{% csrf_token %}
-            <label for="pc-{{ ex.pk }}" class="small">{% if ex.delivery == 'postal' %}ویرایش کد رهگیری{% else %}ارسال با پست؟ کد رهگیری رو ثبت کن{% endif %}</label>
-            <div class="cluster"><input id="pc-{{ ex.pk }}" name="tracking_code" dir="ltr" maxlength="40" autocomplete="off" placeholder="کد رهگیری ۸ تا ۳۰ رقمی" value="{{ ex.tracking_code }}"><button class="btn btn-secondary btn-sm">ثبت ارسال</button></div></form>{% endif %}
+        <p class="small muted">زمان و جای تحویل رو تو چت مشخص کنید؛ جای عمومی و شلوغ بهتره. <a href="{% url 'how_it_works' %}#safety" target="_blank">نکته‌های امن</a></p>
+        {% if ex.delivery == 'postal' %}<div class="callout good">{% include "components/icon.html" with name="gift" %}<div><strong>با پست ارسال شد</strong><p class="m-t6">کد رهگیری: <span dir="ltr" class="bidi-plain"><strong>{{ ex.tracking_code }}</strong></span>{% if ex.shipped_at %} · {{ ex.shipped_at|jdate }}{% endif %}</p></div></div>{% endif %}
         {% if is_owner and ex.owner_confirmed or not is_owner and ex.requester_confirmed %}<div class="alert alert-success"><p>تأییدت ثبت شده؛ منتظر تأیید {{ other.public_name }} هستیم.</p></div>
-        {% else %}<form method="post" action="{% url 'exchanges:confirm' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-lg">{% include "components/icon.html" with name="check" %} تحویل انجام شد</button></form>{% endif %}
+        {% else %}<form method="post" action="{% url 'exchanges:confirm' ex.pk %}">{% csrf_token %}<button class="btn btn-lg btn-block">{% include "components/icon.html" with name="check" %} تحویل انجام شد</button></form>{% endif %}
+        <div class="ex-opts">
+        {% if is_owner %}<details class="ex-opt"{% if ex.delivery != 'postal' and request.GET.postal %} open{% endif %}><summary>{% include "components/icon.html" with name="gift" %} {% if ex.delivery == 'postal' %}ویرایش کد رهگیری{% else %}با پست می‌فرستی؟{% endif %}</summary>
+            <form method="post" action="{% url 'exchanges:postal' ex.pk %}" class="ex-opt-body">{% csrf_token %}
+                <label for="pc-{{ ex.pk }}" class="small">کد رهگیری مرسوله</label>
+                <div class="inline-form"><input id="pc-{{ ex.pk }}" name="tracking_code" dir="ltr" inputmode="text" maxlength="40" autocomplete="off" placeholder="مثلاً ۲۴ رقم روی رسید" value="{{ ex.tracking_code }}"><button class="btn btn-sm">ثبت</button></div></form></details>{% endif %}
         {% include "exchanges/_cancel_form.html" with label="لغو مبادله" %}
+        </div>
     {% elif ex.status == 'completed' %}<h3>{% include "components/icon.html" with name="sparkle" %} مبادله کامل شد</h3><p class="muted">کتاب {% if is_owner %}به {{ other.public_name }} رسید و ۱ امتیاز گرفتی{% else %}مال توئه؛ بخونش و دوباره بسپارش{% endif %}.</p>
         {% if not is_owner %}<a class="btn" href="{% url 'books:relist' ex.book.pk %}">دوباره برای مبادله بذار</a>{% endif %}
     {% else %}<h3>این مبادله {{ ex.get_status_display }}</h3><p class="muted">امتیاز نگه‌داشته‌شده به گیرنده برگشته.</p>{% endif %}
     </section>
-
-    {% if ex.status == 'accepted' %}
-    {% if ex.disputed_at %}<div class="alert alert-warning"><p>برای این مبادله اختلاف ثبت شده و مدیریت در حال بررسیه. تا نتیجه، امتیاز نگه داشته می‌شه.</p></div>
-    {% elif dispute_form %}<details class="faq"><summary>مشکلی تو تحویل هست؟</summary>
-        <form method="post" action="{% url 'exchanges:dispute' ex.pk %}" novalidate class="pad-faq">{% csrf_token %}{% include "components/form.html" with form=dispute_form %}<button class="btn btn-sm btn-secondary">ثبت اختلاف</button>
-        <p class="hint">اول تو چت هماهنگ کن. اگه حل نشد، مدیریت بین شما تصمیم می‌گیره.</p></form></details>{% endif %}
-    <section class="card"><h3>{% include "components/icon.html" with name="pin" %} نقطه‌ی تحویل</h3>
-        {% if ex.meeting_point %}<p><strong>{{ ex.meeting_point.name }}</strong> <span class="muted">({{ ex.meeting_point.get_kind_display }}، {{ ex.meeting_point.city.name }})</span>{% if ex.meeting_point.address %}<br><span class="small muted">{{ ex.meeting_point.address }}</span>{% endif %}</p>
-            {% if ex.meeting_agreed %}<p><span class="pill pill-green">هر دو تأیید کردین</span></p>
-            {% elif ex.meeting_proposed_by_id == user.pk %}<p class="muted small">منتظر تأیید {{ other.public_name }}…</p>
-            {% else %}<form method="post" action="{% url 'exchanges:meeting_agree' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-sm">تأیید این نقطه</button></form>{% endif %}{% endif %}
-        {% if meeting_options %}<form method="post" action="{% url 'exchanges:meeting' ex.pk %}" class="inline-form mt-12">{% csrf_token %}
-            <select name="point" required aria-label="نقطه‌ی تحویل">{% for p in meeting_options %}<option value="{{ p.pk }}">{{ p.get_kind_display }} {{ p.name }} — {{ p.city.name }}</option>{% endfor %}</select>
-            <button class="btn btn-sm btn-secondary">{% if ex.meeting_point %}پیشنهاد نقطه‌ی دیگه{% else %}پیشنهاد نقطه{% endif %}</button></form>
-        {% elif not ex.meeting_point %}<p class="muted small">برای شهر شما نقطه‌ای تعریف نشده؛ تو چت هماهنگ کنید. نقطه‌ی عمومی و شلوغ بهتره.</p>{% endif %}
-    </section>
-    {% endif %}
 
     {% if ex.status == 'completed' %}
     <section class="card"><h3>رأی به {{ other.public_name }}</h3>
