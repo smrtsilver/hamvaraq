@@ -13,9 +13,9 @@
   var io = new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
   }, { rootMargin: "0px 0px -8% 0px" });
-  document.querySelectorAll("main .section-sm, main .steps .step, main .feature, main .event-list .event-card, main .post-grid .post-card").forEach(function (el) {
+  document.querySelectorAll("main .section-sm, main .lp-steps .lp-step, main .feature, main .event-list .event-card, main .post-grid .post-card").forEach(function (el) {
     if (el.getBoundingClientRect().top < vh) return;       // بالای صفحه بدون تأخیر دیده بشه
-    el.classList.add("reveal"); if (el.classList.contains("step")) el.style.setProperty("--i", Array.prototype.indexOf.call(el.parentNode.children, el)); io.observe(el);
+    el.classList.add("reveal"); if (el.classList.contains("lp-step")) el.style.setProperty("--i", Array.prototype.indexOf.call(el.parentNode.children, el)); io.observe(el);
   });
 })();
 

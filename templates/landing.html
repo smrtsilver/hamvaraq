@@ -28,8 +28,8 @@
 
 <section class="lp-section"><div class="container">
     <div class="lp-title"><h2>چطور کار می‌کنه؟</h2><p>سه قدم ساده از قفسه‌ی تو تا قفسه‌ی یه نفر دیگه.</p></div>
-    <ol class="steps">{% for icon, title, text in steps %}
-        <li class="step"><span class="step-n" aria-hidden="true">{{ forloop.counter|fa }}</span><div class="step-card"><div class="step-ico">{% include "components/icon.html" with name=icon %}</div><div><h3>{{ title }}</h3><p>{{ text }}</p></div></div></li>{% endfor %}
+    <ol class="lp-steps">{% for icon, title, text in steps %}
+        <li class="lp-step"><span class="lp-step-n" aria-hidden="true">{{ forloop.counter|fa }}</span><div class="lp-step-card"><div class="lp-step-ico">{% include "components/icon.html" with name=icon %}</div><div><h3>{{ title }}</h3><p>{{ text }}</p></div></div></li>{% endfor %}
     </ol>
     <div class="eq" aria-label="قاعده‌ی امتیاز"><span class="term">۱ کتاب دادی</span><span class="op">=</span><span class="term hl">{% include "components/icon.html" with name="star" %} ۱ امتیاز</span><span class="op">=</span><span class="term">۱ کتاب گرفتی</span></div>
 </div></section>

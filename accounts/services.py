@@ -29,6 +29,8 @@ def anonymize_user(user):
     user.posts.exclude(status="draft").update(status="draft")
     Wishlist.objects.filter(user=user).delete()
     # کتابخونه‌ی شخصی، دنبال‌کردن‌ها، هدف‌ها: داده‌ی شخصیه و با حذف حساب پاک می‌شه
+    user.highlights.all().delete()
+    user.reading_days.all().delete()
     user.shelf.all().delete()
     user.reading_goals.all().delete()
     user.following_set.all().delete()

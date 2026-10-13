@@ -96,3 +96,6 @@ document.addEventListener("click", (e) => {
     if (close) close.closest("dialog").close();
     else if (e.target.matches("dialog.sheet")) e.target.close();
 });
+
+// دکمه‌ی چاپ (نسخه‌ی چاپی قفسه)
+document.addEventListener("click", (e) => { if (e.target.closest("[data-print]")) window.print(); });

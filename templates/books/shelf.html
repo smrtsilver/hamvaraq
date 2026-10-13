@@ -4,10 +4,14 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>قفسه‌ی من</h1><p>کتابخونه‌ی شخصیت؛ فقط کتاب‌هایی که خودت بخوای برای معاوضه می‌رن.</p></div>
-    <div class="cluster"><a class="btn btn-secondary" href="{% url 'books:shelf_stats' %}">{% include "components/icon.html" with name="chart" %} آمار</a><a class="btn" href="{% url 'books:shelf_add' %}" data-open-dialog="shelf-add-dlg">{% include "components/icon.html" with name="plus" %} افزودن کتاب</a></div></div>
+    <div class="cluster"><a class="btn btn-secondary" href="{% url 'books:shelf_stats' %}">{% include "components/icon.html" with name="chart" %} آمار</a><a class="btn btn-secondary" href="{% url 'books:highlights' %}">{% include "components/icon.html" with name="pen" %} نقل‌قول‌ها</a><a class="btn" href="{% url 'books:shelf_add' %}" data-open-dialog="shelf-add-dlg">{% include "components/icon.html" with name="plus" %} افزودن کتاب</a></div></div>
 {% if goal %}<a class="goal-card" href="{% url 'books:shelf_stats' %}"><div class="goal-ring" role="img" aria-label="{{ goal.done|fa }} از {{ goal.target|fa }} کتاب" data-pct="{{ goal.percent }}"><span>{{ goal.done|fa }}<small>از {{ goal.target|fa }}</small></span></div>
     <div><strong>هدف {{ goal.year|fa }}</strong><span class="small muted">{% if goal.done >= goal.target %}به هدفت رسیدی؛ دمت گرم!{% elif goal.ahead > 0 %}{{ goal.ahead|fa }} کتاب جلوتر از برنامه‌ای{% elif goal.ahead < 0 %}برای رسیدن به هدف کمی عقبی؛ یه کتاب کوتاه شروع کن{% else %}دقیقاً طبق برنامه‌ای{% endif %}</span></div>{% include "components/icon.html" with name="chevron-left" %}</a>
 {% else %}<a class="goal-card goal-empty" href="{% url 'books:shelf_stats' %}">{% include "components/icon.html" with name="star" %}<div><strong>هدف خواندن {{ jyear|fa }}</strong><span class="small muted">بگو امسال چند کتاب می‌خوای بخونی</span></div>{% include "components/icon.html" with name="chevron-left" %}</a>{% endif %}
+<section class="streak-card" aria-labelledby="streak-h"><div class="streak-num"><span class="flame" aria-hidden="true">🔥</span><b>{{ streak.current|fa }}</b><small>روز پشت‌سرهم</small></div>
+    <div class="grow"><h2 id="streak-h" class="visually-hidden">سری خواندن</h2><div class="streak-dots" aria-label="۱۴ روز اخیر">{% for d, on in streak.grid %}<i class="{% if on %}on{% endif %}" title="{{ d|jdate }}"></i>{% endfor %}</div>
+        <span class="small muted">بهترین سری: {{ streak.best|fa }} روز</span></div>
+    {% if streak.today %}<span class="pill pill-green">امروز خوندی ✓</span>{% else %}<form method="post" action="{% url 'books:mark_today' %}">{% csrf_token %}{% if reading_now %}<input type="hidden" name="entry" value="{{ reading_now.0.pk }}">{% endif %}<button class="btn btn-sm">امروز خوندم</button></form>{% endif %}</section>
 <nav class="shelf-tabs" aria-label="فیلتر قفسه">{% for v, label, n in tabs %}<a href="?{% if v %}s={{ v }}{% endif %}"{% if tab == v %} aria-current="page"{% endif %}>{{ label }} <b>{{ n|fa }}</b></a>{% endfor %}<a href="?s=swap"{% if tab == 'swap' %} aria-current="page"{% endif %}>برای معاوضه</a></nav>
 {% if entries %}<ul class="shelf-list">{% for e in entries %}
     <li><a class="shelf-row" href="{% url 'books:shelf_edit' e.pk %}">
@@ -17,6 +21,7 @@
             {% if e.matches %}<span class="match-line">{% include "components/icon.html" with name="swap" %} {{ e.matches|length|fa }} آگهی موجود — {{ e.matches.0.city.name }}</span>{% endif %}</span>
         {% include "components/icon.html" with name="chevron-left" %}</a></li>{% endfor %}</ul>
 {% else %}{% url 'books:shelf_add' as add_url %}{% include "components/empty.html" with ill="books" title="هنوز کتابی اینجا نیست" text="کتاب‌هایی که داری یا خوندی رو اضافه کن تا قفسه‌ات جون بگیره." cta_url=add_url cta_label="افزودن اولین کتاب" %}{% endif %}
+<p class="shelf-export small muted">خروجی قفسه: <a href="{% url 'books:shelf_export' %}">فایل CSV (اکسل)</a> · <a href="{% url 'books:shelf_export' %}?print=1">نسخه‌ی چاپی / PDF</a></p>
 {% if recs %}<section class="section-sm" aria-labelledby="recs-h"><div class="section-head"><div><h2 id="recs-h">پیشنهاد برای تو</h2><p>از روی قفسه‌ات؛ همه برای معاوضه موجودن</p></div></div>
     <div class="hv-shelf-track" tabindex="0" aria-label="پیشنهادها">{% for b in recs %}<div class="hv-shelf-item">{% include "components/book_card.html" %}<p class="why">{{ b.why }}</p></div>{% endfor %}</div></section>{% endif %}
 <dialog class="hv-modal sheet" id="shelf-add-dlg" aria-labelledby="shelf-add-h"><div class="sheet-in"><div class="sheet-head"><h2 id="shelf-add-h">افزودن به قفسه</h2><button type="button" class="icon-btn" data-close-dialog aria-label="بستن">{% include "components/icon.html" with name="x" %}</button></div>

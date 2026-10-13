@@ -53,6 +53,7 @@ def profile(request, username):
         "followers": owner.follower_set.count(), "following": owner.following_set.count(),
         "is_following": request.user.is_authenticated and owner.follower_set.filter(follower=request.user).exists(),
         "goal": _public_goal(owner),
+        "highlights": owner.highlights.filter(is_public=True)[:6],
     })
 
 

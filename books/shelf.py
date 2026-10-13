@@ -30,7 +30,9 @@ def my_shelf(request):
         e.matches = matches.get(e.pk, [])
     return render(request, "books/shelf.html", {"entries": entries, "tabs": tabs, "tab": tab, "add_form": ShelfAddForm(),
                                                 "goal": reading.goal_progress(request.user), "jyear": reading.current_jyear(),
-                                                "recs": reading.recommendations(request.user, 8) if not tab else []})
+                                                "recs": reading.recommendations(request.user, 8) if not tab else [],
+                                                "streak": reading.streak(request.user, 14),
+                                                "reading_now": [e for e in entries if e.reading_status == ShelfEntry.Reading.READING][:5]})
 
 
 @login_required
@@ -54,7 +56,8 @@ def shelf_stats(request):
         return redirect("books:shelf_stats")
     years = sorted({this, *[y for y in ReadingGoal.objects.filter(user=request.user).values_list("year", flat=True)]}, reverse=True)
     return render(request, "books/shelf_stats.html", {"year": year, "this_year": this, "years": years,
-                                                      "goal": reading.goal_progress(request.user, year), "stats": reading.reading_stats(request.user, year)})
+                                                      "goal": reading.goal_progress(request.user, year), "stats": reading.reading_stats(request.user, year),
+                                                      "streak": reading.streak(request.user, 35)})
 
 
 @login_required
@@ -96,3 +99,73 @@ def shelf_delete(request, pk):
     entry.delete()
     messages.success(request, "از قفسه برداشته شد.")
     return redirect("books:shelf")
+
+
+@login_required
+@require_POST
+def mark_today(request):
+    from django.utils import timezone
+
+    from .models import ReadingDay
+
+    entry = request.user.shelf.filter(pk=request.POST.get("entry") or 0).first()
+    ReadingDay.objects.get_or_create(user=request.user, day=timezone.localdate(), defaults={"entry": entry})
+    messages.success(request, "ثبت شد؛ سری خوندنت ادامه داره.")
+    return redirect("books:shelf_stats" if request.POST.get("next") == "stats" else "books:shelf")
+
+
+@login_required
+def highlights(request):
+    from .forms import HighlightForm
+    from .models import Highlight
+
+    form = HighlightForm(request.POST or None, user=request.user,
+                         initial={k: request.GET[k][:600] for k in ("text", "title", "author") if request.GET.get(k)} or None)
+    if request.method == "POST" and form.is_valid():
+        if Highlight.objects.filter(user=request.user).count() >= 3000:
+            messages.error(request, "تعداد نقل‌قول‌هات به سقف رسیده.")
+        else:
+            h = form.save(commit=False)
+            h.user = request.user
+            if h.entry and not h.title:
+                h.title, h.author = h.entry.title, h.entry.author
+            h.save()
+            messages.success(request, "نقل‌قول ذخیره شد.")
+        return redirect("books:highlights")
+    items = list(Highlight.objects.filter(user=request.user).select_related("entry")[:500])
+    groups = {}
+    for h in items:
+        groups.setdefault((h.title, h.author), []).append(h)
+    return render(request, "books/highlights.html", {"form": form, "groups": list(groups.items()), "count": len(items)})
+
+
+@login_required
+@require_POST
+def highlight_delete(request, pk):
+    from .models import Highlight
+
+    get_object_or_404(Highlight, pk=pk, user=request.user).delete()
+    return redirect("books:highlights")
+
+
+@login_required
+def shelf_export(request):
+    """خروجی CSV قفسه (با BOM تا اکسل فارسی رو درست نشون بده) یا نسخه‌ی چاپی (?print=1) برای ذخیره به PDF."""
+    import csv
+
+    from django.http import HttpResponse
+
+    from common.jalali import jdate
+
+    entries = request.user.shelf.select_related("book").order_by("title")
+    if request.GET.get("print"):
+        return render(request, "books/shelf_print.html", {"entries": entries, "count": entries.count()})
+    resp = HttpResponse(content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = 'attachment; filename="hamvaraq-shelf.csv"'
+    resp.write("﻿")
+    w = csv.writer(resp)
+    w.writerow(["عنوان", "نویسنده", "شابک", "وضعیت خواندن", "تاریخ تموم کردن", "ستاره", "نقد", "یادداشت", "برای معاوضه", "تاریخ افزودن"])
+    for e in entries:
+        w.writerow([e.title, e.author, e.isbn, e.get_reading_status_display(), jdate(e.finished_at) if e.finished_at else "",
+                    e.rating or "", e.review, e.note, "بله" if e.for_exchange else "خیر", jdate(e.created_at)])
+    return resp

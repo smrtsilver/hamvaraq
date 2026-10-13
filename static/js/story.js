@@ -125,9 +125,9 @@
   function schedule() { if (queued) return; queued = true; requestAnimationFrame(function () { queued = false; draw(); count(); }); }
   function count() { var n = form.elements.text.value.length; root.querySelector("[data-story-count]").textContent = HV.formatFaNumber(n); syncPublish(); }
   function syncPublish() {
-    var a = root.querySelector("[data-story-publish]"); if (!a) return;
-    var o = opts(), q = new URLSearchParams({ quote: o.text, book_title: o.title, book_author: o.author });
-    a.href = a.href.split("?")[0] + "?" + q.toString();
+    var o = opts(), a = root.querySelector("[data-story-publish]"), sv = root.querySelector("[data-story-save]");
+    if (a) a.href = a.href.split("?")[0] + "?" + new URLSearchParams({ quote: o.text, book_title: o.title, book_author: o.author }).toString();
+    if (sv) sv.href = sv.href.split("?")[0].split("#")[0] + "?" + new URLSearchParams({ text: o.text, title: o.title, author: o.author }).toString() + "#hl-form";
   }
   form.addEventListener("input", schedule); form.addEventListener("change", schedule);
 

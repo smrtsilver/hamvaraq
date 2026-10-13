@@ -215,6 +215,9 @@ def story(request):
         book = get_object_or_404(Book, pk=bid)
     if request.GET.get("mode") == "quote":
         data.update(mode="quote", text=request.GET.get("text", "")[:600])
+        for k in ("title", "author"):
+            if request.GET.get(k) and not data[k]:
+                data[k] = request.GET[k][:150]
     if book is not None:
         data.update(title=book.title, author=book.author, cover=book.cover.url if book.cover else "", slug=f"book-{book.pk}", book=book.pk,
                     city=book.city.name, condition=book.get_condition_display())

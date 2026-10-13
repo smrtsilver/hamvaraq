@@ -21,6 +21,10 @@
     <div class="stat"><strong>{{ stats.reviews|fa }}</strong><span>نقد نوشتی</span></div>
 </div>
 
+<section class="section-sm" aria-labelledby="sk-h"><h2 id="sk-h">سری خواندن</h2>
+    <div class="streak-card"><div class="streak-num"><span class="flame" aria-hidden="true">🔥</span><b>{{ streak.current|fa }}</b><small>روز</small></div>
+        <div class="grow"><div class="streak-dots streak-dots-lg" aria-label="۵ هفته‌ی اخیر">{% for d, on in streak.grid %}<i class="{% if on %}on{% endif %}" title="{{ d|jdate }}"></i>{% endfor %}</div><span class="small muted">بهترین: {{ streak.best|fa }} روز</span></div>
+        {% if not streak.today %}<form method="post" action="{% url 'books:mark_today' %}">{% csrf_token %}<input type="hidden" name="next" value="stats"><button class="btn btn-sm">امروز خوندم</button></form>{% endif %}</div></section>
 <section class="section-sm" aria-labelledby="months-h"><h2 id="months-h">ماه‌به‌ماه</h2>
     <div class="month-bars" role="list">{% for name, n, pct in stats.months %}<div class="mb" role="listitem" aria-label="{{ name }}: {{ n|fa }} کتاب"><span class="mb-n">{% if n %}{{ n|fa }}{% endif %}</span><span class="mb-track"><i data-h="{{ pct }}"></i></span><span class="mb-l">{{ name|slice:":3" }}</span></div>{% endfor %}</div></section>
 

@@ -26,7 +26,8 @@
         <div class="story-actions">
             <button type="button" class="btn btn-lg" data-story-download>{% include "components/icon.html" with name="download" %} دانلود تصویر</button>
             <button type="button" class="btn btn-secondary" data-story-share hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
-            {% if story.mode == 'quote' and user.is_authenticated %}<a class="btn btn-ghost" data-story-publish href="{% url 'posts:create' %}">{% include "components/icon.html" with name="pen" %} انتشار به‌صورت معرفی</a>{% endif %}
+            {% if story.mode == 'quote' and user.is_authenticated %}<a class="btn btn-ghost" data-story-save href="{% url 'books:highlights' %}#hl-form">{% include "components/icon.html" with name="heart" %} ذخیره در نقل‌قول‌هام</a>
+            <a class="btn btn-ghost" data-story-publish href="{% url 'posts:create' %}">{% include "components/icon.html" with name="pen" %} انتشار به‌صورت معرفی</a>{% endif %}
         </div>
         {% if book %}<p class="small muted mt-12">بدون جاوااسکریپت؟ <a href="{% url 'books:card' book.pk %}?download=1">کارت ساده‌ی این کتاب</a> رو بگیر.</p>{% endif %}
     </form>

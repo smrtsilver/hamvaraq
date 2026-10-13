@@ -398,3 +398,33 @@ class ReadingGoal(models.Model):
                        models.CheckConstraint(condition=models.Q(target__gte=1, target__lte=500), name="goal_target_range")]
         verbose_name = "هدف خواندن"
         verbose_name_plural = "هدف‌های خواندن"
+
+
+class Highlight(models.Model):
+    """نقل‌قول/هایلایت ذخیره‌شده از یه کتاب قفسه؛ همیشه با ارجاع به کتاب."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="highlights", verbose_name="کاربر")
+    entry = models.ForeignKey(ShelfEntry, null=True, blank=True, on_delete=models.SET_NULL, related_name="highlights", verbose_name="کتاب قفسه")
+    title = models.CharField(max_length=200, verbose_name="عنوان کتاب")
+    author = models.CharField(max_length=150, blank=True, verbose_name="نویسنده")
+    text = models.TextField(max_length=600, verbose_name="نقل‌قول")
+    page = models.PositiveIntegerField(null=True, blank=True, verbose_name="صفحه")
+    is_public = models.BooleanField(default=True, verbose_name="روی پروفایل نمایش داده بشه")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "نقل‌قول"
+        verbose_name_plural = "نقل‌قول‌ها"
+
+
+class ReadingDay(models.Model):
+    """«امروز خوندم»: یه ردیف برای هر روز؛ سری خواندن (streak) از روی همین حساب می‌شه. یادآوری‌ای فرستاده نمی‌شه."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reading_days")
+    day = models.DateField(db_index=True)
+    entry = models.ForeignKey(ShelfEntry, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "day"], name="one_reading_day")]
+        ordering = ["-day"]

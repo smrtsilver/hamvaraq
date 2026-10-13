@@ -8,7 +8,7 @@ from common.location_forms import LocationMixin
 
 from .isbn import isbn_error
 from .isbn import normalize_isbn as isbn_normalize
-from .models import Book, BookPhoto, Category, Review, ShelfEntry
+from .models import Book, BookPhoto, Category, Highlight, Review, ShelfEntry
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -223,3 +223,25 @@ class ShelfEntryForm(ShelfAddForm):
         super().__init__(*args, **kwargs)
         self.fields["rating"].required = False
         self.fields["rating"].choices = [("", "بدون امتیاز")] + [(i, "★" * i) for i in range(1, 6)]
+
+
+class HighlightForm(PersianFormMixin, forms.ModelForm):
+    class Meta:
+        model = Highlight
+        fields = ["text", "entry", "title", "author", "page", "is_public"]
+        widgets = {"text": forms.Textarea(attrs={"rows": 4, "maxlength": 600, "placeholder": "جمله‌ای که دلت رو برد…"})}
+        labels = {"entry": "از کدوم کتاب قفسه‌ات؟", "title": "یا عنوان کتاب", "author": "نویسنده"}
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["entry"].queryset = user.shelf.order_by("title") if user else ShelfEntry.objects.none()
+        self.fields["entry"].required = False
+        self.fields["entry"].empty_label = "کتاب تو قفسه‌ام نیست"
+        self.fields["entry"].widget.attrs.update({"data-combobox": "", "data-placeholder": "جستجوی کتاب قفسه…"})
+        self.fields["title"].required = False
+
+    def clean(self):
+        data = super().clean()
+        if not data.get("entry") and not (data.get("title") or "").strip():
+            self.add_error("title", "نقل‌قول باید به یه کتاب ارجاع داشته باشه؛ از قفسه انتخاب کن یا عنوان رو بنویس.")
+        return data

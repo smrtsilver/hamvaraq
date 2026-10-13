@@ -100,3 +100,26 @@ def recommendations(user, limit=12):
                 b.why = "کتاب‌خوان‌های هم‌سلیقه‌ات دارنش"
                 picks.append(b)
     return picks[:limit]
+
+
+def streak(user, days=28):
+    """سری خواندن: {'current', 'best', 'today', 'grid': [(date, bool)…]} — فقط از روی «امروز خوندم»‌های خود کاربر."""
+    from datetime import timedelta
+
+    from .models import ReadingDay
+
+    today = timezone.localdate()
+    marked = set(ReadingDay.objects.filter(user=user, day__gte=today - timedelta(days=400)).values_list("day", flat=True))
+    cur, d = 0, today if today in marked else today - timedelta(days=1)   # اگه امروز هنوز نزده، سری دیروز هنوز زنده‌ست
+    while d in marked:
+        cur += 1
+        d -= timedelta(days=1)
+    best, run = 0, 0
+    for i in range(400, -1, -1):
+        if today - timedelta(days=i) in marked:
+            run += 1
+            best = max(best, run)
+        else:
+            run = 0
+    grid = [(today - timedelta(days=i), (today - timedelta(days=i)) in marked) for i in range(days - 1, -1, -1)]
+    return {"current": cur, "best": best, "today": today in marked, "grid": grid}

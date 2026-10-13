@@ -2733,3 +2733,46 @@ class ClubTests(Base):
         self.client.force_login(self.taker)
         self.client.force_login(User.objects.create_user("noclub", password="x12345678"))
         self.assertNotIn("club", self.client.get("/announcements/new/").context["form"].fields)
+
+
+class LaterFeatureTests(Base):
+    def setUp(self):
+        self.client.force_login(self.giver)
+
+    def test_highlight_needs_book_reference_and_shows_on_profile(self):
+        from books.models import Highlight, ShelfEntry
+        r = self.client.post("/books/highlights/", {"text": "بی‌ارجاع"})
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Highlight.objects.exists())
+        e = ShelfEntry.objects.create(user=self.giver, title="سووشون", author="دانشور")
+        self.client.post("/books/highlights/", {"text": "زندگی همینه", "entry": e.pk, "is_public": "on"})
+        h = Highlight.objects.get()
+        self.assertEqual((h.title, h.author), ("سووشون", "دانشور"))
+        self.client.post("/books/highlights/", {"text": "خصوصیِ من", "title": "کتاب دیگر"})
+        r = self.client.get("/accounts/u/giver/")
+        self.assertContains(r, "زندگی همینه")
+        self.assertNotContains(r, "خصوصیِ من")
+
+    def test_export_csv_and_print(self):
+        from books.models import ShelfEntry
+        ShelfEntry.objects.create(user=self.giver, title="کلیدر", author="دولت‌آبادی", note="یادداشت", reading_status="read")
+        r = self.client.get("/books/shelf/export/")
+        body = r.content.decode("utf-8")
+        self.assertTrue(body.startswith("﻿"))
+        self.assertIn("کلیدر", body)
+        self.assertIn("خوانده‌شده", body)
+        self.assertContains(self.client.get("/books/shelf/export/?print=1"), "کلیدر")
+
+    def test_streak_counts_consecutive_days(self):
+        from books import reading
+        from books.models import ReadingDay
+        today = timezone.localdate()
+        for i in (1, 2, 3, 5):
+            ReadingDay.objects.create(user=self.giver, day=today - timedelta(days=i))
+        s = reading.streak(self.giver)
+        self.assertEqual((s["current"], s["best"], s["today"]), (3, 3, False))     # دیروز تا سه روز پیش
+        self.client.post("/books/shelf/today/")
+        s = reading.streak(self.giver)
+        self.assertEqual((s["current"], s["today"]), (4, True))
+        self.client.post("/books/shelf/today/")                                    # دوباره زدن تکراری نمی‌سازه
+        self.assertEqual(ReadingDay.objects.filter(user=self.giver, day=today).count(), 1)
