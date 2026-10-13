@@ -1,7 +1,7 @@
 {% extends "panel/base.html" %}
 {% block ptitle %}{{ u.username }}{% endblock %}
 {% block panel %}
-<div class="page-head"><div><h1>{{ u.username }}</h1><p>{{ u.city.full_name|default:"بدون شهر" }} · عضو از {{ u.date_joined|jdate }}</p></div>
+<div class="page-head"><div><h1>{{ u.public_name }} <span class="small muted" dir="ltr">{{ u.username }}</span></h1><p>{{ u.city.full_name|default:"بدون شهر" }} · عضو از {{ u.date_joined|jdate }}</p></div>
     <div class="cluster"><a class="btn btn-ghost btn-sm" href="{% url 'accounts:profile' u.username %}">پروفایل عمومی</a><a class="btn btn-ghost btn-sm" href="{% url 'admin:accounts_user_change' u.pk %}">ویرایش پیشرفته</a><a class="btn btn-ghost btn-sm" href="{% url 'panel:users' %}">بازگشت</a></div></div>
 <div class="stats">
     <div class="stat"><strong>{{ u.points|fa }}</strong><span>امتیاز</span></div>

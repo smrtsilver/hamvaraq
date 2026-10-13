@@ -269,7 +269,7 @@ class BookTests(Base):
 
     def test_signup_flow(self):
         r = self.client.post(reverse("accounts:signup"), {
-            "username": "newuser", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk, "accept_rules": "on"})
+            "display_name": "کاربر تازه", "username": "newuser", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk, "accept_rules": "on"})
         self.assertEqual(r.status_code, 302)
         u = User.objects.get(username="newuser")
         self.assertEqual(u.points, 1)  # امتیاز خوش‌آمد (آی‌پی لوکال شمرده نمی‌شه)
@@ -1059,7 +1059,7 @@ class WelcomePointsTests(Base):
         from django.test import Client
         c = Client()
         c.post(reverse("accounts:signup"), {
-            "username": name, "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk,
+            "display_name": "کتاب‌خوان", "username": name, "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "city": self.tehran.pk,
             "accept_rules": "on"},
             REMOTE_ADDR=ip)
         return User.objects.get(username=name), c
@@ -3034,3 +3034,33 @@ class ForbiddenPageTests(Base):
         self.assertEqual(r.status_code, 403)
         self.assertContains(r, "مخصوص مدیریت سایته", status_code=403)
         self.assertNotContains(r, "Forbidden", status_code=403)
+
+
+class DisplayNameTests(Base):
+    def test_signup_requires_name_and_it_replaces_username_everywhere(self):
+        from django.core.cache import cache
+        cache.clear()
+        data = {"username": "reader9", "password1": "Str0ng-pass-99", "password2": "Str0ng-pass-99", "accept_rules": "on"}
+        r = self.client.post(reverse("accounts:signup"), data)
+        self.assertIn("display_name", r.context["form"].errors)
+        r = self.client.post(reverse("accounts:signup"), {**data, "display_name": "www.spam.ir"})
+        self.assertIn("display_name", r.context["form"].errors)
+        self.client.post(reverse("accounts:signup"), {**data, "display_name": "  مریم   کتاب‌خوان "})
+        u = User.objects.get(username="reader9")
+        self.assertEqual(u.public_name, "مریم کتاب‌خوان")
+        b = Book.objects.create(owner=u, title="کلیدر", author="دولت‌آبادی", city=self.isfahan)
+        html = self.client.get(b.get_absolute_url()).content.decode()
+        self.assertIn("مریم کتاب‌خوان", html)
+        self.assertNotIn(">reader9<", html)
+
+    def test_profile_can_change_and_clear_name(self):
+        self.client.login(username="giver", password="x12345678")
+        url = reverse("accounts:settings")
+        self.client.post(url, {"display_name": "علی"})
+        self.giver.refresh_from_db()
+        self.assertEqual(self.giver.public_name, "علی")
+        page = self.client.get(reverse("accounts:profile", args=["giver"])).content.decode()
+        self.assertIn("<h1 class=\"mb-4\">علی</h1>", page)
+        self.client.post(url, {"display_name": ""})
+        self.giver.refresh_from_db()
+        self.assertEqual(self.giver.public_name, "giver")

@@ -54,7 +54,7 @@ def request_book(book_id, requester):
         raise ExchangeError("برای این کتاب قبلاً درخواست دادی.")
     exchange = Exchange.objects.create(book=book, requester=requester, owner=book.owner)
     points.apply(requester, -1, "request_hold", exchange=exchange, note=book.title)
-    notify(book.owner, f"{requester.username} کتاب «{book.title}» رو درخواست داد.", _url(exchange))
+    notify(book.owner, f"{requester.public_name} کتاب «{book.title}» رو درخواست داد.", _url(exchange))
     return exchange
 
 
@@ -163,7 +163,7 @@ def confirm(exchange_id, user):
         if ex.first_confirmed_at is None:
             ex.first_confirmed_at, ex.reminder_count = timezone.now(), 0
         ex.save(update_fields=["owner_confirmed", "requester_confirmed", "first_confirmed_at", "reminder_count", "updated_at"])
-        notify(ex.other_party(user), f"{user.username} تحویل «{ex.book.title}» رو تأیید کرد؛ نوبت توئه.", _url(ex))
+        notify(ex.other_party(user), f"{user.public_name} تحویل «{ex.book.title}» رو تأیید کرد؛ نوبت توئه.", _url(ex))
     return ex
 
 
@@ -185,8 +185,8 @@ def _complete(ex):
     ShelfEntry.objects.filter(user=giver, book=book).update(book=None)
     ShelfEntry.objects.get_or_create(user=receiver, book=book, defaults={
         "title": book.title, "author": book.author, "isbn": book.isbn, "edition": book.edition, "reading_status": ShelfEntry.Reading.WANT})
-    notify(giver, f"مبادله‌ی «{book.title}» کامل شد؛ ۱ امتیاز گرفتی. به {receiver.username} رأی بده.", _url(ex))
-    notify(receiver, f"کتاب «{book.title}» مال توئه. به {giver.username} رأی بده.", _url(ex))
+    notify(giver, f"مبادله‌ی «{book.title}» کامل شد؛ ۱ امتیاز گرفتی. به {receiver.public_name} رأی بده.", _url(ex))
+    notify(receiver, f"کتاب «{book.title}» مال توئه. به {giver.public_name} رأی بده.", _url(ex))
     check_badges(giver)
     check_badges(receiver)
 
@@ -215,7 +215,7 @@ def propose_meeting(exchange_id, user, point_id):
     ex.meeting_point, ex.meeting_proposed_by, ex.meeting_agreed = point, user, False
     ex.save(update_fields=["meeting_point", "meeting_proposed_by", "meeting_agreed", "updated_at"])
     Message.objects.create(exchange=ex, sender=user, text=f"📍 پیشنهاد نقطه‌ی تحویل: {point.name} ({point.city})")
-    notify(ex.other_party(user), f"{user.username} نقطه‌ی تحویل پیشنهاد داد: {point.name}", _url(ex))
+    notify(ex.other_party(user), f"{user.public_name} نقطه‌ی تحویل پیشنهاد داد: {point.name}", _url(ex))
     return ex
 
 
@@ -235,7 +235,7 @@ def agree_meeting(exchange_id, user):
     ex.meeting_agreed = True
     ex.save(update_fields=["meeting_agreed", "updated_at"])
     Message.objects.create(exchange=ex, sender=user, text=f"✅ نقطه‌ی تحویل تأیید شد: {ex.meeting_point.name}")
-    notify(ex.other_party(user), f"{user.username} نقطه‌ی تحویل رو تأیید کرد: {ex.meeting_point.name}", _url(ex))
+    notify(ex.other_party(user), f"{user.public_name} نقطه‌ی تحویل رو تأیید کرد: {ex.meeting_point.name}", _url(ex))
     return ex
 
 

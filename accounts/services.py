@@ -44,7 +44,7 @@ def anonymize_user(user):
     user.push_subscriptions.all().delete()
     user.announcement_bookmarks.all().delete()
     user.username = f"deleted_{user.pk}"
-    user.first_name = user.last_name = user.email = ""
+    user.first_name = user.last_name = user.email = user.display_name = ""
     user.last_ip_hash = ""
     user.set_unusable_password()
     user.is_active = False

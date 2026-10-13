@@ -200,7 +200,7 @@ def users(request):
         qs = qs.filter(date_joined__gte=timezone.now() - timedelta(days=7))
     elif flt == "warned":
         qs = qs.filter(warnings__gt=0)
-    qs = search_q(qs, request.GET.get("q"), ["username", "email"])
+    qs = search_q(qs, request.GET.get("q"), ["username", "display_name", "email"])
     return page(request, "panel/users.html", {"page": _paginate(request, qs.order_by("-date_joined")), "f": flt, "q": request.GET.get("q", ""),
                                                "qs": _qs(request), "user_tabs": USER_TABS, "keep_f": {"f": flt} if flt else {}}, "users")
 

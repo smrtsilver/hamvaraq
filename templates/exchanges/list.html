@@ -9,7 +9,7 @@
     <a class="exchange-row" href="{% url 'exchanges:detail' e.pk %}">
         <span class="thumb">{% if e.book.cover %}<img src="{{ e.book.thumb_url }}" alt="" loading="lazy">{% endif %}</span>
         <span class="grow"><strong>{{ e.book.title }}</strong>
-            <span class="small muted">{% if e.owner == user %}به {{ e.requester.username }}{% else %}از {{ e.owner.username }}{% endif %} · {{ e.updated_at|ago }}</span></span>
+            <span class="small muted">{% if e.owner == user %}به {{ e.requester.public_name }}{% else %}از {{ e.owner.public_name }}{% endif %} · {{ e.updated_at|ago }}</span></span>
         {% if e.unread %}<span class="pill pill-green">{% include "components/icon.html" with name="chat" %} {{ e.unread|fa }} پیام جدید</span>{% endif %}
         <span class="pill {% if e.status == 'completed' %}pill-green{% elif e.status == 'cancelled' or e.status == 'rejected' %}pill-red{% elif e.status == 'accepted' %}pill-amber{% endif %}">{{ e.get_status_display }}</span>
     </a>

@@ -58,12 +58,12 @@
                 <details class="menu" data-menu>
                     <summary>
                         {% include "components/avatar.html" with u=user size="sm" %}
-                        <span class="menu-name">{{ user.username }}</span>
+                        <span class="menu-name">{{ user.public_name }}</span>
                         <span class="menu-points">{% include "components/icon.html" with name="star" %} {{ user.points|fa }}</span>
                         <span class="visually-hidden">منوی کاربر</span>
                     </summary>
                     <div class="menu-panel">
-                        <div class="menu-head"><strong>{{ user.username }}</strong><span>{{ user.points|fa }} امتیاز{% if user.city %} · {{ user.city.name }}{% endif %}</span></div>
+                        <div class="menu-head"><strong>{{ user.public_name }}</strong><span>{{ user.points|fa }} امتیاز{% if user.city %} · {{ user.city.name }}{% endif %}</span></div>
                         <a href="{% url 'accounts:profile' user.username %}">{% include "components/icon.html" with name="user" %} پروفایل من</a>
                         <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %} قفسه‌ی من</a>
                         <a href="{% url 'accounts:feed' %}">{% include "components/icon.html" with name="news" %} فید کتاب‌خوان‌ها</a>

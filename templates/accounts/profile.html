@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load trust_tags %}
-{% block title %}{{ owner.username }} | هم‌ورق{% endblock %}
-{% block description %}قفسه‌ی {{ owner.username }} در هم‌ورق.{% endblock %}
+{% block title %}{{ owner.public_name }} | هم‌ورق{% endblock %}
+{% block description %}قفسه‌ی {{ owner.public_name }} در هم‌ورق.{% endblock %}
 {% block content %}
 <section class="card">
     <div class="profile-head">
         {% include "components/avatar.html" with u=owner size="xl" %}
         <div class="grow">
-            <h1 class="mb-4">{{ owner.username }}</h1>
+            <h1 class="mb-4">{{ owner.public_name }}</h1>
             <div class="cluster">{% reputation_badge owner %}{% if owner.city %}<span class="chip">{% include "components/icon.html" with name="pin" %}{{ owner.city.name }}، {{ owner.city.province.name }}</span>{% endif %}<span class="chip">عضو از {{ owner.date_joined|jlong }}</span></div>
             {% if owner.is_restricted %}<div class="alert alert-warning mb-0"><p>این کاربر موقتاً فقط می‌تونه کتاب بده.</p></div>{% endif %}
             <p class="follow-line small muted"><b>{{ followers|fa }}</b> دنبال‌کننده · <b>{{ following|fa }}</b> دنبال‌شونده{% if goal %} · هدف {{ goal.year|fa }}: <b>{{ goal.done|fa }} از {{ goal.target|fa }}</b> کتاب{% endif %}</p>
@@ -27,12 +27,12 @@
     <div class="stat"><strong>{{ shelf_count|fa }}</strong><span>کتاب تو قفسه</span></div>
 </div>
 
-<section class="section-sm"><div class="section-head"><div><h2>قفسه‌ی {{ owner.username }}</h2><p>کتاب‌های با نقطه‌ی زرد برای معاوضه‌ان؛ روی هر کتاب بزن.</p></div>{% if user == owner %}<a class="btn btn-secondary btn-sm" href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="settings" %} مدیریت قفسه</a>{% endif %}</div>
-{% if books %}<div class="wshelf" data-wshelf data-rows="2" aria-label="قفسه‌ی چوبی {{ owner.username }}"><div class="wshelf-in"><div class="wshelf-books">{% for e in books %}<a class="sp{% if e.title|length > 30 %} sp-l{% elif e.title|length < 12 %} sp-s{% endif %}{% if e.open_for_exchange %} sp-swap{% endif %}" href="{% if e.open_for_exchange %}{% url 'books:detail' e.book_id %}{% elif user == owner %}{% url 'books:shelf_edit' e.pk %}{% else %}#{% endif %}" data-sp data-title="{{ e.title }}" data-author="{{ e.author }}" data-status="{{ e.get_reading_status_display }}"{% if e.open_for_exchange %} data-swap="1" data-go="دیدن و درخواست"{% elif user == owner %} data-go="ویرایش در قفسه‌ی من"{% endif %} data-added="{{ e.created_at|jdate }}"{% if e.rating %} data-stars="{{ e.rating }}"{% endif %} data-desc="{{ e.review|truncatechars:280 }}"{% if e.cover_url %} data-cover="{{ e.cover_url }}"{% endif %}><span class="sp-b"><span class="sp-t">{{ e.title }}</span><span class="sp-a">{{ e.author }}</span>{% if e.open_for_exchange %}<i class="sp-rib" aria-hidden="true"></i><span class="visually-hidden">(برای معاوضه)</span>{% endif %}</span></a>{% endfor %}</div></div>
+<section class="section-sm"><div class="section-head"><div><h2>قفسه‌ی {{ owner.public_name }}</h2><p>کتاب‌های با نقطه‌ی زرد برای معاوضه‌ان؛ روی هر کتاب بزن.</p></div>{% if user == owner %}<a class="btn btn-secondary btn-sm" href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="settings" %} مدیریت قفسه</a>{% endif %}</div>
+{% if books %}<div class="wshelf" data-wshelf data-rows="2" aria-label="قفسه‌ی چوبی {{ owner.public_name }}"><div class="wshelf-in"><div class="wshelf-books">{% for e in books %}<a class="sp{% if e.title|length > 30 %} sp-l{% elif e.title|length < 12 %} sp-s{% endif %}{% if e.open_for_exchange %} sp-swap{% endif %}" href="{% if e.open_for_exchange %}{% url 'books:detail' e.book_id %}{% elif user == owner %}{% url 'books:shelf_edit' e.pk %}{% else %}#{% endif %}" data-sp data-title="{{ e.title }}" data-author="{{ e.author }}" data-status="{{ e.get_reading_status_display }}"{% if e.open_for_exchange %} data-swap="1" data-go="دیدن و درخواست"{% elif user == owner %} data-go="ویرایش در قفسه‌ی من"{% endif %} data-added="{{ e.created_at|jdate }}"{% if e.rating %} data-stars="{{ e.rating }}"{% endif %} data-desc="{{ e.review|truncatechars:280 }}"{% if e.cover_url %} data-cover="{{ e.cover_url }}"{% endif %}><span class="sp-b"><span class="sp-t">{{ e.title }}</span><span class="sp-a">{{ e.author }}</span>{% if e.open_for_exchange %}<i class="sp-rib" aria-hidden="true"></i><span class="visually-hidden">(برای معاوضه)</span>{% endif %}</span></a>{% endfor %}</div></div>
     <button type="button" class="btn btn-secondary btn-sm wshelf-more" data-wshelf-more hidden aria-expanded="false">مشاهده‌ی بیشتر</button></div>
 {% else %}{% include "components/empty.html" with ill="books" title="قفسه خالیه" text="هنوز کتابی تو این قفسه نیست." %}{% endif %}
 </section>
-{% if highlights %}<section class="section-sm" aria-labelledby="hl-h"><div class="section-head"><h2 id="hl-h">نقل‌قول‌های محبوب {{ owner.username }}</h2></div>
+{% if highlights %}<section class="section-sm" aria-labelledby="hl-h"><div class="section-head"><h2 id="hl-h">نقل‌قول‌های محبوب {{ owner.public_name }}</h2></div>
     <div class="hscroll" tabindex="0">{% for h in highlights %}<figure class="hl hl-card"><blockquote>{{ h.text|truncatechars:240 }}</blockquote><figcaption><b>{{ h.title }}</b>{% if h.author %} · {{ h.author }}{% endif %}</figcaption></figure>{% endfor %}</div></section>{% endif %}
 {% if available %}<section class="section-sm"><div class="section-head"><div><h2>برای مبادله موجوده</h2><p>روی هر کتاب بزن و درخواست بده</p></div></div>{% include "components/book_grid.html" with books=available %}</section>{% endif %}
 {% endblock %}

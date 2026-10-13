@@ -1,1 +1,1 @@
-<span class="avatar av-{{ u.pk|mod:6 }}{% if size %} avatar-{{ size }}{% endif %}" aria-hidden="true">{{ u.username|slice:":1"|upper }}</span>
+<span class="avatar av-{{ u.pk|mod:6 }}{% if size %} avatar-{{ size }}{% endif %}" aria-hidden="true">{{ u.public_name|slice:":1"|upper }}</span>

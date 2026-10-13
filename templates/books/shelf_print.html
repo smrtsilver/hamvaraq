@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}قفسه‌ی {{ user.username }} | هم‌ورق{% endblock %}
+{% block title %}قفسه‌ی {{ user.public_name }} | هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="print-sheet">
 <div class="page-head no-print"><div><h1>نسخه‌ی چاپی قفسه</h1><p>برای ذخیره به PDF از «چاپ» مرورگر استفاده کن.</p></div><button type="button" class="btn" data-print>{% include "components/icon.html" with name="download" %} چاپ / PDF</button></div>
-<h2 class="print-title">کتابخونه‌ی {{ user.username }} — {{ count|fa }} کتاب</h2>
+<h2 class="print-title">کتابخونه‌ی {{ user.public_name }} — {{ count|fa }} کتاب</h2>
 <div class="ptable-wrap"><table class="table ptable print-table"><thead><tr><th>عنوان</th><th>نویسنده</th><th>وضعیت</th><th>ستاره</th><th>تموم کردن</th></tr></thead><tbody>
 {% for e in entries %}<tr><td data-label="عنوان"><strong>{{ e.title }}</strong></td><td data-label="نویسنده">{{ e.author }}</td><td data-label="وضعیت">{{ e.get_reading_status_display }}</td><td data-label="ستاره">{% if e.rating %}{{ e.rating|fa }}{% else %}—{% endif %}</td><td data-label="تموم کردن">{% if e.finished_at %}{{ e.finished_at|jdate }}{% else %}—{% endif %}</td></tr>{% endfor %}
 </tbody></table></div></div>

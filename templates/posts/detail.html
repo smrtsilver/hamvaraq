@@ -12,7 +12,7 @@
     {% if not post.is_published %}<div class="alert alert-warning"><p>این نوشته هنوز منتشر نشده ({{ post.get_status_display }}){% if post.reject_reason %}: {{ post.reject_reason }}{% endif %}؛ فقط تو و مدیریت می‌بینید.</p></div>{% endif %}
     <p class="small"><a href="{% url 'posts:list' %}">معرفی کتاب</a></p>
     <h1 class="fs-3xl">{{ post.title }}</h1>
-    <div class="byline"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}<strong class="c-ink">{{ post.author.username }}</strong></a>
+    <div class="byline"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}<strong class="c-ink">{{ post.author.public_name }}</strong></a>
         <span>{{ post.published_at|default:post.created_at|jlong }}</span><span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span><span>{{ post.view_count|fa }} بازدید</span>
         {% if post.rating %}<span class="stars" aria-label="{{ post.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= post.rating %}★{% else %}☆{% endif %}{% endfor %}</span>{% endif %}</div>
     {% if post.cover %}<div class="cover-wide"><img src="{{ post.cover.url }}" alt="{{ post.title }}" fetchpriority="high"></div>{% endif %}
@@ -33,7 +33,7 @@
     </div>
 </article>
 {% if more_by_author %}<section class="post-more" aria-labelledby="more-by">
-    <div class="pm-head"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}</a><h2 id="more-by">بیشتر از {{ post.author.username }}</h2><a class="small ms-auto" href="{% url 'posts:author' post.author.username %}">همه‌ی نوشته‌ها</a></div>
+    <div class="pm-head"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}</a><h2 id="more-by">بیشتر از {{ post.author.public_name }}</h2><a class="small ms-auto" href="{% url 'posts:author' post.author.username %}">همه‌ی نوشته‌ها</a></div>
     <div class="hscroll" tabindex="0">{% for p in more_by_author %}{% include "components/post_mini.html" %}{% endfor %}</div></section>{% endif %}
 {% if related %}<section class="post-more post-more-alt" aria-labelledby="related-h"><div class="pm-head"><h2 id="related-h">معرفی‌های مرتبط</h2></div>
     <div class="hscroll" tabindex="0">{% for p in related %}{% include "components/post_mini.html" %}{% endfor %}</div></section>{% endif %}

@@ -138,7 +138,7 @@ def _message_json(m, user):
     from common.jalali import jtime
 
     return {
-        "id": m.pk, "sender": m.sender.username, "mine": m.sender_id == user.pk, "text": m.text,
+        "id": m.pk, "sender": m.sender.public_name, "mine": m.sender_id == user.pk, "text": m.text,
         "time": jtime(m.created_at),
         "report_url": "" if m.sender_id == user.pk else reverse("trust:report", args=["message", m.pk]),
     }
@@ -161,7 +161,7 @@ def send_message(request, pk):
         other, url = ex.other_party(request.user), f"/exchanges/{ex.pk}/"
         # پشت‌سرهم پیام دادن اعلان تکراری نمی‌سازه؛ شمارنده‌ی خوانده‌نشده‌ی چت کافیه
         if not Notification.objects.filter(user=other, url=url, is_read=False, text__startswith="پیام تازه").exists():
-            notify(other, f"پیام تازه از {request.user.username}", url, kind="chat")
+            notify(other, f"پیام تازه از {request.user.public_name}", url, kind="chat")
     if ajax:
         return JsonResponse({"ok": bool(text)})
     return redirect("exchanges:detail", pk)

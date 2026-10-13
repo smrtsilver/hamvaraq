@@ -9,6 +9,7 @@ class User(AbstractUser):
         RESTRICTED = "restricted", "محدود"
         BANNED = "banned", "مسدود"
 
+    display_name = models.CharField(max_length=40, blank=True, verbose_name="اسم نمایشی")
     # ایمیل اختیاریه و فقط برای بازیابی رمز استفاده می‌شه
     city = models.ForeignKey(
         "common.City", null=True, blank=True, on_delete=models.SET_NULL,
@@ -27,6 +28,13 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "کاربر"
         verbose_name_plural = "کاربرها"
+
+    @property
+    def public_name(self):
+        """اسمی که بقیه می‌بینن؛ شناسه فقط تو آدرس و پنل."""
+        if self.deleted_at:
+            return "کاربر حذف‌شده"
+        return self.display_name or self.username
 
     @property
     def is_deleted(self):

@@ -61,7 +61,7 @@ def post_detail(request, slug):
 def _post_ld(post, request):
     data = {
         "@context": "https://schema.org", "@type": "Article", "headline": post.title, "inLanguage": "fa",
-        "author": {"@type": "Person", "name": post.author.username}, "mainEntityOfPage": request.build_absolute_uri(),
+        "author": {"@type": "Person", "name": post.author.public_name}, "mainEntityOfPage": request.build_absolute_uri(),
         "datePublished": (post.published_at or post.created_at).isoformat(), "dateModified": post.updated_at.isoformat(),
         "about": {"@type": "Book", "name": post.display_book_title, "author": {"@type": "Person", "name": post.display_book_author}},
     }

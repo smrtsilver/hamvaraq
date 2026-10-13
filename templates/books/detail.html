@@ -35,9 +35,9 @@
             {% if ed.isbn13 %}<div><dt>شابک</dt><dd dir="ltr">{{ ed.isbn13 }}</dd></div>{% endif %}</dl>{% endif %}{% endwith %}
 
         <div class="owner-card">
-            <a href="{% url 'accounts:profile' book.owner.username %}" aria-label="پروفایل {{ book.owner.username }}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
+            <a href="{% url 'accounts:profile' book.owner.username %}" aria-label="پروفایل {{ book.owner.public_name }}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
             <div class="grow">
-                <strong><a href="{% url 'accounts:profile' book.owner.username %}" class="c-inherit">{{ book.owner.username }}</a></strong>
+                <strong><a href="{% url 'accounts:profile' book.owner.username %}" class="c-inherit">{{ book.owner.public_name }}</a></strong>
                 <div>{% load trust_tags %}{% reputation_badge book.owner %}</div>
                 <span class="small muted">{% include "components/icon.html" with name="pin" %} <a href="{% url 'city' book.city.pk %}">{{ book.city.name }}</a>، <a href="{% url 'province' book.city.province_id %}">{{ book.city.province.name }}</a></span>
             </div>
@@ -77,17 +77,17 @@
 {% if book.status == 'available' and not is_owner %}<div class="cta-fixed" role="region" aria-label="درخواست کتاب">{% include "books/_cta.html" with compact=1 %}</div>{% endif %}
 
 {% if pending %}<section class="section-sm"><h2>درخواست‌ها</h2>
-    <ul class="list-clean card">{% for e in pending %}<li><span class="party">{% include "components/avatar.html" with u=e.requester size="sm" %}<a href="{% url 'exchanges:detail' e.pk %}">{{ e.requester.username }}</a></span><span>{% reputation_badge e.requester %}</span></li>{% endfor %}</ul></section>{% endif %}
+    <ul class="list-clean card">{% for e in pending %}<li><span class="party">{% include "components/avatar.html" with u=e.requester size="sm" %}<a href="{% url 'exchanges:detail' e.pk %}">{{ e.requester.public_name }}</a></span><span>{% reputation_badge e.requester %}</span></li>{% endfor %}</ul></section>{% endif %}
 
 {% if journey %}<section class="section-sm"><h2>مسیر کتاب</h2>
     <ol class="journey">{% for s in journey %}{% if forloop.first %}<li>{{ s.from_city.name|default:"؟" }}</li>{% endif %}<li>{{ s.to_city.name|default:"؟" }}</li>{% endfor %}</ol></section>{% endif %}
 
 {% if notes %}<section class="section-sm"><h2>یادداشت صاحبان قبلی</h2>
-    {% for n in notes %}<blockquote class="quote">«{{ n.text }}»<cite>— {{ n.author.username }}</cite></blockquote>{% endfor %}</section>{% endif %}
+    {% for n in notes %}<blockquote class="quote">«{{ n.text }}»<cite>— {{ n.author.public_name }}</cite></blockquote>{% endfor %}</section>{% endif %}
 
 <section class="section-sm"><div class="section-head"><h2>نقد و ستاره</h2>{% if rating.n %}<div class="rating-big"><strong>{{ rating.avg|floatformat:1|fa }}</strong><span class="stars">★★★★★</span><span class="muted">{{ rating.n|fa }} نقد</span></div>{% endif %}</div>
     {% for r in reviews %}<div class="review"><div class="cluster"><span class="stars" aria-label="{{ r.stars|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
-        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a>{% if r.user == user and r.text %}<a class="small ms-auto" href="{% url 'story' %}?review={{ r.pk }}">ساخت استوری از این نقد</a>{% endif %}</div>{% if r.text %}<p class="m-t6">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
+        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.public_name }}</a>{% if r.user == user and r.text %}<a class="small ms-auto" href="{% url 'story' %}?review={{ r.pk }}">ساخت استوری از این نقد</a>{% endif %}</div>{% if r.text %}<p class="m-t6">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
     {% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}
     {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card mt-16" novalidate><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{% include "components/form.html" with form=review_form %}<button class="btn btn-sm">ثبت نقد</button></form>{% endif %}
 </section>
@@ -96,8 +96,8 @@
     {% if can_write_post %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:create' %}?book={{ book.pk }}">{% include "components/icon.html" with name="pen" %} یه معرفی بنویس</a>{% endif %}</div>
     {% if posts %}<div class="hscroll" tabindex="0">{% for p in posts %}{% include "components/post_mini.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
 
-{% if owner_books %}<section class="section-sm owner-more"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.username }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
-    <div class="hv-shelf-track" tabindex="0" role="list" aria-label="کتاب‌های دیگر {{ book.owner.username }}">{% for b in owner_books %}<div class="hv-shelf-item" role="listitem">{% include "components/book_card.html" %}</div>{% endfor %}</div></section>{% endif %}
+{% if owner_books %}<section class="section-sm owner-more"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.public_name }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
+    <div class="hv-shelf-track" tabindex="0" role="list" aria-label="کتاب‌های دیگر {{ book.owner.public_name }}">{% for b in owner_books %}<div class="hv-shelf-item" role="listitem">{% include "components/book_card.html" %}</div>{% endfor %}</div></section>{% endif %}
 
 {% if similar %}<section class="section-sm"><div class="section-head"><div><h2>هم‌سلیقه‌ها</h2><p>کسایی که این کتاب رو داشتن، اینا رو هم دارن</p></div></div>
     {% include "components/book_grid.html" with books=similar %}</section>{% endif %}

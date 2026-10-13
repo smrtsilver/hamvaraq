@@ -196,18 +196,18 @@ def story(request):
     if pid.isdigit():
         r = get_object_or_404(Review.objects.select_related("book", "user"), pk=pid)
         book = r.book
-        data.update(mode="review", text=r.text or "", stars=r.stars, user=r.user.username)
+        data.update(mode="review", text=r.text or "", stars=r.stars, user=r.user.public_name)
     elif request.GET.get("post"):
         p = get_object_or_404(Post.objects.select_related("book", "author"), slug=request.GET["post"], status=Post.Status.PUBLISHED)
         book = p.book
-        data.update(mode="review", text=p.excerpt, stars=p.rating or 0, user=p.author.username,
+        data.update(mode="review", text=p.excerpt, stars=p.rating or 0, user=p.author.public_name,
                     title=p.display_book_title, author=p.display_book_author)
     eid = request.GET.get("entry", "")
     if eid.isdigit() and request.user.is_authenticated:
         from books.models import ShelfEntry
 
         e = get_object_or_404(ShelfEntry.objects.select_related("book"), pk=eid, user=request.user)
-        data.update(mode="review", text=e.review, stars=e.rating or 0, user=request.user.username, title=e.title, author=e.author, slug=f"shelf-{e.pk}")
+        data.update(mode="review", text=e.review, stars=e.rating or 0, user=request.user.public_name, title=e.title, author=e.author, slug=f"shelf-{e.pk}")
         if e.cover_url:
             data["cover"] = e.cover.url if e.cover else e.listing.cover.url
     bid = request.GET.get("book", "")

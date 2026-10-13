@@ -407,7 +407,7 @@ def quick_search(request):
     pq = Post.objects.filter(status="published", published_at__lte=timezone.now())
     for w in ws:
         pq = pq.filter(search_text__contains=w)
-    posts = [{"title": p.title, "by": p.author.username, "url": p.get_absolute_url()}
+    posts = [{"title": p.title, "by": p.author.public_name, "url": p.get_absolute_url()}
              for p in pq.select_related("author").order_by("-published_at")[:3]]
     return JsonResponse({"books": books, "posts": posts, "total": total})
 

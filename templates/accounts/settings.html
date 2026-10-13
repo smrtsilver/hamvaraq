@@ -5,7 +5,7 @@
 <div class="medium">
 <section class="place-hero settings-hero">
     {% include "components/avatar.html" with u=user size="lg" %}
-    <div class="grow"><span class="ph-kicker">حساب من</span><h1>{{ user.username }}</h1>
+    <div class="grow"><span class="ph-kicker">حساب من</span><h1>{{ user.public_name }}</h1>
         <div class="ph-stats"><span>عضو از {{ user.date_joined|jlong }}</span><span><b>{{ user.points|fa }}</b> امتیاز</span><span><b>{{ user.shelf.count|fa }}</b> کتاب تو قفسه</span></div></div>
     <a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' user.username %}">دیدن پروفایل</a>
 </section>
