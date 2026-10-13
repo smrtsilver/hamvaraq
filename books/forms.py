@@ -312,6 +312,7 @@ class HighlightForm(PersianFormMixin, forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["entry"].queryset = user.shelf.order_by("title") if user else ShelfEntry.objects.none()
+        self.fields["entry"].label_from_instance = lambda e: f"{e.title} — {e.author}" if e.author else e.title
         self.fields["entry"].required = False
         self.fields["entry"].empty_label = "کتاب تو قفسه‌ام نیست"
         self.fields["entry"].widget.attrs.update({"data-combobox": "", "data-placeholder": "جستجوی کتاب قفسه…"})

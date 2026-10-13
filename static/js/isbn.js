@@ -33,10 +33,35 @@
     const line = (cls, text) => { const p = document.createElement("p"); p.className = cls; p.textContent = text; return p; };
     function show(box, items) { box.replaceChildren(...items); box.hidden = !items.length; }
 
+    // دکمه‌ی جستجو کنار هر فیلد شابک
+    document.querySelectorAll("[data-isbn-url]").forEach((input) => {
+        if (input.closest(".isbn-row")) return;
+        const row = document.createElement("div"); row.className = "isbn-row";
+        input.before(row); row.append(input);
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "btn btn-secondary isbn-go"; b.textContent = "جستجو";
+        b.addEventListener("click", () => lookup(input));
+        row.append(b);
+        const scan = input.id && document.querySelector(`[data-scan][data-scan-target="${input.id}"]`);
+        if (scan) { scan.classList.add("isbn-scan"); scan.setAttribute("aria-label", "اسکن بارکد"); row.append(scan); }
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); lookup(input); } });
+    });
+    // ثبت فرم با شابکِ جستجونشده: اول جستجو، بعد ارسال
+    document.addEventListener("submit", async (e) => {
+        const input = e.target.querySelector && e.target.querySelector("[data-isbn-url]");
+        if (!input || !input.value.trim() || input.dataset.looked === input.value || e.target.dataset.isbnWait) return;
+        e.preventDefault();
+        e.target.dataset.isbnWait = "1";
+        await lookup(input);
+        delete e.target.dataset.isbnWait;
+        if (input.getAttribute("aria-invalid") !== "true") e.target.requestSubmit(e.submitter || undefined);
+    }, true);
+
     let seq = 0;
-    document.addEventListener("change", async (e) => {
-        const input = e.target;
-        if (!input.matches("[data-isbn-url]")) return;
+    document.addEventListener("change", (e) => { if (e.target.matches("[data-isbn-url]")) lookup(e.target); });
+    async function lookup(input) {
+        if (input.dataset.looked === input.value && input.value) return;
+        input.dataset.looked = input.value;
         const box = statusBox(input), scope = input.closest("[data-isbn-scope]") || input.form;
         const title = scope.querySelector("[data-isbn-title]"), author = scope.querySelector("[data-isbn-author]");
         const value = input.value.trim();
@@ -49,11 +74,10 @@
             show(box, [line("isbn-err", /^\d{10}$|^\d{9}X$|^\d{13}$/i.test(digits) ? "رقم کنترل این شابک درست نیست؛ یه بار دیگه چک کن." : "شابک باید ۱۰ یا ۱۳ رقم باشه.")]);
             return;
         }
-        input.value = clean;
         const mine = ++seq;
         show(box, [line("isbn-wait", "در حال جستجو…")]);
         try {
-            const r = await fetch(input.dataset.isbnUrl + "?isbn=" + encodeURIComponent(clean), {credentials: "same-origin"});
+            const r = await fetch(input.dataset.isbnUrl + "?isbn=" + encodeURIComponent(value), {credentials: "same-origin"});
             if (mine !== seq) return;
             if (r.status === 404) { show(box, [line("isbn-note", "این شابک تو منبع‌ها پیدا نشد؛ عنوان و نویسنده رو خودت بنویس.")]); return; }
             if (!r.ok) { show(box, [line("isbn-err", (await r.json().catch(() => ({}))).message || "استعلام ناموفق بود؛ دستی پر کن.")]); return; }
@@ -69,5 +93,5 @@
             show(box, items);
             document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: d}}));
         } catch (_) { show(box, []); /* پر کردن دستی هنوز ممکنه */ }
-    });
+    }
 })();

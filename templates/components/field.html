@@ -5,6 +5,19 @@
     {% if field.help_text %}<p class="hint">{{ field.help_text }}</p>{% endif %}
     {% for e in field.errors %}<p class="err" role="alert">{{ e }}</p>{% endfor %}
 </div>
+{% elif field.field.widget.input_type == "radio" and field.name == "rating" %}
+<fieldset class="field{% if field.errors %} has-error{% endif %} reset-box mb-18 rate-field">
+    <legend>{{ field.label }}</legend>
+    <div class="rate-row"><div class="rate">{% for radio in field.subwidgets reversed %}{% if radio.data.value %}<label class="star" for="{{ radio.id_for_label }}">{{ radio.tag }}<svg class="i" aria-hidden="true"><use href="#i-star"></use></svg><span class="visually-hidden">{{ radio.data.value }} از ۵</span></label>{% endif %}{% endfor %}</div>
+    {% for radio in field %}{% if not radio.data.value %}<label class="rate-clear" for="{{ radio.id_for_label }}">{{ radio.tag }}<span>بدون امتیاز</span></label>{% endif %}{% endfor %}</div>
+    {% for e in field.errors %}<p class="err" role="alert">{{ e }}</p>{% endfor %}
+</fieldset>
+{% elif field.field.widget.input_type == "radio" and field.name == "reading_status" %}
+<fieldset class="field{% if field.errors %} has-error{% endif %} reset-box mb-18">
+    <legend>{{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</legend>
+    <div class="seg seg-fill">{% for radio in field %}<label for="{{ radio.id_for_label }}">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}</div>
+    {% for e in field.errors %}<p class="err" role="alert">{{ e }}</p>{% endfor %}
+</fieldset>
 {% elif field.field.widget.input_type == "radio" %}
 <fieldset class="field{% if field.errors %} has-error{% endif %} reset-box mb-18">
     <legend>{{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</legend>
