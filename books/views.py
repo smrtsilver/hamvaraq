@@ -22,7 +22,7 @@ from analytics.tracking import track
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
-from .services import notify_wishlists, similar_books
+from .services import add_wish, notify_wishlists, similar_books
 
 
 def book_list(request):
@@ -158,9 +158,10 @@ def wishlist(request):
     if not settings.WISHLIST_ENABLED:
         return render(request, "books/wishlist.html", {"wishes": []})
     if request.method == "POST":
-        text = request.POST.get("text", "").strip()[:200]
-        if text:
-            Wishlist.objects.get_or_create(user=request.user, text=text)
+        wish, error = add_wish(request.user, request.POST.get("text", ""))
+        if error:
+            messages.error(request, error)
+        else:
             messages.success(request, "به لیست آرزو اضافه شد؛ اگه ثبت بشه خبرت می‌کنیم.")
         return redirect("books:wishlist")
     return render(request, "books/wishlist.html", {"wishes": request.user.wishes.all()})

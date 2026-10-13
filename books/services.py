@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from common.text import normalize, work_key
+from common.text import work_key
 from notifications.services import notify as _notify
 
 from .models import Book, Wishlist
@@ -10,19 +10,55 @@ def notify(user, text, url=""):
     return _notify(user, text, url, kind="wishlist")
 
 
+def add_wish(user, text):
+    """آرزو رو با اعتبارسنجی ثبت می‌کنه. (wish, None) یا (None, پیام خطا)."""
+    from common.text import significant_words
+
+    from .isbn import normalize as isbn_normalize
+
+    text = " ".join((text or "").split())[:200]
+    if not isbn_normalize(text) and not significant_words(text):
+        return None, "حداقل یه کلمه‌ی مشخص (۳ حرف یا بیشتر؛ نه فقط «کتاب» یا «رمان») یا یه شابک بنویس."
+    if user.wishes.count() >= Wishlist.MAX_PER_USER:
+        return None, f"حداکثر {Wishlist.MAX_PER_USER} آرزو می‌تونی داشته باشی؛ چندتا رو پاک کن."
+    wish, _ = Wishlist.objects.get_or_create(user=user, text=text)
+    return wish, None
+
+
+def matching_wishes(book):
+    """
+    آرزوهایی که این کتاب برآوردشون می‌کنه، بدون اسکن کل جدول:
+    - شابک برابر (ایندکس isbn)، یا
+    - همه‌ی کلمه‌های معنی‌دار آرزو، کلمه‌ی کامل (نه زیررشته) تو عنوان+نویسنده باشه؛ نامزدها از ایندکس WishToken.word.
+    """
+    from common.text import significant_words
+
+    from .models import WishToken
+
+    ids = set()
+    if book.isbn:
+        ids |= set(Wishlist.objects.filter(isbn=book.isbn).values_list("pk", flat=True))
+    book_words = set(significant_words(f"{book.title} {book.author}"))
+    if book_words:
+        candidates = set(WishToken.objects.filter(word__in=book_words).values_list("wish_id", flat=True))
+        if candidates:
+            wanted = {}
+            for wish_id, word in WishToken.objects.filter(wish_id__in=candidates).values_list("wish_id", "word"):
+                wanted.setdefault(wish_id, set()).add(word)
+            ids |= {wish_id for wish_id, ws in wanted.items() if ws <= book_words}
+    return Wishlist.objects.filter(pk__in=ids).exclude(user=book.owner).select_related("user")
+
+
 def notify_wishlists(book):
-    """کسایی که عنوان، نویسنده یا شابکِ این کتاب تو لیست آرزوشونه خبردار می‌شن."""
+    """کسایی که کتابِ تازه آرزوشونه خبردار می‌شن؛ هر کاربر برای هر کتاب حداکثر یک اعلان."""
     if not settings.WISHLIST_ENABLED:
         return
-    fields = [normalize(f) for f in (book.title, book.author, book.isbn) if f]
     seen = set()
-    for wish in Wishlist.objects.exclude(user=book.owner).select_related("user"):
-        text = normalize(wish.text)
-        if wish.user_id in seen or not text:
+    for wish in matching_wishes(book):
+        if wish.user_id in seen or not wish.user.is_active:
             continue
-        if any(text in f or f in text for f in fields):
-            seen.add(wish.user_id)
-            notify(wish.user, f"کتابی که می‌خواستی ثبت شد: «{book.title}»", f"/books/{book.pk}/")
+        seen.add(wish.user_id)
+        notify(wish.user, f"کتابی که می‌خواستی ثبت شد: «{book.title}»", f"/books/{book.pk}/")
 
 
 def same_work(book):

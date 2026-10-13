@@ -537,7 +537,7 @@ class MeetingAndCardTests(Base):
         b = self.book(title="کارت")
         r = self.client.get(reverse("books:card", args=[b.pk]), {"download": 1})
         self.assertEqual(r["Content-Type"], "image/png")
-        self.assertTrue(r.content.startswith(b"\x89PNG"))
+        self.assertTrue(b"".join(r.streaming_content).startswith(b"\x89PNG"))
         self.assertIn("attachment", r["Content-Disposition"])
         self.assertEqual(self.client.get(reverse("books:card", args=[99999])).status_code, 404)
 

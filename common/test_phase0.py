@@ -317,3 +317,101 @@ class CardCacheTests(Base):
             other = self.book(title="کتاب دیگر")
             r = self.client.get(reverse("books:card", args=[other.pk]))
         self.assertEqual(r.status_code, 429)
+
+
+class WishlistMatchingTests(Base):
+    def setUp(self):
+        from django.test import override_settings
+        patcher = override_settings(WISHLIST_ENABLED=True)
+        patcher.enable()
+        self.addCleanup(patcher.disable)
+
+    def wish(self, text, user=None):
+        from books.services import add_wish
+        return add_wish(user or self.taker, text)
+
+    def notes(self):
+        from notifications.models import Notification
+        return Notification.objects.filter(user=self.taker, kind="wishlist").count()
+
+    def new_book(self, title, author="هدایت", **kw):
+        from books.services import notify_wishlists
+        b = Book.objects.create(owner=self.giver, title=title, author=author, city=self.isfahan, category=self.cat, **kw)
+        notify_wishlists(b)
+        return b
+
+    def test_short_and_stopword_wishes_are_rejected_and_never_match(self):
+        for bad in ("ا", "کتاب", "رمان", "از", "  ", "کتاب رمان"):
+            wish, error = self.wish(bad)
+            self.assertIsNone(wish, bad)
+            self.assertIn("کلمه", error)
+        from books.models import Wishlist
+        legacy = Wishlist.objects.create(user=self.taker, text="کتاب")        # آرزوی قدیمی/مستقیم: توکن ندارد
+        self.assertEqual(legacy.tokens.count(), 0)
+        self.new_book("کتاب مفید")
+        self.new_book("ا")
+        self.assertEqual(self.notes(), 0)
+
+    def test_whole_word_match_not_substring(self):
+        self.wish("بوف")
+        self.new_book("بوفه‌ی مدرن")                                         # زیررشته‌ی «بوف» ولی کلمه‌ی دیگر
+        self.assertEqual(self.notes(), 0)
+        self.new_book("بوف کور")
+        self.assertEqual(self.notes(), 1)
+
+    def test_all_words_required_and_author_counts(self):
+        self.wish("بوف کور هدایت")
+        self.new_book("بوف کور", author="نویسنده‌ی دیگر")                   # «هدایت» نیست
+        self.assertEqual(self.notes(), 0)
+        self.new_book("بوف کور", author="صادق هدایت")
+        self.assertEqual(self.notes(), 1)
+
+    def test_isbn_wish_matches_exact_isbn_only_and_one_note_per_user(self):
+        self.wish("978-964-305-109-2")
+        self.wish("کلیدر")
+        self.new_book("عنوان دیگر", isbn="9780000000002")
+        self.assertEqual(self.notes(), 0)
+        b = self.new_book("کلیدر جلد اول", isbn="9789643051092")              # هم شابک هم عنوان؛ فقط یک اعلان
+        self.assertEqual(self.notes(), 1)
+        self.assertEqual(b.owner, self.giver)
+
+    def test_owner_not_notified_and_persian_variants_match(self):
+        from books.services import notify_wishlists
+        self.wish("كلیدر", user=self.giver)                                  # ک عربی
+        mine = Book.objects.create(owner=self.giver, title="کلیدر", author="دولت‌آبادی", city=self.isfahan)
+        notify_wishlists(mine)
+        from notifications.models import Notification
+        self.assertEqual(Notification.objects.filter(user=self.giver, kind="wishlist").count(), 0)
+        self.wish("كلیدر")                                                   # taker
+        self.new_book("کلیدر", author="دولت‌آبادی")
+        self.assertEqual(self.notes(), 1)
+
+    def test_matching_uses_indexed_token_query_not_full_scan_and_limits(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        from books.models import Wishlist
+        for i in range(20):
+            self.wish(f"عنوان{i}ی منحصر")
+        self.wish("بوف")
+        b = Book.objects.create(owner=self.giver, title="بوف کور", author="هدایت", city=self.isfahan)
+        from books.services import matching_wishes
+        with CaptureQueriesContext(connection) as ctx:
+            result = list(matching_wishes(b))
+        self.assertEqual([w.text for w in result], ["بوف"])
+        self.assertLessEqual(len(ctx), 4)
+        self.assertEqual(Wishlist.objects.filter(user=self.taker).count(), 21)
+        # سقف تعداد آرزو
+        for i in range(Wishlist.MAX_PER_USER - 21):
+            self.wish(f"سقف{i}ام اضافه")
+        wish, error = self.wish("یکی بیشتر از حد")
+        self.assertIsNone(wish)
+        self.assertIn("حداکثر", error)
+
+    def test_view_shows_error_for_junk_wish(self):
+        from books.models import Wishlist
+        self.client.login(username="taker", password="x12345678")
+        r = self.client.post("/books/wishlist/", {"text": "کتاب"}, follow=True)
+        self.assertContains(r, "حداقل یه کلمه")
+        self.assertEqual(Wishlist.objects.count(), 0)
+        self.client.post("/books/wishlist/", {"text": "بوف کور"})
+        self.assertEqual(Wishlist.objects.count(), 1)

@@ -126,10 +126,16 @@ class BookPhoto(models.Model):
 
 
 class Wishlist(models.Model):
-    """کاربر عنوان، نویسنده یا شابک کتابی رو که می‌خواد ثبت می‌کنه."""
+    """
+    کاربر عنوان، نویسنده یا شابک کتابی رو که می‌خواد ثبت می‌کنه.
+    برای تطبیق سریع (بدون اسکن کل جدول): شابک تو فیلد ایندکس‌دار isbn و کلمه‌های معنی‌دار تو WishToken نگه‌داری می‌شن.
+    """
+
+    MAX_PER_USER = 30
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wishes", verbose_name="کاربر")
     text = models.CharField(max_length=200, verbose_name="عنوان، نویسنده یا شابک")
+    isbn = models.CharField(max_length=20, blank=True, db_index=True, editable=False, verbose_name="شابک نرمال")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
 
     class Meta:
@@ -140,6 +146,30 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return self.text
+
+    def save(self, *args, **kwargs):
+        from .isbn import normalize as isbn_normalize
+
+        self.isbn = isbn_normalize(self.text) or ""
+        super().save(*args, **kwargs)
+        self.rebuild_tokens()
+
+    def rebuild_tokens(self):
+        from common.text import significant_words
+
+        words = [] if self.isbn else significant_words(self.text)
+        self.tokens.all().delete()
+        WishToken.objects.bulk_create([WishToken(wish=self, word=w) for w in words])
+
+
+class WishToken(models.Model):
+    """یک کلمه‌ی معنی‌دار از یه آرزو؛ با ایندکس word کتابِ تازه فقط آرزوهای نامزد رو پیدا می‌کنه."""
+
+    wish = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="tokens")
+    word = models.CharField(max_length=60, db_index=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["wish", "word"], name="uniq_wish_word")]
 
 
 class BookNote(models.Model):
