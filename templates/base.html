@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("hv-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+    <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("hv-theme");if(t)document.documentElement.dataset.theme=t;if(+localStorage.getItem("hv-pf-off")>Date.now())document.documentElement.classList.add("pf-off")}catch(e){}</script>
     <title>{% block title %}هم‌ورق | کتاب‌ها دست‌به‌دست، قصه‌ها ادامه‌دار{% endblock %}</title>
     <meta name="description" content="{% block description %}هم‌ورق؛ کتابی که خوندی رو بسپار، کتاب بعدیت رو بردار. جامعه‌ی کتاب‌خوان‌هایی که قفسه‌هاشون رو با هم شریک می‌شن.{% endblock %}">
     {% block robots %}{% endblock %}
@@ -118,11 +118,13 @@
             <div><p class="footer-title">راهنما</p><ul>
                 <li><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></li><li><a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></li>
                 <li><a href="{% url 'rules' %}">قوانین</a></li>
-                <li><a href="{% url 'support:new' %}?from={{ request.path|urlencode }}">گزارش مشکل</a></li></ul></div>
+                <li><a href="{% url 'support:new' %}?from={{ request.path|urlencode }}">گزارش مشکل</a></li>
+                <li><a href="{% url 'support_us' %}">حمایت از هم‌ورق</a></li></ul></div>
             <div><p class="footer-title">حساب</p><ul>
                 {% if user.is_authenticated %}<li><a href="{% url 'accounts:profile' user.username %}">پروفایل من</a></li><li><a href="{% url 'books:create' %}">ثبت کتاب</a></li>
                 {% else %}<li><a href="{% url 'accounts:signup' %}">هم‌ورق شو</a></li><li><a href="{% url 'accounts:login' %}">ورود</a></li>{% endif %}</ul></div>
         </div>
+        <div class="footer-friend"><span class="pf-dot" aria-hidden="true"></span><span>دوست و همراه ما:</span><a href="{{ porfam_url }}" target="_blank" rel="noopener">پروفام</a><span class="muted-on-dark">— ویترین آدم‌های خلاق</span></div>
         <div class="footer-bottom"><span>{{ site.tagline }}</span><span>ساخته‌شده با ❤ برای کتاب‌خوان‌ها</span></div>
     </div>
 </footer>

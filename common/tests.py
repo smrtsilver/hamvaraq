@@ -2826,3 +2826,23 @@ class SloganTests(Base):
         head = html.split("</head>")[0]
         for w in ("رایگان", "پول"):
             self.assertNotIn(w, head)
+
+
+class SupportPorfamTests(Base):
+    def test_support_page_external_only(self):
+        from django.test import override_settings
+        r = self.client.get("/support-us/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "به‌زودی")                       # بدون SUPPORT_URL دکمه‌ی پرداخت نیست
+        self.assertContains(r, "https://porofam.ir/donate/")
+        with override_settings(SUPPORT_URL="https://daramet.com/hamvaraq"):
+            r = self.client.get("/support-us/?thanks=1")
+            self.assertContains(r, 'href="https://daramet.com/hamvaraq"')
+            self.assertContains(r, "ممنون که کنار مایی")
+            self.assertNotIn('class="sup-tier"><form', r.content.decode())   # پرداخت فقط با لینک بیرونی
+
+    def test_porfam_banner_and_footer(self):
+        r = self.client.get("/")
+        self.assertContains(r, "data-porfam")
+        self.assertContains(r, "https://porofam.ir")
+        self.assertContains(self.client.get("/books/"), "دوست و همراه ما")

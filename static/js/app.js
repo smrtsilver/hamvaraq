@@ -99,3 +99,13 @@ document.addEventListener("click", (e) => {
 
 // دکمه‌ی چاپ (نسخه‌ی چاپی قفسه)
 document.addEventListener("click", (e) => { if (e.target.closest("[data-print]")) window.print(); });
+
+// بنر پروفام: بستن تا ۳۰ روز (فقط تو همین مرورگر)
+document.addEventListener("click", (e) => {
+    const x = e.target.closest("[data-porfam-x]");
+    if (!x) return;
+    try { localStorage.setItem("hv-pf-off", String(Date.now() + 30 * 864e5)); } catch (_) { /* بسته */ }
+    const box = x.closest("[data-porfam]");
+    box.classList.add("is-closing");
+    setTimeout(() => { document.documentElement.classList.add("pf-off"); }, 260);
+});

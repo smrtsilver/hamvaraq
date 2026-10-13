@@ -60,6 +60,7 @@
     <div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div>
 </div></section>{% endif %}
 
+<div class="container">{% include "components/porfam_banner.html" %}</div>
 <section class="lp-section"><div class="container faq-wrap">
     <div class="lp-title"><h2>سوال‌های پرتکرار</h2></div>
     {% for q, a in faq %}<details class="faq"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}

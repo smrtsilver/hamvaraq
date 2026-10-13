@@ -261,3 +261,9 @@ EVENT_CITY_NOTIFY_LIMIT = 300    # سقف اعلان به کاربران شهر 
 EVENT_REMIND_HOURS = 30          # یادآوری «فردا» برای کسانی که یادآوری زدن
 ANNOUNCEMENT_DAILY_LIMIT = 3     # حداکثر اطلاعیه‌ی جدید هر کاربر در ۲۴ ساعت
 BADGE_COLUMNIST_POSTS = 5
+
+# حمایت از هم‌ورق: فقط لینک بیرونی (مثلاً صفحه‌ی دارمت)؛ هیچ پرداختی داخل سایت ذخیره نمی‌شه
+SUPPORT_URL = env("SUPPORT_URL", default="")
+# پروفام: پروژه‌ی همراه
+PORFAM_URL = env("PORFAM_URL", default="https://porofam.ir")
+PORFAM_DONATE_URL = env("PORFAM_DONATE_URL", default="https://porofam.ir/donate/")

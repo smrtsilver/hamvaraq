@@ -6,7 +6,7 @@
 {% include "panel/_search.html" with placeholder="عنوان، نویسنده، شابک یا صاحب" keep=keep_status %}
 {% include "panel/_bulk_bar.html" with action=bulk_url options=bulk_opts with_note=1 %}
 <div class="ptable-wrap"><table class="table ptable" data-ptable><thead><tr><th class="sel"><input type="checkbox" data-select-all aria-label="انتخاب همه"></th><th>کتاب</th><th>صاحب</th><th>شهر</th><th>وضعیت</th><th>ثبت</th><th><span class="visually-hidden">اقدام</span></th></tr></thead><tbody>
-{% for b in page %}<tr><td class="sel"><input type="checkbox" name="ids" value="{{ b.pk }}" form="bulk-form" aria-label="انتخاب"></td>
+{% for b in page %}<tr><td class="sel" data-label="انتخاب"><input type="checkbox" name="ids" value="{{ b.pk }}" form="bulk-form" aria-label="انتخاب"></td>
     <td data-label="کتاب">{% if b.deleted_at %}<strong>{{ b.title|truncatechars:40 }}</strong> <span class="pill pill-red">حذف‌شده</span>{% else %}<a href="{{ b.get_absolute_url }}"><strong>{{ b.title|truncatechars:40 }}</strong></a>{% endif %}<br><span class="small muted">{{ b.author }}</span></td>
     <td data-label="صاحب"><a href="{% url 'panel:user' b.owner.pk %}">{{ b.owner.username }}</a></td><td data-label="شهر">{{ b.city.name|default:"—" }}</td>
     <td data-label="وضعیت"><span class="pill">{{ b.get_status_display }}</span></td><td data-label="ثبت">{{ b.created_at|jdate }}</td>

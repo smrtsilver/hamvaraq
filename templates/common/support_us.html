@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}حمایت از هم‌ورق | هر همراهی، یه ورق تازه{% endblock %}
+{% block description %}هم‌ورق مستقل و داوطلبانه ساخته می‌شه. اگه دوست داری کتاب‌ها بیشتر سفر کنن، می‌تونی همراه‌مون باشی.{% endblock %}
+{% block content %}
+<div class="sup">
+{% if thanks %}<section class="sup-thanks" role="status"><span class="sup-thanks-ico" aria-hidden="true">❦</span><div><h2>ممنون که کنار مایی</h2><p>همراهیت ثبت شد. هر ورقی که اضافه می‌کنی، یه کتاب رو یه قدم جلوتر می‌بره.</p></div></section>{% endif %}
+
+<section class="sup-hero" aria-labelledby="sup-h">
+    <span class="sup-glow sup-glow-1" aria-hidden="true"></span><span class="sup-glow sup-glow-2" aria-hidden="true"></span>
+    <div class="sup-hero-copy">
+        <span class="sup-kicker">{% include "components/icon.html" with name="heart" %} همراهی داوطلبانه</span>
+        <h1 id="sup-h">هر همراهی، <em>یه ورق تازه</em></h1>
+        <p>هم‌ورق مستقل ساخته می‌شه تا کتاب‌ها روی قفسه خاک نخورن و از دستی به دستی سفر کنن. اگه این مسیر رو دوست داری، می‌تونی تو نگه‌داشتن و بزرگ‌ترشدنش شریک باشی.</p>
+        <div class="cluster">{% if support_url %}<a class="btn btn-lg" href="{{ support_url }}" target="_blank" rel="noopener">{% include "components/icon.html" with name="heart" %} همراه هم‌ورق شو</a>{% else %}<a class="btn btn-lg" href="#ways">{% include "components/icon.html" with name="heart" %} چطور همراه بشم؟</a>{% endif %}
+            <a class="lp-link" href="#where">همراهیت کجا می‌ره؟ {% include "components/icon.html" with name="chevron-left" %}</a></div>
+    </div>
+    <div class="sup-art" aria-hidden="true"><div class="sup-book"><i></i><i></i></div><span class="sup-page p1"></span><span class="sup-page p2"></span><span class="sup-page p3"></span></div>
+</section>
+
+<section class="lp-section sup-sec" aria-labelledby="why-h"><div class="lp-title"><h2 id="why-h">چرا همراهی؟</h2><p>چون هر کتاب، یه سفر تازه‌ست و هر سفر یه همسفر می‌خواد.</p></div>
+    <div class="sup-why">
+        <div class="sup-card"><span class="sup-ico">{% include "components/icon.html" with name="leaf" %}</span><h3>کتاب‌ها زنده می‌مونن</h3><p>کتابی که خونده شد، به جای خاک خوردن راه می‌افته سمت خواننده‌ی بعدی.</p></div>
+        <div class="sup-card"><span class="sup-ico">{% include "components/icon.html" with name="pin" %}</span><h3>شهرها به هم نزدیک می‌شن</h3><p>از کتاب‌خوان‌های یه محله تا باشگاه‌های کتاب یه شهر تازه.</p></div>
+        <div class="sup-card"><span class="sup-ico">{% include "components/icon.html" with name="shield" %}</span><h3>بدون تبلیغ، بدون مزاحمت</h3><p>می‌خوایم هم‌ورق آروم و تمیز بمونه؛ همراهی شماست که این رو ممکن می‌کنه.</p></div>
+    </div></section>
+
+<section class="lp-section lp-alt sup-sec" id="where" aria-labelledby="where-h"><div class="container-in"><div class="lp-title"><h2 id="where-h">همراهیت به کجا می‌رسه؟</h2><p>شفاف و ساده؛ فقط برای خود هم‌ورق.</p></div>
+    <div class="sup-where">
+        <div class="sup-w"><span class="sup-ico">{% include "components/icon.html" with name="settings" %}</span><div><h3>سرور و پشتیبان‌گیری</h3><p>روشن نگه‌داشتن قفسه‌ها، نسخه‌ی پشتیبان و امنیت داده‌ها.</p></div></div>
+        <div class="sup-w"><span class="sup-ico">{% include "components/icon.html" with name="sparkle" %}</span><div><h3>امکانات تازه</h3><p>استوری‌ساز، باشگاه کتاب، آمار خواندن؛ و چیزهایی که شما پیشنهاد می‌دید.</p></div></div>
+        <div class="sup-w"><span class="sup-ico">{% include "components/icon.html" with name="calendar" %}</span><div><h3>رویدادهای کتاب‌خوانی</h3><p>کمک به جلسه‌های همخوانی و میزهای مبادله‌ی کتاب در شهرهای مختلف.</p></div></div>
+        <div class="sup-w"><span class="sup-ico">{% include "components/icon.html" with name="chat" %}</span><div><h3>رسیدگی و پشتیبانی</h3><p>جواب‌دادن به گزارش‌ها و حل اختلاف‌ها با حوصله.</p></div></div>
+    </div></div></section>
+
+<section class="lp-section sup-sec" aria-labelledby="tiers-h"><div class="lp-title"><h2 id="tiers-h">دوست داری کدوم ورق رو اضافه کنی؟</h2><p>هر اندازه‌ای ارزشمنده؛ مهم‌تر از اون، همراهیه.</p></div>
+    <div class="sup-tiers">{% for ico, amount, label, _v in tiers %}
+        {% if support_url %}<a class="sup-tier" href="{{ support_url }}" target="_blank" rel="noopener">{% else %}<div class="sup-tier is-soon">{% endif %}<span class="sup-emoji" aria-hidden="true">{{ ico }}</span><strong>{{ amount }} تومان</strong><small>{{ label }}</small>{% if support_url %}</a>{% else %}</div>{% endif %}{% endfor %}
+        {% if support_url %}<a class="sup-tier sup-tier-custom" href="{{ support_url }}" target="_blank" rel="noopener"><span class="sup-emoji" aria-hidden="true">✍️</span><strong>اندازه‌ی دلخواه</strong><small>خودت انتخاب کن</small></a>{% endif %}
+    </div>
+    {% if support_url %}<p class="sup-note">{% include "components/icon.html" with name="shield" %} همراهی روی صفحه‌ی امن یه سرویس بیرونی انجام می‌شه؛ هم‌ورق هیچ اطلاعات پرداختی ذخیره نمی‌کنه.</p>
+    {% else %}<p class="sup-note">{% include "components/icon.html" with name="info" %} درگاه همراهی هم‌ورق به‌زودی باز می‌شه. تا اون موقع، از راه‌های پایین هم می‌شه همراه بود.</p>{% endif %}
+</section>
+
+<section class="lp-section lp-alt sup-sec" id="ways" aria-labelledby="ways-h"><div class="container-in"><div class="lp-title"><h2 id="ways-h">همراهی فقط یه شکل نداره</h2><p>این‌ها هم به همون اندازه ارزشمندن.</p></div>
+    <div class="sup-ways">
+        <a class="sup-way" href="{% url 'books:shelf_add' %}">{% include "components/icon.html" with name="book" %}<strong>قفسه‌ات رو بیار</strong><span>کتاب‌هایی که داری رو اضافه کن</span></a>
+        <a class="sup-way" href="{% url 'clubs:list' %}">{% include "components/icon.html" with name="chat" %}<strong>باشگاه کتاب بساز</strong><span>کتاب‌خوان‌های شهرت رو جمع کن</span></a>
+        <a class="sup-way" href="{% url 'posts:create' %}">{% include "components/icon.html" with name="pen" %}<strong>معرفی بنویس</strong><span>کتابی که دوستش داشتی رو معرفی کن</span></a>
+        <a class="sup-way" href="{% url 'support:new' %}">{% include "components/icon.html" with name="flag" %}<strong>مشکل گزارش کن</strong><span>هر باگی که پیدا کنی، هم‌ورق بهتر می‌شه</span></a>
+    </div></div></section>
+
+<section class="porfam-promo porfam-wide" aria-labelledby="pf-h">
+    <div class="pf-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="grow"><span class="pf-kicker">پروژه‌ی همراه</span><h2 id="pf-h">پروفام؛ ویترین آدم‌های خلاق</h2>
+        <p>همون‌طور که هم‌ورق قفسه‌ی کتاب‌خوان‌هاست، پروفام صفحه‌ی معرفی کسب‌وکارهای کوچک و هنرمندهاست. سری بزن، شاید آشنایی اونجا باشه.</p>
+        <div class="cluster"><a class="btn btn-secondary" href="{{ porfam_url }}" target="_blank" rel="noopener">دیدن پروفام</a><a class="lp-link" href="{{ porfam_donate }}" target="_blank" rel="noopener">همراهی با پروفام {% include "components/icon.html" with name="chevron-left" %}</a></div></div>
+</section>
+
+<section class="lp-section sup-sec" aria-labelledby="sfaq-h"><div class="lp-title"><h2 id="sfaq-h">چند نکته‌ی کوتاه</h2></div>
+    <div class="faq-wrap">{% for q, a in faq %}<details class="faq"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}</div></section>
+
+<section class="cta-band sup-closing"><h2>آماده‌ای یه ورق تازه به این کتاب اضافه کنی؟</h2><p>با همراهی، با یه کتاب، یا حتی با یه معرفی کوتاه.</p>
+    {% if support_url %}<a class="btn btn-lg btn-accent" href="{{ support_url }}" target="_blank" rel="noopener">همراه هم‌ورق شو</a>{% else %}<a class="btn btn-lg btn-accent" href="{% url 'books:shelf_add' %}">یه کتاب به قفسه اضافه کن</a>{% endif %}</section>
+</div>
+{% endblock %}

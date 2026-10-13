@@ -227,3 +227,21 @@ def story(request):
         from django.http import Http404
         raise Http404
     return render(request, "common/story.html", {"story": data, "book": book, "templates": STORY_TEMPLATES})
+
+
+SUPPORT_TIERS = [
+    ("☕", "۵۰ هزار", "چای یه شب کدنویسی", 50_000),
+    ("📚", "۱۵۰ هزار", "یه قفسه‌ی تازه برای امکانات جدید", 150_000),
+    ("🖥️", "۳۰۰ هزار", "سهمی از سرور این ماه", 300_000),
+    ("🌱", "۷۰۰ هزار", "یه رویداد کتاب‌خوانی تو یه شهر تازه", 700_000),
+]
+
+
+def support_us(request):
+    """صفحه‌ی «حمایت از ما»: فقط لینک‌های بیرونی؛ هیچ پرداخت یا اطلاعات حامی‌ای اینجا ذخیره نمی‌شه."""
+    from .content import SUPPORT_FAQ
+
+    return render(request, "common/support_us.html", {
+        "tiers": SUPPORT_TIERS, "faq": SUPPORT_FAQ, "thanks": request.GET.get("thanks") == "1",
+        "support_url": settings.SUPPORT_URL, "porfam_url": settings.PORFAM_URL, "porfam_donate": settings.PORFAM_DONATE_URL,
+    })
