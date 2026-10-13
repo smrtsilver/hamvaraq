@@ -867,3 +867,5 @@ input[aria-invalid=true]{border-color:var(--danger)}
   .listing-preview .lp-cover{display:none}
 }
 @media (max-width:359px){.header-in{gap:4px}.header-in .btn{padding:0 10px;min-height:34px}.brand{font-size:1.25rem}.brand svg{width:26px;height:26px}.header-in .icon-btn{min-width:36px;padding:0}}
+.toasts{box-sizing:border-box;max-width:100%}.toasts>*{max-width:100%;box-sizing:border-box}
+@media (max-width:359px){.header-actions{gap:0}.header-actions .icon-btn{width:34px;height:34px}.brand{font-size:1.1rem}}
