@@ -3,6 +3,8 @@
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}
 <div class="page-head"><div><h1>فید کتاب‌خوان‌ها</h1><p>کتاب‌هایی که دوستانت تموم کردن، نقدهاشون و آگهی‌های تازه‌شون.</p></div></div>
+{% if recs %}<section class="section-sm feed-recs" aria-labelledby="frec-h"><div class="section-head"><div><h2 id="frec-h">پیشنهاد کتاب برای تو</h2><p>از روی قفسه‌ات؛ همه برای معاوضه موجودن</p></div></div>
+    <div class="hv-shelf-track" tabindex="0" aria-label="پیشنهادها">{% for b in recs %}<div class="hv-shelf-item">{% include "components/book_card.html" %}<p class="why">{{ b.why }}</p></div>{% endfor %}</div></section>{% endif %}
 <div class="feed-layout">
 <div>
 {% if items %}<ol class="feed">{% for it in items %}

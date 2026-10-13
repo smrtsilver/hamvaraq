@@ -208,8 +208,8 @@ def story(request):
 
         e = get_object_or_404(ShelfEntry.objects.select_related("book"), pk=eid, user=request.user)
         data.update(mode="review", text=e.review, stars=e.rating or 0, user=request.user.username, title=e.title, author=e.author, slug=f"shelf-{e.pk}")
-        if e.listing and e.listing.cover:
-            data["cover"] = e.listing.cover.url
+        if e.cover_url:
+            data["cover"] = e.cover.url if e.cover else e.listing.cover.url
     bid = request.GET.get("book", "")
     if book is None and bid.isdigit():
         book = get_object_or_404(Book, pk=bid)

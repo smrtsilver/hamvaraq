@@ -214,7 +214,7 @@ class ShelfAddForm(PersianFormMixin, forms.ModelForm):
 
 class ShelfEntryForm(ShelfAddForm):
     class Meta(ShelfAddForm.Meta):
-        fields = ["reading_status", "rating", "review", "note", "title", "author", "isbn"]
+        fields = ["reading_status", "rating", "review", "note", "cover", "title", "author", "isbn"]
         widgets = {"reading_status": forms.RadioSelect, "rating": forms.RadioSelect,
                    "review": forms.Textarea(attrs={"rows": 5, "placeholder": "نظرت درباره‌ی این کتاب؛ روی قفسه‌ات به بقیه نشون داده می‌شه."}),
                    "note": forms.Textarea(attrs={"rows": 4, "placeholder": "فقط خودت می‌بینی: صفحه‌ای که رسیدی، جمله‌هایی که خوشت اومد…"})}
@@ -223,6 +223,15 @@ class ShelfEntryForm(ShelfAddForm):
         super().__init__(*args, **kwargs)
         self.fields["rating"].required = False
         self.fields["rating"].choices = [("", "بدون امتیاز")] + [(i, "★" * i) for i in range(1, 6)]
+        self.fields["cover"].help_text = "اختیاری؛ عکس جلد خودت. بدون اطلاعات مکانی و فشرده ذخیره می‌شه."
+        self.fields["cover"].widget.attrs["accept"] = "image/*"
+
+    def clean_cover(self):
+        cover = self.cleaned_data.get("cover")
+        if isinstance(cover, UploadedFile):
+            _check_size(cover)
+            return process_upload(cover)
+        return cover
 
 
 class HighlightForm(PersianFormMixin, forms.ModelForm):

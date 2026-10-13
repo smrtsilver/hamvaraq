@@ -81,7 +81,11 @@ def follow_toggle(request, username):
 def feed(request):
     from . import feed as feedmod
 
-    return render(request, "accounts/feed.html", {"items": feedmod.build(request.user), "suggested": feedmod.suggested_readers(request.user)})
+    from books.listing import decorate_cards
+    from books.reading import recommendations
+
+    return render(request, "accounts/feed.html", {"items": feedmod.build(request.user), "suggested": feedmod.suggested_readers(request.user),
+                                                  "recs": decorate_cards(recommendations(request.user, 8), request.user)})
 
 
 @login_required

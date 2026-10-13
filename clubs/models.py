@@ -63,3 +63,29 @@ class ClubPost(models.Model):
         ordering = ["-created_at"]
         verbose_name = "پیام باشگاه"
         verbose_name_plural = "پیام‌های باشگاه"
+
+
+class ClubProposal(models.Model):
+    """پیشنهاد «کتاب بعدی» در باشگاه؛ عضوها رأی می‌دن و گرداننده انتخاب می‌کنه."""
+
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="proposals")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="club_proposals")
+    title = models.CharField(max_length=200, verbose_name="عنوان کتاب")
+    author = models.CharField(max_length=150, blank=True, verbose_name="نویسنده")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "پیشنهاد کتاب بعدی"
+        verbose_name_plural = "پیشنهادهای کتاب بعدی"
+
+
+class ClubVote(models.Model):
+    """هر عضو در هر باشگاه یه رأی داره (عوض‌کردنش آزاده)."""
+
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="votes")
+    proposal = models.ForeignKey(ClubProposal, on_delete=models.CASCADE, related_name="votes")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="club_votes")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["club", "user"], name="one_vote_per_club")]

@@ -15,7 +15,7 @@
 <nav class="shelf-tabs" aria-label="فیلتر قفسه">{% for v, label, n in tabs %}<a href="?{% if v %}s={{ v }}{% endif %}"{% if tab == v %} aria-current="page"{% endif %}>{{ label }} <b>{{ n|fa }}</b></a>{% endfor %}<a href="?s=swap"{% if tab == 'swap' %} aria-current="page"{% endif %}>برای معاوضه</a></nav>
 {% if entries %}<ul class="shelf-list">{% for e in entries %}
     <li><a class="shelf-row" href="{% url 'books:shelf_edit' e.pk %}">
-        <span class="sr-spine{% if e.for_exchange %} has-ribbon{% endif %}" aria-hidden="true"></span>
+        {% if e.cover %}<img class="sr-cover" src="{{ e.cover.url }}" alt="" loading="lazy" width="40" height="58">{% else %}<span class="sr-spine{% if e.for_exchange %} has-ribbon{% endif %}" aria-hidden="true"></span>{% endif %}
         <span class="sr-main"><strong>{{ e.title }}</strong><span class="muted small">{{ e.author }}</span>
             <span class="sr-meta"><span class="pill pill-{% if e.reading_status == 'read' %}green{% elif e.reading_status == 'reading' %}amber{% else %}blue{% endif %}">{{ e.get_reading_status_display }}</span>{% if e.rating %}<span class="stars" aria-label="{{ e.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= e.rating %}★{% endif %}{% endfor %}</span>{% endif %}{% if e.for_exchange %}<span class="ribbon-chip">برای معاوضه</span>{% endif %}{% if e.review %}<span class="small muted">{% include "components/icon.html" with name="pen" %} نقد</span>{% endif %}</span>
             {% if e.matches %}<span class="match-line">{% include "components/icon.html" with name="swap" %} {{ e.matches|length|fa }} آگهی موجود — {{ e.matches.0.city.name }}</span>{% endif %}</span>

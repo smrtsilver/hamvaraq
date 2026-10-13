@@ -81,7 +81,7 @@ def shelf_add(request):
 @login_required
 def shelf_edit(request, pk):
     entry = get_object_or_404(ShelfEntry.objects.select_related("book"), pk=pk, user=request.user)
-    form = ShelfEntryForm(request.POST or None, instance=entry)
+    form = ShelfEntryForm(request.POST or None, request.FILES or None, instance=entry)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "ذخیره شد.")

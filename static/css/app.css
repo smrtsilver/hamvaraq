@@ -1257,3 +1257,11 @@ a.sup-tier:hover{text-decoration:none;color:inherit;transform:translateY(-3px);b
 .sup-closing{margin-top:36px}
 @media (max-width:760px){.sup-hero{grid-template-columns:1fr;padding:26px 18px}.sup-art{display:none}}
 @media (prefers-reduced-motion:reduce){.sup-glow,.sup-page{animation:none}}
+.eh-cover{flex:none;width:100px;height:150px;object-fit:cover;border-radius:4px 10px 10px 4px;box-shadow:4px 6px 12px rgba(0,0,0,.25)}
+.sr-cover{flex:none;width:40px;height:58px;object-fit:cover;border-radius:2px 5px 5px 2px;box-shadow:2px 2px 4px rgba(0,0,0,.2)}
+.vote-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:10px}
+.vote-list li{padding:10px 12px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface-2)}.vote-list li.is-mine{border-color:var(--primary)}
+.vote-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.vote-n{font-size:var(--fs-xs);font-weight:800;color:var(--primary-ink);white-space:nowrap}
+.vote-bar{display:block;height:6px;margin:6px 0;border-radius:3px;background:var(--line);overflow:hidden}.vote-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--primary));border-radius:3px;transition:width .5s var(--ease)}
+.vote-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.vote-acts form{margin:0}
+.propose-form{display:grid;gap:8px}.propose-form input{min-height:40px}

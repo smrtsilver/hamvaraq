@@ -26,6 +26,20 @@
     {% else %}<p class="muted">هنوز کسی چیزی ننوشته؛ اولین نفر باش.</p>{% endif %}
 </section>
 <aside class="club-side">
+    <section class="card" aria-labelledby="next-h"><h2 id="next-h" class="h3">کتاب بعدی چی باشه؟</h2>
+        {% if proposals %}<ol class="vote-list">{% for p in proposals %}<li class="{% if p.pk == my_vote %}is-mine{% endif %}">
+            <div class="vote-top"><span><b>{{ p.title }}</b>{% if p.author %}<small class="muted"> · {{ p.author }}</small>{% endif %}</span><span class="vote-n">{{ p.n|fa }} رأی</span></div>
+            <span class="vote-bar" role="img" aria-label="{{ p.pct|fa }} درصد رأی‌ها"><i data-w="{{ p.pct }}"></i></span>
+            <div class="vote-acts">{% if is_member %}{% if p.pk != my_vote %}<form method="post" action="{% url 'clubs:vote' club.slug p.pk %}">{% csrf_token %}<button class="btn btn-secondary btn-sm">رأی می‌دم</button></form>{% else %}<span class="pill pill-green">رأی تو</span>{% endif %}{% endif %}
+                {% if is_owner %}<form method="post" action="{% url 'clubs:choose' club.slug p.pk %}" data-confirm="«{{ p.title }}» کتاب بعدی بشه؟ رأی‌گیری از نو شروع می‌شه.">{% csrf_token %}<button class="btn btn-sm">انتخاب</button></form>{% endif %}
+                {% if user == p.user or is_owner %}<form method="post" action="{% url 'clubs:proposal_delete' club.slug p.pk %}">{% csrf_token %}<button class="btn-link link-danger small">حذف</button></form>{% endif %}</div>
+        </li>{% endfor %}</ol>{% else %}<p class="muted small">هنوز پیشنهادی نیست.</p>{% endif %}
+        {% if is_member %}<form method="post" action="{% url 'clubs:propose' club.slug %}" class="propose-form" novalidate>{% csrf_token %}
+            <label class="visually-hidden" for="pp-t">عنوان کتاب</label><input id="pp-t" name="title" maxlength="200" placeholder="عنوان کتاب پیشنهادی" required>
+            <label class="visually-hidden" for="pp-a">نویسنده</label><input id="pp-a" name="author" maxlength="150" placeholder="نویسنده (اختیاری)">
+            <button class="btn btn-secondary btn-sm">پیشنهاد بده</button></form>{% endif %}
+    </section>
+    <div class="mt-16"></div>
     <section class="card" aria-labelledby="ev-h"><h2 id="ev-h" class="h3">جلسه‌های پیش‌رو</h2>
         {% if events %}<div class="stack stack-sm">{% for a in events %}{% include "components/event_card.html" %}{% endfor %}</div>{% else %}<p class="muted small">جلسه‌ای اعلام نشده.</p>{% endif %}</section>
     <section class="card mt-16" aria-labelledby="mem-h"><h2 id="mem-h" class="h3">عضوها</h2>

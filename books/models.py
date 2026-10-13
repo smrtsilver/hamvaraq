@@ -329,6 +329,7 @@ class ShelfEntry(models.Model):
     title = models.CharField(max_length=200, verbose_name="عنوان")
     author = models.CharField(max_length=150, verbose_name="نویسنده")
     isbn = models.CharField(max_length=20, blank=True, verbose_name="شابک")
+    cover = models.ImageField(upload_to="shelf/%Y/%m/", blank=True, verbose_name="عکس جلد")
     reading_status = models.CharField(max_length=8, choices=Reading.choices, default=Reading.READ, db_index=True, verbose_name="وضعیت خواندن")
     rating = models.PositiveSmallIntegerField(null=True, blank=True, choices=[(i, f"{i} ستاره") for i in range(1, 6)], verbose_name="امتیاز")
     review = models.TextField(blank=True, max_length=1500, verbose_name="نقد (عمومی)")
@@ -357,6 +358,14 @@ class ShelfEntry(models.Model):
         if b is None or b.deleted_at or b.owner_id != self.user_id:
             return None
         return b
+
+    @property
+    def cover_url(self):
+        """جلد قفسه؛ اگه خودش نداره، جلد آگهی معاوضه‌اش."""
+        if self.cover:
+            return self.cover.url
+        b = self.listing
+        return b.thumb_url if b and b.cover else ""
 
     @property
     def for_exchange(self):
