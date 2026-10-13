@@ -49,9 +49,26 @@ def _action(service, ok_message):
     return view
 
 
+@login_required
+@require_POST
+@throttle("postal", 20, 3600, by="user")
+def postal(request, pk):
+    if _run(request, services.set_postal, pk, request.user, request.POST.get("tracking_code", "")):
+        messages.success(request, "ارسال پستی ثبت شد و گیرنده خبردار شد.")
+    return redirect("exchanges:detail", pk)
+
+
 accept = _action(services.accept, "درخواست تأیید شد.")
 reject = _action(services.reject, "درخواست رد شد.")
-cancel = _action(services.cancel, "مبادله لغو شد.")
+@login_required
+@require_POST
+def cancel(request, pk):
+    """لغو با دلیل اختیاری (فهرست ثابت یا متن آزاد کوتاه)."""
+    reason = request.POST.get("reason", "")
+    if _run(request, services.cancel, pk, request.user, reason):
+        messages.success(request, "مبادله لغو شد.")
+    return redirect("exchanges:detail", pk)
+
 confirm = _action(services.confirm, "تأییدت ثبت شد.")
 
 

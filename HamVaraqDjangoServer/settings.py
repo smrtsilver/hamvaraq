@@ -235,6 +235,8 @@ WELCOME_WINDOW_DAYS = 30
 # بدون این کلیدها فقط اعلان داخل سایت کار می‌کنه. ساختن: python manage.py generate_vapid_keys
 WISHLIST_ENABLED = env.bool("WISHLIST_ENABLED", default=False)  # فعلاً «به‌زودی»؛ اطلاعات کتاب (شابک و ...) کامل بشه، روشنش می‌کنیم
 # کارت استوری از nginx سرو بشه: مثلاً /_cards/ (و location internal تو nginx؛ deploy/hamvaraq.nginx.conf.example)
+RELIST_REMIND_DAYS = env.int("RELIST_REMIND_DAYS", default=7)           # روز بعد از تحویل موفق تا یادآوری «دوباره بذارش»
+CANCEL_AFTER_ACCEPT_FLAG = env.int("CANCEL_AFTER_ACCEPT_FLAG", default=3)   # لغو بعد از تأیید در ۳۰ روز ← فقط سرنخ تو داشبورد
 CARD_X_ACCEL_PREFIX = env("CARD_X_ACCEL_PREFIX", default="")
 # CSP: اول Report-Only (تخلف‌ها تو لاگ csp)؛ بعد از چند روز بدون تخلف CSP_ENFORCE=True
 CSP_ENFORCE = env.bool("CSP_ENFORCE", default=False)

@@ -27,6 +27,17 @@ class Exchange(models.Model):
     accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان تأیید")
     first_confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="اولین تأیید تحویل")
     reminder_count = models.PositiveSmallIntegerField(default=0, verbose_name="تعداد یادآوری")
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="لغوکننده")
+    cancel_reason = models.CharField(max_length=200, blank=True, verbose_name="دلیل لغو")
+    cancelled_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان لغو")
+    class Delivery(models.TextChoices):
+        IN_PERSON = "in_person", "حضوری"
+        POSTAL = "postal", "ارسال پستی"
+
+    delivery = models.CharField(max_length=10, choices=Delivery.choices, default=Delivery.IN_PERSON, verbose_name="روش تحویل")
+    tracking_code = models.CharField(max_length=40, blank=True, verbose_name="کد رهگیری")
+    shipped_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان ارسال")
+    relist_reminded_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name="یادآوری دوباره‌گذاشتن")
     disputed_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان اختلاف")
     resolution_note = models.CharField(max_length=300, blank=True, verbose_name="نتیجه‌ی رسیدگی")
     # آخرین باری که هر طرف چت رو دیده (برای شمارش پیام‌های خوانده‌نشده)

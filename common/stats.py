@@ -67,6 +67,13 @@ def suspicious_accounts(now=None):
         for u in members:
             flag(u, f"{g['n']} حساب با ثبت‌نام از یه شبکه")
 
+    # ۴.۵) لغو بعد از تأیید، تکراری (سرنخ بدقولی؛ جریمه‌ی خودکار نیست)
+    cancels = (Exchange.objects.filter(status=Exchange.Status.CANCELLED, accepted_at__isnull=False, cancelled_by__isnull=False, cancelled_at__gte=now - timedelta(days=30))
+               .values("cancelled_by").annotate(n=Count("id")).filter(n__gte=settings.CANCEL_AFTER_ACCEPT_FLAG))
+    users_cancel = User.objects.in_bulk([c["cancelled_by"] for c in cancels])
+    for c in cancels:
+        flag(users_cancel[c["cancelled_by"]], f"{c['n']} لغو بعد از تأیید در ۳۰ روز")
+
     # ۵) اخطارهای تکراری
     for u in User.objects.filter(warnings__gte=2):
         flag(u, f"{u.warnings} اخطار")

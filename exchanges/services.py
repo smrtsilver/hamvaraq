@@ -105,7 +105,8 @@ def reject(exchange_id, user):
 
 
 @transaction.atomic
-def cancel(exchange_id, user):
+def cancel(exchange_id, user, reason=""):
+    """لغو توسط یکی از دو طرف؛ لغوکننده و دلیلش ثبت می‌شه (لغو بعد از تأیید برای تحلیل اعتماد مهمه)."""
     ex = _get_locked(exchange_id)
     if not ex.is_party(user):
         raise ExchangeError("این مبادله مال تو نیست.")
@@ -113,12 +114,34 @@ def cancel(exchange_id, user):
         raise ExchangeError("این مبادله دیگه قابل لغو نیست.")
     was_accepted = ex.status == Exchange.Status.ACCEPTED
     ex.status = Exchange.Status.CANCELLED
-    ex.save(update_fields=["status", "updated_at"])
+    ex.cancelled_by, ex.cancelled_at, ex.cancel_reason = user, timezone.now(), " ".join((reason or "").split())[:200]
+    ex.save(update_fields=["status", "cancelled_by", "cancelled_at", "cancel_reason", "updated_at"])
     _refund(ex)
     if was_accepted:
         ex.book.status = Book.Status.AVAILABLE
         ex.book.save(update_fields=["status"])
-    notify(ex.other_party(user), f"مبادله‌ی «{ex.book.title}» لغو شد.", _url(ex))
+    notify(ex.other_party(user), f"مبادله‌ی «{ex.book.title}» لغو شد." + (f" دلیل: {ex.cancel_reason}" if ex.cancel_reason else ""), _url(ex))
+    return ex
+
+
+@transaction.atomic
+def set_postal(exchange_id, user, tracking_code):
+    """صاحب کتاب (فرستنده) ارسال پستی رو با کد رهگیری ثبت می‌کنه؛ گیرنده خبردار می‌شه و بعد از رسیدن «تحویل انجام شد» رو می‌زنه."""
+    import re
+
+    from common.text import normalize
+
+    ex = _get_locked(exchange_id)
+    if ex.owner_id != user.pk:
+        raise ExchangeError("فقط صاحب کتاب می‌تونه ارسال پستی ثبت کنه.")
+    if ex.status != Exchange.Status.ACCEPTED or ex.disputed_at:
+        raise ExchangeError("ارسال فقط برای مبادله‌ی تأییدشده‌ی بدون اختلاف ثبت می‌شه.")
+    code = re.sub(r"[\s-]", "", normalize(tracking_code)).upper()
+    if not re.fullmatch(r"[A-Z0-9]{8,30}", code):
+        raise ExchangeError("کد رهگیری باید ۸ تا ۳۰ حرف و عدد (انگلیسی یا فارسی) باشه.")
+    ex.delivery, ex.tracking_code, ex.shipped_at = Exchange.Delivery.POSTAL, code, timezone.now()
+    ex.save(update_fields=["delivery", "tracking_code", "shipped_at", "updated_at"])
+    notify(ex.requester, f"«{ex.book.title}» با پست ارسال شد. کد رهگیری: {code}. بعد از رسیدن «تحویل انجام شد» رو بزن.", _url(ex))
     return ex
 
 
@@ -220,7 +243,8 @@ def auto_cancel(ex, reason):
             return ex
         was_accepted = ex.status == Exchange.Status.ACCEPTED
         ex.status = Exchange.Status.CANCELLED
-        ex.save(update_fields=["status", "updated_at"])
+        ex.cancelled_by, ex.cancelled_at, ex.cancel_reason = None, timezone.now(), f"سیستم: {reason}"[:200]
+        ex.save(update_fields=["status", "cancelled_by", "cancelled_at", "cancel_reason", "updated_at"])
         _refund(ex)
         if was_accepted:
             ex.book.status = Book.Status.AVAILABLE
@@ -285,7 +309,7 @@ def process_lifecycle(now=None, dry_run=False):
     from django.conf import settings
 
     now = now or timezone.now()
-    out = {"reminded": 0, "cancelled": 0, "disputed": 0}
+    out = {"reminded": 0, "cancelled": 0, "disputed": 0, "relist_reminded": 0}
 
     def days(since):
         return (now - since) / timedelta(days=1)
@@ -331,4 +355,16 @@ def process_lifecycle(now=None, dry_run=False):
             else:
                 remind(ex, settings.ACCEPTED_REMIND_DAYS, since, [ex.owner, ex.requester],
                        f"مبادله‌ی «{ex.book.title}» تأیید شده ولی هنوز تحویل نشده؛ هماهنگ کنید یا لغوش کنید.")
+
+    # کتاب گرفته‌شده‌ای که ۷ روز بعد از تحویل هنوز «مبادله‌شده» مونده: یه‌بار یادآوری برای دوباره‌گذاشتن (چرخه‌ی کتاب نمیره)
+    cutoff = now - timedelta(days=settings.RELIST_REMIND_DAYS)
+    for ex in base.filter(status=Exchange.Status.COMPLETED, completed_at__lte=cutoff, relist_reminded_at__isnull=True,
+                          book__status=Book.Status.EXCHANGED):
+        if ex.book.owner_id != ex.requester_id:          # کتاب تو این فاصله جابه‌جا شده
+            continue
+        out["relist_reminded"] += 1
+        if not dry_run:
+            notify(ex.requester, f"«{ex.book.title}» رو خوندی؟ دوباره برای مبادله بذارش تا نفر بعدی بخونه.",
+                   reverse("books:relist", args=[ex.book_id]))
+            Exchange.objects.filter(pk=ex.pk).update(relist_reminded_at=now)
     return out

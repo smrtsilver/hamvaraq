@@ -107,3 +107,128 @@ class LedgerTests(Base):
         self.assertEqual(self.giver.points, 0 + 10 - 3)
         self.assertEqual(points.audit(), [])
         self.assertEqual(Exchange.objects.count(), 0)
+
+
+class CancelInfoTests(Base):
+    def test_cancel_records_who_when_and_reason_and_notifies_with_reason(self):
+        from notifications.models import Notification
+        ex = services.request_book(self.book().pk, self.taker)
+        services.accept(ex.pk, self.giver)
+        self.client.login(username="taker", password="x12345678")
+        page = self.client.get(reverse("exchanges:detail", args=[ex.pk])).content.decode()
+        self.assertTrue("cancel-form" in page and "دلیل لغو" in page)
+        r = self.client.post(reverse("exchanges:cancel", args=[ex.pk]), {"reason": "نتونستیم هماهنگ کنیم"})
+        self.assertEqual(r.status_code, 302)
+        ex.refresh_from_db()
+        self.assertEqual((ex.status, ex.cancelled_by, ex.cancel_reason), ("cancelled", self.taker, "نتونستیم هماهنگ کنیم"))
+        self.assertIsNotNone(ex.cancelled_at)
+        self.assertTrue(Notification.objects.filter(user=self.giver, text__contains="دلیل: نتونستیم هماهنگ کنیم").exists())
+
+    def test_reason_optional_trimmed_and_system_cancel_has_no_actor(self):
+        ex = services.request_book(self.book().pk, self.taker)
+        services.cancel(ex.pk, self.taker, "  " + "ا" * 400)
+        ex.refresh_from_db()
+        self.assertEqual(len(ex.cancel_reason), 200)
+        b2 = self.book(title="دیگر")
+        self.taker.points = 1
+        self.taker.save()
+        e2 = services.request_book(b2.pk, self.taker)
+        services.auto_cancel(e2, "به‌خاطر بی‌پاسخی لغو شد")
+        e2.refresh_from_db()
+        self.assertEqual((e2.cancelled_by, e2.cancel_reason), (None, "سیستم: به‌خاطر بی‌پاسخی لغو شد"))
+
+    def test_repeated_post_accept_cancellations_flag_suspicious_without_penalty(self):
+        from common.stats import suspicious_accounts
+        for i in range(3):
+            book = self.book(title=f"ک{i}")
+            self.taker.points = 1
+            self.taker.save()
+            ex = services.request_book(book.pk, self.taker)
+            services.accept(ex.pk, self.giver)
+            services.cancel(ex.pk, self.taker, "پشیمون شدم")
+        flagged = {u.username: why for u, why in suspicious_accounts()}
+        self.assertTrue(any("3 لغو بعد از تأیید" in w for w in flagged.get("taker", [])))
+        self.taker.refresh_from_db()
+        self.assertEqual((self.taker.status, self.taker.warnings), ("active", 0))             # فقط سرنخ، نه جریمه
+        boss = User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        page = self.client.get(reverse("panel:user", args=[self.taker.pk])).content.decode()
+        self.assertTrue("لغوهای این کاربر" in page and "بعد از تأیید" in page and "پشیمون شدم" in page)
+        self.assertEqual(boss.pk, User.objects.get(username="boss").pk)
+
+
+class RelistReminderTests(Base):
+    def test_reminder_after_seven_days_once_only_and_not_if_relisted_or_moved(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from books.models import Book
+        from exchanges.services import process_lifecycle
+        from notifications.models import Notification
+        ex = self.complete()
+        self.assertEqual(process_lifecycle()["relist_reminded"], 0)                         # هنوز ۷ روز نشده
+        Exchange.objects.filter(pk=ex.pk).update(completed_at=timezone.now() - timedelta(days=8))
+        self.assertEqual(process_lifecycle(dry_run=True)["relist_reminded"], 1)
+        self.assertFalse(Notification.objects.filter(user=self.taker, text__contains="خوندی").exists())
+        self.assertEqual(process_lifecycle()["relist_reminded"], 1)
+        note = Notification.objects.get(user=self.taker, text__contains="خوندی")
+        self.assertEqual(note.url, reverse("books:relist", args=[ex.book_id]))
+        self.assertEqual(process_lifecycle()["relist_reminded"], 0)                         # فقط یک‌بار
+        # کتابی که دوباره گذاشته شده یادآوری نمی‌گیره
+        self.taker.points = 1
+        self.taker.save()
+        other = self.complete(self.book(title="دیگر"))
+        Exchange.objects.filter(pk=other.pk).update(completed_at=timezone.now() - timedelta(days=9))
+        Book.objects.filter(pk=other.book_id).update(status="available")
+        self.assertEqual(process_lifecycle()["relist_reminded"], 0)
+
+    def test_command_reports_relist_count(self):
+        out = StringIO()
+        call_command("expire_exchanges", stdout=out)
+        self.assertIn("یادآوری دوباره‌گذاشتن: 0", out.getvalue())
+
+
+class PostalDeliveryTests(Base):
+    def setUp(self):
+        self.book_obj = self.book()
+        self.ex = services.request_book(self.book_obj.pk, self.taker)
+        services.accept(self.ex.pk, self.giver)
+
+    def test_owner_sets_tracking_code_requester_notified_and_sees_it(self):
+        from notifications.models import Notification
+        self.client.login(username="giver", password="x12345678")
+        page = self.client.get(reverse("exchanges:detail", args=[self.ex.pk])).content.decode()
+        self.assertTrue("postal-form" in page and "ارسال با پست" in page)
+        r = self.client.post(reverse("exchanges:postal", args=[self.ex.pk]), {"tracking_code": "۱۲۳۴-۵۶۷۸ ۹۰۱۲"})
+        self.assertEqual(r.status_code, 302)
+        self.ex.refresh_from_db()
+        self.assertEqual((self.ex.delivery, self.ex.tracking_code), ("postal", "123456789012"))
+        self.assertIsNotNone(self.ex.shipped_at)
+        self.assertTrue(Notification.objects.filter(user=self.taker, text__contains="کد رهگیری: 123456789012").exists())
+        self.client.login(username="taker", password="x12345678")
+        page = self.client.get(reverse("exchanges:detail", args=[self.ex.pk])).content.decode()
+        self.assertTrue("123456789012" in page and "ارسال پستی" in page and "postal-form" not in page)
+
+    def test_validation_and_permissions(self):
+        for bad in ("", "123", "کد!خراب@@@@@@@@", "x" * 31):
+            with self.assertRaises(services.ExchangeError):
+                services.set_postal(self.ex.pk, self.giver, bad)
+        with self.assertRaises(services.ExchangeError):
+            services.set_postal(self.ex.pk, self.taker, "AB12345678")                       # فقط صاحب کتاب
+        services.set_postal(self.ex.pk, self.giver, "ab-12345678")
+        self.ex.refresh_from_db()
+        self.assertEqual(self.ex.tracking_code, "AB12345678")
+        services.set_postal(self.ex.pk, self.giver, "ZZ99999999")                           # ویرایش کد
+        self.ex.refresh_from_db()
+        self.assertEqual(self.ex.tracking_code, "ZZ99999999")
+        services.cancel(self.ex.pk, self.taker)
+        with self.assertRaises(services.ExchangeError):
+            services.set_postal(self.ex.pk, self.giver, "AB12345678")                       # لغوشده
+
+    def test_postal_exchange_still_completes_normally_and_points_move(self):
+        services.set_postal(self.ex.pk, self.giver, "AB12345678")
+        services.confirm(self.ex.pk, self.giver)
+        services.confirm(self.ex.pk, self.taker)
+        self.ex.refresh_from_db()
+        self.assertEqual(self.ex.status, "completed")
+        self.giver.refresh_from_db()
+        self.assertEqual(self.giver.points, 1)

@@ -314,7 +314,7 @@ h2.h3{font-size:var(--fs-lg)}
 .pager a,.pager span{display:inline-grid;place-items:center;min-width:42px;height:42px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:var(--fs-sm)}
 .pager a:hover{border-color:var(--primary);text-decoration:none;color:var(--primary)}.pager .cur{background:var(--primary);color:var(--on-primary);border-color:var(--primary);font-weight:800}
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:48px 20px;border:1.5px dashed var(--line-strong);border-radius:var(--r-lg);background:var(--surface-2)}
-.empty .ill{width:150px;height:auto;margin-bottom:8px}.empty h3{margin:0}.empty p{margin:0 0 10px;color:var(--ink-3);max-width:420px}
+.empty .ill{width:150px;height:auto;margin-bottom:8px}.empty h3,.empty h2{margin:0}.empty p{margin:0 0 10px;color:var(--ink-3);max-width:420px}
 /* نوار فیلتر: یه کلاس برای همه‌ی فهرست‌ها (کتاب، معرفی، اطلاعیه). ستون‌ها خودکار می‌شکنن؛ فیلد جستجو عریض‌تره. */
 .filterbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:28px;box-shadow:var(--shadow-1)}
 .filterbar>*,.form-grid>*,.grid-2>*{min-width:0}
@@ -756,3 +756,5 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .facet-grid{list-style:none;margin:0 0 24px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
 .facet-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;text-decoration:none;color:var(--ink)}.facet-item:hover{text-decoration:none}
 .c-plus{color:var(--primary)}.c-minus{color:var(--danger)}
+.cancel-form{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}.cancel-form select{min-height:40px;width:auto;max-width:220px;padding-block:6px}
+.postal-form{margin:12px 0}.postal-form .cluster{flex-wrap:nowrap}.postal-form input{max-width:300px}

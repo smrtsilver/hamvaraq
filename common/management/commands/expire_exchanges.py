@@ -12,4 +12,4 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         out = process_lifecycle(dry_run=opts["dry_run"])
         prefix = "(آزمایشی) " if opts["dry_run"] else ""
-        self.stdout.write(f"{prefix}یادآوری: {out['reminded']}، لغو: {out['cancelled']}، اختلاف: {out['disputed']}")
+        self.stdout.write(f"{prefix}یادآوری: {out['reminded']}، لغو: {out['cancelled']}، اختلاف: {out['disputed']}، یادآوری دوباره‌گذاشتن: {out['relist_reminded']}")

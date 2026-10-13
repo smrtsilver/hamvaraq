@@ -782,7 +782,7 @@ class LifecycleTests(Base):
 
     def test_request_remind_once_then_expire_and_refund(self):
         ex = services.request_book(self.book().pk, self.taker)
-        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0})
+        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0, "relist_reminded": 0})
         self.age(ex, 3)
         self.assertEqual(self.run_cycle()["reminded"], 1)
         self.assertEqual(self.run_cycle()["reminded"], 0)  # دوباره اجرا اعلان تکراری نمی‌سازه
@@ -819,7 +819,7 @@ class LifecycleTests(Base):
         self.assertIsNotNone(ex.disputed_at)
         rep = Report.objects.get()
         self.assertEqual((rep.reporter, rep.target_user), (self.giver, self.taker))  # تأییدکننده شاکیه
-        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0})  # از انقضا خارجه
+        self.assertEqual(self.run_cycle(), {"reminded": 0, "cancelled": 0, "disputed": 0, "relist_reminded": 0})  # از انقضا خارجه
         Exchange.objects.filter(pk=ex.pk).update(accepted_at=timezone.now() - timedelta(days=99))
         self.assertEqual(self.run_cycle()["cancelled"], 0)
 

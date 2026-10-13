@@ -194,6 +194,7 @@ def user_detail(request, pk):
         "books": u.books.order_by("-created_at")[:8],
         "exchanges": Exchange.objects.filter(Q(owner=u) | Q(requester=u)).select_related("book").order_by("-created_at")[:8],
         "against": Report.objects.filter(Q(target_user=u) | Q(target_book__owner=u) | Q(target_post__author=u)).order_by("-created_at")[:8],
+        "cancels": Exchange.objects.filter(cancelled_by=u).select_related("book").order_by("-cancelled_at")[:5],
         "made": u.reports_made.order_by("-created_at")[:5], "tickets": u.tickets.all()[:5],
         "logs": AuditLog.objects.filter(target__startswith=f"کاربر {u.username}")[:8],
     }
