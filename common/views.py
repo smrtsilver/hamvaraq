@@ -174,3 +174,40 @@ def how_it_works(request):
 def rules(request):
 
     return render(request, "common/rules.html", {"s": settings})
+
+
+STORY_TEMPLATES = [("paper", "کاغذ کهنه"), ("night", "شب کتاب‌خونه"), ("saffron", "زعفرانی"), ("cover", "جلد کتاب")]
+
+
+def story(request):
+    """استوری‌ساز: محتوا (کتاب، نقد، معرفی یا نقل‌قول) سمت سرور پر می‌شه؛ رسم و پیش‌نمایش با canvas در مرورگر.
+    پیش‌نمایش همون canvasیه که دانلود می‌شه، پس خروجی دقیقاً همونیه که کاربر می‌بینه."""
+    from books.models import Review
+    from posts.models import Post
+
+    data = {"mode": "book", "text": "", "title": "", "author": "", "cover": "", "user": "", "stars": 0, "slug": "story"}
+    book = None
+    pid = request.GET.get("review", "")
+    if pid.isdigit():
+        r = get_object_or_404(Review.objects.select_related("book", "user"), pk=pid)
+        book = r.book
+        data.update(mode="review", text=r.text or "", stars=r.stars, user=r.user.username)
+    elif request.GET.get("post"):
+        p = get_object_or_404(Post.objects.select_related("book", "author"), slug=request.GET["post"], status=Post.Status.PUBLISHED)
+        book = p.book
+        data.update(mode="review", text=p.excerpt, stars=p.rating or 0, user=p.author.username,
+                    title=p.display_book_title, author=p.display_book_author)
+    bid = request.GET.get("book", "")
+    if book is None and bid.isdigit():
+        book = get_object_or_404(Book, pk=bid)
+    if request.GET.get("mode") == "quote":
+        data.update(mode="quote", text=request.GET.get("text", "")[:600])
+    if book is not None:
+        data.update(title=book.title, author=book.author, cover=book.cover.url if book.cover else "", slug=f"book-{book.pk}", book=book.pk,
+                    city=book.city.name, condition=book.get_condition_display())
+        if data["mode"] == "book" and not data["text"]:
+            data["text"] = book.description[:220] if book.description else "این کتاب رو رایگان بگیر؛ با یه امتیاز."
+    if not data["title"] and data["mode"] != "quote":
+        from django.http import Http404
+        raise Http404
+    return render(request, "common/story.html", {"story": data, "book": book, "templates": STORY_TEMPLATES})

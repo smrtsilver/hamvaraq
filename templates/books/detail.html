@@ -67,7 +67,8 @@
         <div class="cluster small">
             <button type="button" class="link btn-link" data-share data-share-title="{{ book.title }}" data-share-url="{{ request.build_absolute_uri }}" hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
             <a class="link" data-share-fallback rel="noopener" target="_blank" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode:'' }}&amp;text={{ book.title|urlencode }}">{% include "components/icon.html" with name="share" %} ارسال در تلگرام</a>
-            <a href="{% url 'books:card' book.pk %}?download=1" class="link">{% include "components/icon.html" with name="download" %} کارت استوری</a>
+            <a href="{% url 'story' %}?book={{ book.pk }}" class="link">{% include "components/icon.html" with name="download" %} ساخت استوری</a>
+            <a href="{% url 'story' %}?book={{ book.pk }}&amp;mode=quote" class="link">{% include "components/icon.html" with name="pen" %} نقل‌قول از این کتاب</a>
             {% if user.is_authenticated and not is_owner %}<a href="{% url 'trust:report' 'book' book.pk %}" class="muted">{% include "components/icon.html" with name="flag" %} گزارش کتاب</a>{% endif %}
         </div>
     </div>
@@ -86,7 +87,7 @@
 
 <section class="section-sm"><div class="section-head"><h2>نقد و ستاره</h2>{% if rating.n %}<div class="rating-big"><strong>{{ rating.avg|floatformat:1|fa }}</strong><span class="stars">★★★★★</span><span class="muted">{{ rating.n|fa }} نقد</span></div>{% endif %}</div>
     {% for r in reviews %}<div class="review"><div class="cluster"><span class="stars" aria-label="{{ r.stars|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
-        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a></div>{% if r.text %}<p class="m-t6">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
+        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a>{% if r.user == user and r.text %}<a class="small ms-auto" href="{% url 'story' %}?review={{ r.pk }}">ساخت استوری از این نقد</a>{% endif %}</div>{% if r.text %}<p class="m-t6">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
     {% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}
     {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card mt-16" novalidate><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{% include "components/form.html" with form=review_form %}<button class="btn btn-sm">ثبت نقد</button></form>{% endif %}
 </section>

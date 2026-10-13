@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
-from books.models import Book, Category, Wishlist
+from books.models import Book, Category, Review, Wishlist
 from common.models import City, Province
 
 
@@ -2553,3 +2553,23 @@ class WoodenShelfTests(Base):
         Book.objects.bulk_create([Book(owner=self.giver, title=f"ک{i}", author="الف", city=self.isfahan) for i in range(130)])
         r = self.client.get(f"/accounts/u/{self.giver.username}/")
         self.assertEqual(len(r.context["books"]), 120)
+
+
+class StoryStudioTests(Base):
+    def test_story_book_quote_and_review_prefill(self):
+        b = self.book(title="سووشون")
+        r = self.client.get(f"/story/?book={b.pk}&mode=quote")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["story"]["mode"], "quote")
+        self.assertEqual(r.context["story"]["title"], "سووشون")
+        rev = Review.objects.create(book=b, user=self.taker, stars=4, text="عالی بود")
+        r = self.client.get(f"/story/?review={rev.pk}")
+        self.assertEqual((r.context["story"]["text"], r.context["story"]["stars"]), ("عالی بود", 4))
+        self.assertEqual(self.client.get("/story/").status_code, 404)
+
+    def test_quote_publish_prefills_post_form(self):
+        self.client.force_login(self.giver)
+        r = self.client.get("/posts/new/?quote=خط اول%0Aخط دوم&book_title=سووشون&book_author=دانشور")
+        form = r.context["form"]
+        self.assertEqual(form.initial["body"], "> خط اول\n> خط دوم\n\n")
+        self.assertEqual(form.initial["title"], "نقل‌قولی از «سووشون»")

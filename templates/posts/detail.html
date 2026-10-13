@@ -28,7 +28,8 @@
     <div class="cluster mt-20">
         {% if mine and post.author == user %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:edit' post.slug %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
             <form method="post" action="{% url 'posts:delete' post.slug %}" class="inline" data-confirm="این معرفی حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost btn-sm link-danger">حذف</button></form>
-        {% elif user.is_authenticated %}<a class="muted small" href="{% url 'trust:report' 'post' post.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
+        {% endif %}{% if post.is_published %}<a class="btn btn-secondary btn-sm" href="{% url 'story' %}?post={{ post.slug|urlencode }}">{% include "components/icon.html" with name="download" %} ساخت استوری</a>{% endif %}
+        {% if mine and post.author == user %}{% elif user.is_authenticated %}<a class="muted small" href="{% url 'trust:report' 'post' post.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
     </div>
 </article>
 {% if more_by_author %}<section class="post-more" aria-labelledby="more-by">

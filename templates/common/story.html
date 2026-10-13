@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}استوری‌ساز | هم‌ورق{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>استوری‌ساز</h1><p>{% if story.mode == 'quote' %}جمله‌ای که دوستش داشتی رو بنویس و قالبش رو انتخاب کن.{% elif story.mode == 'review' %}نقدت رو به یه استوری قشنگ تبدیل کن.{% else %}کتاب رو با یه استوری به بقیه معرفی کن.{% endif %} همون چیزی که می‌بینی دانلود می‌شه.</p></div></div>
+<div class="story-studio" data-story>
+    <div class="story-stage">
+        <canvas class="story-canvas" width="1080" height="1920" aria-label="پیش‌نمایش استوری" role="img"></canvas>
+        <p class="story-loading small muted" data-story-status role="status">در حال آماده‌سازی پیش‌نمایش…</p>
+    </div>
+    <form class="story-panel card" data-story-form novalidate>
+        <fieldset class="story-field"><legend>قالب</legend>
+            <div class="tpl-picker" role="radiogroup" aria-label="قالب">
+                {% for key, label in templates %}<label class="tpl tpl-{{ key }}"><input type="radio" name="tpl" value="{{ key }}"{% if forloop.first %} checked{% endif %}><span class="tpl-sw" aria-hidden="true"></span><span>{{ label }}</span></label>{% endfor %}
+            </div></fieldset>
+        <div class="field"><label for="st-text">{% if story.mode == 'quote' %}نقل‌قول{% else %}متن{% endif %}</label>
+            <textarea id="st-text" name="text" rows="5" maxlength="600" placeholder="{% if story.mode == 'quote' %}جمله‌ای از کتاب که دلت رو برد…{% else %}چند خط درباره‌ی کتاب…{% endif %}">{{ story.text }}</textarea>
+            <p class="hint"><span data-story-count>۰</span> از ۶۰۰ نویسه؛ اندازه‌ی متن خودکار تنظیم می‌شه.</p></div>
+        <div class="form-grid"><div class="field"><label for="st-title">عنوان کتاب</label><input id="st-title" name="title" maxlength="120" value="{{ story.title }}"></div>
+            <div class="field"><label for="st-author">نویسنده</label><input id="st-author" name="author" maxlength="100" value="{{ story.author }}"></div></div>
+        <fieldset class="story-field"><legend>چیدمان</legend>
+            <div class="seg" role="radiogroup" aria-label="چیدمان متن"><label><input type="radio" name="align" value="center" checked><span>وسط‌چین</span></label><label><input type="radio" name="align" value="right"><span>راست‌چین</span></label></div>
+            {% if story.cover %}<label class="check"><input type="checkbox" name="showcover" checked> نمایش جلد کتاب</label>{% endif %}
+        </fieldset>
+        <div class="story-actions">
+            <button type="button" class="btn btn-lg" data-story-download>{% include "components/icon.html" with name="download" %} دانلود تصویر</button>
+            <button type="button" class="btn btn-secondary" data-story-share hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
+            {% if story.mode == 'quote' and user.is_authenticated %}<a class="btn btn-ghost" data-story-publish href="{% url 'posts:create' %}">{% include "components/icon.html" with name="pen" %} انتشار به‌صورت معرفی</a>{% endif %}
+        </div>
+        {% if book %}<p class="small muted mt-12">بدون جاوااسکریپت؟ <a href="{% url 'books:card' book.pk %}?download=1">کارت ساده‌ی این کتاب</a> رو بگیر.</p>{% endif %}
+    </form>
+</div>
+{{ story|json_script:"hv-story" }}
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/story.js' %}" defer></script>{% endblock %}

@@ -81,8 +81,17 @@ def post_create(request):
     if request.method == "POST" and Post.objects.filter(author=request.user, created_at__gte=since).count() >= _daily_limit():
         messages.error(request, "امروز به سقف تعداد نوشته رسیدی؛ فردا دوباره بنویس.")
         return redirect("posts:mine")
-    form = PostForm(request.POST or None, request.FILES or None, user=request.user,
-                    initial={"book": request.GET.get("book")} if request.GET.get("book", "").isdigit() else None)
+    initial = {"book": request.GET.get("book")} if request.GET.get("book", "").isdigit() else {}
+    quote = request.GET.get("quote", "").strip()[:600]
+    for key in ("book_title", "book_author"):
+        if request.GET.get(key):
+            initial[key] = request.GET[key][:150]
+    if quote:
+        # نقل‌قول از استوری‌ساز: همیشه با ارجاع به کتاب
+        initial["body"] = "\n".join("> " + line for line in quote.splitlines() if line.strip()) + "\n\n"
+        if initial.get("book_title"):
+            initial["title"] = f"نقل‌قولی از «{initial['book_title']}»"[:140]
+    form = PostForm(request.POST or None, request.FILES or None, user=request.user, initial=initial or None)
     if request.method == "POST" and form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
