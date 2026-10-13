@@ -1044,3 +1044,8 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .sp-swap .sp-b{padding-top:14px;padding-bottom:42px}
 .sp-rib{top:auto;bottom:15px;inset-inline:5px;width:auto;height:20px;border-radius:3px;clip-path:none;background:linear-gradient(#f6d27a,#c8902a);box-shadow:0 1px 2px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.5);display:grid;place-items:center}
 .sp-rib::before{content:"⇄";font-style:normal;font-weight:800;font-size:12px;line-height:1;color:#3a2600}
+/* معاوضه: فقط یه نقطه‌ی زرد پایین عطف */
+.sp-swap .sp-b{padding-bottom:30px}
+.sp-rib{inset-inline:auto;left:50%;bottom:16px;width:9px;height:9px;border-radius:50%;transform:translateX(-50%);background:#f2c55c;box-shadow:0 0 0 2px rgba(0,0,0,.25),0 0 6px rgba(242,197,92,.8)}
+.sp-rib::before{content:none}
+.sp-swap .sp-b{box-shadow:3px 0 5px rgba(0,0,0,.45),inset 0 3px 0 rgba(255,255,255,.14)}
