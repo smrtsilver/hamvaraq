@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.db.models import Q, Avg, Count
 
 from accounts.badges import check_badges
 from django.utils import timezone
@@ -19,10 +19,11 @@ from exchanges.models import Exchange
 from . import card as book_card
 from analytics.tracking import track
 
+from . import catalog
 from . import isbn as isbn_lookup
 from .forms import BookFilterForm, BookForm, BulkCommonForm, BulkRowForm, RelistForm, ReviewForm
 from .models import Book, BookPhoto, Review, Wishlist
-from .services import add_wish, notify_wishlists, similar_books
+from .services import add_wish, demand_for, notify_wishlists, similar_books
 
 
 def book_list(request):
@@ -207,10 +208,28 @@ def book_bulk_create(request):
 @login_required
 @throttle("isbn", 30, 60, by="user", methods=("GET",), json=True)
 def isbn_view(request):
-    result = isbn_lookup.lookup(request.GET.get("isbn", ""))
-    if not result:
+    """استعلام شابک برای فرم ثبت کتاب: اطلاعات چاپ + تعداد منتظرها + هشدار کتاب تکراری."""
+    raw = request.GET.get("isbn", "")
+    error = isbn_lookup.isbn_error(raw)
+    if error:
+        return JsonResponse({"error": "invalid_isbn", "message": error}, status=400)
+    isbn13 = isbn_lookup.normalize_isbn(raw)
+    if not isbn13:
         return JsonResponse({"error": "not_found"}, status=404)
-    return JsonResponse(result)
+    edition = catalog.resolve(isbn13)
+    if not edition:
+        return JsonResponse({"error": "not_found", "isbn": isbn13}, status=404)
+    user = request.user
+    mine = Book.objects.filter(owner=user).filter(Q(isbn=isbn13) | Q(edition=edition)).count()
+    elsewhere = Book.objects.filter(status=Book.Status.AVAILABLE).exclude(owner=user).filter(Q(isbn=isbn13) | Q(edition=edition)).count()
+    return JsonResponse({
+        "isbn": isbn13, "title": edition.title, "subtitle": edition.subtitle, "author": edition.author_line, "authors": edition.authors,
+        "translators": edition.translators, "publisher": edition.publisher, "year": edition.year, "year_calendar": edition.year_calendar,
+        "edition_no": edition.edition_no, "volume": edition.volume, "pages": edition.pages, "language": edition.language,
+        "cover_url": edition.cover_url, "source": edition.source, "confidence": edition.confidence, "verified": edition.verified,
+        "demand": demand_for(isbn13, edition.title, edition.author_line, exclude_user=user),
+        "mine": mine, "available_elsewhere": elsewhere,
+    })
 
 
 def _can_review(book, user):

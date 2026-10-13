@@ -25,7 +25,7 @@ def add_wish(user, text):
     return wish, None
 
 
-def matching_wishes(book):
+def matching_wishes_for(isbn, title, author, exclude_user=None):
     """
     آرزوهایی که این کتاب برآوردشون می‌کنه، بدون اسکن کل جدول:
     - شابک برابر (ایندکس isbn)، یا
@@ -36,9 +36,9 @@ def matching_wishes(book):
     from .models import WishToken
 
     ids = set()
-    if book.isbn:
-        ids |= set(Wishlist.objects.filter(isbn=book.isbn).values_list("pk", flat=True))
-    book_words = set(significant_words(f"{book.title} {book.author}"))
+    if isbn:
+        ids |= set(Wishlist.objects.filter(isbn=isbn).values_list("pk", flat=True))
+    book_words = set(significant_words(f"{title} {author}"))
     if book_words:
         candidates = set(WishToken.objects.filter(word__in=book_words).values_list("wish_id", flat=True))
         if candidates:
@@ -46,7 +46,33 @@ def matching_wishes(book):
             for wish_id, word in WishToken.objects.filter(wish_id__in=candidates).values_list("wish_id", "word"):
                 wanted.setdefault(wish_id, set()).add(word)
             ids |= {wish_id for wish_id, ws in wanted.items() if ws <= book_words}
-    return Wishlist.objects.filter(pk__in=ids).exclude(user=book.owner).select_related("user")
+    qs = Wishlist.objects.filter(pk__in=ids).select_related("user")
+    return qs.exclude(user=exclude_user) if exclude_user is not None else qs
+
+
+def matching_wishes(book):
+    return matching_wishes_for(book.isbn, book.title, book.author, exclude_user=book.owner)
+
+
+def demand_for(isbn, title, author, exclude_user=None, days=90):
+    """«چند نفر دنبال این کتابن»: آرزوهای هم‌خوان + درخواست‌دهنده‌های متفاوتِ نسخه‌های همین کتاب تو چند ماه اخیر."""
+    from datetime import timedelta
+
+    from django.db.models import Q
+    from django.utils import timezone
+
+    from exchanges.models import Exchange
+
+    wishers = set(matching_wishes_for(isbn, title, author, exclude_user).values_list("user_id", flat=True)) if settings.WISHLIST_ENABLED else set()
+    cond = Q(book__work_key=work_key(title, author))
+    if isbn:
+        cond |= Q(book__isbn=isbn)
+    since = timezone.now() - timedelta(days=days)
+    requesters = set(Exchange.objects.filter(cond, created_at__gte=since).values_list("requester_id", flat=True))
+    if exclude_user is not None:
+        requesters.discard(exclude_user.pk)
+        wishers.discard(exclude_user.pk)
+    return len(wishers | requesters)
 
 
 def notify_wishlists(book):

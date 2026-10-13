@@ -274,9 +274,10 @@ class BookTests(Base):
 class IsbnAndBulkTests(Base):
     def test_normalize(self):
         from books.isbn import normalize
-        self.assertEqual(normalize("978-964-6194-48-5"), "9789646194485")
-        self.assertEqual(normalize("۹۷۸۹۶۴۶۱۹۴۴۸۵"), "9789646194485")
-        self.assertEqual(normalize("0-306-40615-X".replace("X", "2")), "0306406152")
+        self.assertEqual(normalize("978-964-6194-48-9"), "9789646194489")
+        self.assertEqual(normalize("۹۷۸۹۶۴۶۱۹۴۴۸۹"), "9789646194489")
+        self.assertEqual(normalize("0-306-40615-2"), "9780306406157")          # ISBN-10 ← ISBN-13
+        self.assertIsNone(normalize("978-964-6194-48-5"))                      # رقم کنترل غلط
         self.assertIsNone(normalize("12345"))
 
     def test_lookup_parses_and_caches(self):
@@ -292,16 +293,17 @@ class IsbnAndBulkTests(Base):
         ):
             r = isbn.lookup("978-0-14-032872-1")
             isbn.lookup("9780140328721")
-        self.assertEqual(r, {"isbn": "9780140328721", "title": "Fantastic Mr Fox", "author": "Roald Dahl"})
+        self.assertEqual((r["isbn"], r["title"], r["author"]), ("9780140328721", "Fantastic Mr Fox", "Roald Dahl"))
         self.assertEqual(m.call_count, 1)                                  # دومی از کش اومد
 
-    def test_lookup_uses_local_books_first(self):
+    def test_book_with_isbn_gets_user_edition_and_resolve_uses_it(self):
         from unittest import mock
-        from books import isbn
-        Book.objects.create(owner=self.giver, title="بوف کور", author="صادق هدایت", isbn="9789643051092", city=self.tehran)
-        with mock.patch("urllib.request.urlopen") as m:
-            r = isbn.lookup("۹۷۸-۹۶۴-۳۰۵۱-۰۹۲")
-        self.assertEqual(r, {"isbn": "9789643051092", "title": "بوف کور", "author": "صادق هدایت"})
+        from books import catalog
+        Book.objects.create(owner=self.giver, title="بوف کور", author="صادق هدایت", isbn="9789643051099", city=self.tehran)
+        ed = Book.objects.get(isbn="9789643051099").edition
+        self.assertEqual((ed.source, ed.confidence, ed.authors), ("user", 20, ["صادق هدایت"]))
+        with mock.patch("books.isbn.lookup_full") as m:
+            self.assertEqual(catalog.resolve("۹۷۸۹۶۴۳۰۵۱۰۹۹", fetch=False), ed)
         m.assert_not_called()
 
     def test_lookup_falls_back_to_google(self):
@@ -310,13 +312,13 @@ class IsbnAndBulkTests(Base):
         from django.core.cache import cache
         from books import isbn
         cache.clear()
-        g = {"isbn": "9789643051092", "title": "کلیدر", "author": "دولت‌آبادی"}
+        g = {"isbn": "9789643051099", "title": "کلیدر", "author": "دولت‌آبادی", "authors": ["دولت‌آبادی"]}
         with (
             mock.patch("books.isbn._nlai", return_value=None),
             mock.patch("books.isbn._open_library", return_value=None),
             mock.patch("books.isbn._google", return_value=g),
         ):
-            r = isbn.lookup("9789643051092")
+            r = isbn.lookup("9789643051099")
         self.assertEqual(r["title"], "کلیدر")
         cache.clear()
         with (
@@ -324,8 +326,8 @@ class IsbnAndBulkTests(Base):
             mock.patch("books.isbn._open_library", side_effect=urllib.error.URLError("x")),
             mock.patch("books.isbn._google", return_value=None),
         ):
-            self.assertIsNone(isbn.lookup("9789643051099"))
-            self.assertIsNone(cache.get("isbn:9789643051099"))  # با خطای شبکه نتیجه‌ی منفی کش نمی‌شه
+            self.assertIsNone(isbn.lookup("9780306406157"))
+            self.assertIsNone(cache.get("isbn2:9780306406157"))  # با خطای شبکه نتیجه‌ی منفی کش نمی‌شه
 
     def test_lookup_network_error_is_none(self):
         import urllib.error
@@ -341,15 +343,20 @@ class IsbnAndBulkTests(Base):
         ):
             self.assertIsNone(isbn.lookup("9780140328721"))
 
-    def test_isbn_view_requires_login_and_404s(self):
+    def test_isbn_view_requires_login_400_404_and_data(self):
         from unittest import mock
         url = reverse("books:isbn")
         self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).status_code, 302)
         self.client.login(username="giver", password="x12345678")
-        with mock.patch("books.isbn.lookup", return_value=None):
+        r = self.client.get(url, {"isbn": "9780140328722"})                          # رقم کنترل غلط
+        self.assertEqual((r.status_code, r.json()["error"]), (400, "invalid_isbn"))
+        with mock.patch("books.isbn.lookup_full", return_value=None):
             self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).status_code, 404)
-        with mock.patch("books.isbn.lookup", return_value={"isbn": "1", "title": "T", "author": "A"}):
-            self.assertEqual(self.client.get(url, {"isbn": "9780140328721"}).json()["title"], "T")
+        rich = {"isbn": "9780140328721", "title": "T", "author": "A", "authors": ["A"], "publisher": "ناشر", "year": 1390, "year_calendar": "jalali",
+                "sources": ["nlai"], "provenance": {}, "confidence": 60}
+        with mock.patch("books.isbn.lookup_full", return_value=rich):
+            data = self.client.get(url, {"isbn": "0-14-032872-6"}).json()   # ISBN-10 هم‌ارز
+        self.assertEqual((data["title"], data["publisher"], data["isbn"], data["confidence"]), ("T", "ناشر", "9780140328721", 60))
 
     def _bulk_data(self, rows):
         data = {"city": self.isfahan.pk, "condition": "used", "form-TOTAL_FORMS": 8, "form-INITIAL_FORMS": 0,
@@ -602,7 +609,7 @@ class ThrottleTests(Base):
         r = self.client.post(reverse("exchanges:message", args=[ex.pk]), {"text": "x"}, headers={"x-requested-with": "XMLHttpRequest"})
         self.assertEqual((r.status_code, r.json()["error"]), (429, "rate_limited"))
         # شمارنده‌ها مستقل از هم‌ان
-        self.assertEqual(self.client.get(reverse("books:isbn"), {"isbn": "12"}).status_code, 404)
+        self.assertEqual(self.client.get(reverse("books:isbn"), {"isbn": "12"}).status_code, 400)
 
     def test_throttle_disabled_and_proxy_ip(self):
         from django.core.cache import cache

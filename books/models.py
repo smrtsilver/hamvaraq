@@ -16,6 +16,55 @@ class Category(models.Model):
         return self.name
 
 
+class Edition(models.Model):
+    """
+    «چاپ» یک کتاب بر اساس ISBN-13 (ISBN-10 هم‌ارزش به همون تبدیل می‌شه). فیلدهای عنوان/نویسنده‌ی خود Book برای
+    سازگاری عقب‌رو می‌مونن؛ Book.edition اختیاریه. منبع داده: nlai/openlibrary/google (ادغام‌شده) یا user.
+    داده‌ی کاربر هیچ‌وقت داده‌ی منبع‌دار رو بازنویسی نمی‌کنه (ضد مسموم‌سازی)؛ تأیید دو کاربر مستقل اطمینان رو بالا می‌بره.
+    """
+
+    SOURCE_USER = "user"
+
+    isbn13 = models.CharField(max_length=13, unique=True, null=True, blank=True, verbose_name="شابک ۱۳رقمی")
+    title = models.CharField(max_length=300, verbose_name="عنوان")
+    subtitle = models.CharField(max_length=300, blank=True, verbose_name="زیرعنوان")
+    authors = models.JSONField(default=list, blank=True, verbose_name="نویسنده‌ها")
+    translators = models.JSONField(default=list, blank=True, verbose_name="مترجم‌ها")
+    publisher = models.CharField(max_length=200, blank=True, verbose_name="ناشر")
+    year = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="سال انتشار")
+    year_calendar = models.CharField(max_length=10, blank=True, choices=[("jalali", "شمسی"), ("gregorian", "میلادی")], verbose_name="تقویم سال")
+    edition_no = models.CharField(max_length=50, blank=True, verbose_name="نوبت چاپ")
+    volume = models.CharField(max_length=50, blank=True, verbose_name="جلد")
+    pages = models.PositiveIntegerField(null=True, blank=True, verbose_name="تعداد صفحه")
+    language = models.CharField(max_length=20, blank=True, verbose_name="زبان")
+    subjects = models.JSONField(default=list, blank=True, verbose_name="موضوع‌ها")
+    description = models.TextField(blank=True, verbose_name="توضیح")
+    cover_url = models.URLField(max_length=500, blank=True, verbose_name="نشانی جلد")
+    source = models.CharField(max_length=40, default="user", db_index=True, verbose_name="منبع")
+    provenance = models.JSONField(default=dict, blank=True, verbose_name="سابقه‌ی داده")
+    confidence = models.PositiveSmallIntegerField(default=20, verbose_name="اطمینان")
+    verified = models.BooleanField(default=False, verbose_name="تأییدشده توسط مدیر")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="ثبت‌کننده")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین تغییر")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "چاپ کتاب"
+        verbose_name_plural = "چاپ‌های کتاب"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def author_line(self):
+        return "، ".join(self.authors)
+
+    @property
+    def is_source_backed(self):
+        return self.source != self.SOURCE_USER
+
+
 class VisibleBookManager(models.Manager):
     """
     مدیر پیش‌فرض: فقط کتاب‌هایی که باید تو سایت دیده بشن (حذف‌نشده، صاحب فعال و غیرمسدود).
@@ -48,6 +97,7 @@ class Book(models.Model):
     cover = models.ImageField(upload_to="books/%Y/%m/", blank=True, verbose_name="عکس")
     cover_thumb = models.ImageField(upload_to="books/thumbs/%Y/%m/", blank=True, editable=False, verbose_name="بند‌انگشتی")
     description = models.TextField(blank=True, verbose_name="توضیحات")
+    edition = models.ForeignKey(Edition, null=True, blank=True, on_delete=models.PROTECT, related_name="books", verbose_name="چاپ")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.AVAILABLE, db_index=True, verbose_name="وضعیت")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت")
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False, verbose_name="زمان حذف")
@@ -108,6 +158,10 @@ class Book(models.Model):
         if fields is not None and ({"title", "author", "isbn"} & set(fields)):
             kwargs["update_fields"] = {*fields, "search_text", "work_key"}
         super().save(*args, **kwargs)
+        if self.isbn and not self.edition_id:
+            from .catalog import attach_edition
+
+            attach_edition(self)         # فقط دیتابیس (بدون شبکه)؛ استعلام بیرونی تو API شابک انجام می‌شه
 
 
 class BookPhoto(models.Model):

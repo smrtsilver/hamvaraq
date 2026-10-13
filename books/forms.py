@@ -6,7 +6,8 @@ from common.forms import PersianFormMixin
 from common.images import process_upload
 from common.location_forms import LocationMixin
 
-from .isbn import normalize as isbn_normalize
+from .isbn import isbn_error
+from .isbn import normalize_isbn as isbn_normalize
 from .models import Book, BookPhoto, Category, Review
 
 
@@ -128,13 +129,14 @@ def _isbn_widget(isbn, title, author):
 
 
 def _clean_isbn(value):
+    """شابک معتبر (با رقم کنترل) ← ISBN-13 یکدست؛ ISBN-10 هم به ۱۳رقمی تبدیل می‌شه."""
     value = (value or "").strip()
     if not value:
         return ""
-    normalized = isbn_normalize(value)
-    if not normalized:
-        raise forms.ValidationError("شابک باید ۱۰ یا ۱۳ رقم باشه.")
-    return normalized
+    error = isbn_error(value)
+    if error:
+        raise forms.ValidationError(error)
+    return isbn_normalize(value)
 
 
 class BulkCommonForm(LocationMixin, PersianFormMixin, forms.Form):

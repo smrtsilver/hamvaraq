@@ -201,13 +201,13 @@ class IsbnBudgetTests(Base):
         self.assertIsNone(result)
         self.assertLess(took, 1.2)
         from django.core.cache import cache
-        self.assertIsNone(cache.get("isbn:9786007547717"))                      # timeout نتیجه‌ی منفیِ قطعی نیست
+        self.assertIsNone(cache.get("isbn2:9786007547717"))                     # timeout نتیجه‌ی منفیِ قطعی نیست
 
     def test_two_back_to_back_slow_lookups_and_site_stays_responsive(self):
         import time
         hang = self.slow(3)
         r1, t1 = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.4, isbn="9786007547717")
-        r2, t2 = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.4, isbn="9789643051092")
+        r2, t2 = self.run_patched(nlai=hang, ol=hang, google=hang, timeout=0.4, isbn="9789643051099")
         self.assertEqual((r1, r2), (None, None))
         self.assertLess(t1 + t2, 1.5)
         start = time.monotonic()
@@ -221,7 +221,7 @@ class IsbnBudgetTests(Base):
         self.assertEqual(result["title"], "ملی")
         self.assertLess(took, 1.0)
         # اگه منبع مهم‌تر جوابی نداره، منبع بعدی گرفته می‌شه بدون اینکه کل بودجه صبر کنه
-        result, took = self.run_patched(ol=lambda isbn, timeout: {"isbn": isbn, "title": "اپن", "author": "ج"}, timeout=2, isbn="9789643051092")
+        result, took = self.run_patched(ol=lambda isbn, timeout: {"isbn": isbn, "title": "اپن", "author": "ج"}, timeout=2, isbn="9789643051099")
         self.assertEqual(result["title"], "اپن")
         self.assertLess(took, 1.0)
 
@@ -232,11 +232,11 @@ class IsbnBudgetTests(Base):
         def broken(isbn_, timeout):
             calls.append(1)
             raise OSError("down")
-        for i in range(3):
-            self.run_patched(ol=broken, isbn=f"97896430510{i}2"[:13])
+        for valid in ("9786007547717", "9780140328721", "9780306406157"):
+            self.run_patched(ol=broken, isbn=valid)
         self.assertTrue(isbn.breaker_open("openlibrary"))
         n = len(calls)
-        self.run_patched(ol=broken, isbn="9789643051092")
+        self.run_patched(ol=broken, isbn="9789643051099")
         self.assertEqual(len(calls), n)                                           # دیگه صدا زده نمی‌شه
         self.assertFalse(isbn.breaker_open("nlai"))
         isbn.breaker_record("openlibrary", True)                                  # موفقیت بازش می‌گردونه
@@ -244,10 +244,10 @@ class IsbnBudgetTests(Base):
 
     def test_negative_result_cached_only_when_all_sources_answered(self):
         from django.core.cache import cache
-        self.run_patched(isbn="9789643051092")
-        self.assertEqual(cache.get("isbn:9789643051092"), {})
+        self.run_patched(isbn="9789643051099")
+        self.assertEqual(cache.get("isbn2:9789643051099"), {})
         self.run_patched(ol=lambda i, t: (_ for _ in ()).throw(OSError()), isbn="9780140328721")
-        self.assertIsNone(cache.get("isbn:9780140328721"))
+        self.assertIsNone(cache.get("isbn2:9780140328721"))
 
     def test_entrypoint_uses_gthread_and_budget_setting_exists(self):
         import pathlib

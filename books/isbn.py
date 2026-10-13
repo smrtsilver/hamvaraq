@@ -23,20 +23,62 @@ NLAI_HEADERS = {"User-Agent": "Mozilla/5.0 (HamVaraq ISBN lookup)"}
 NLAI_MAX_CANDIDATES = 5
 
 
-def normalize(raw):
-    """شابک ۱۰ یا ۱۳ رقمی (با خط تیره و فاصله) ← رقم‌های خالص، یا None."""
-    isbn = re.sub(r"[\s-]", "", (raw or "").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))).upper()
-    if re.fullmatch(r"\d{13}", isbn) or re.fullmatch(r"\d{9}[\dX]", isbn):
-        return isbn
+_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def clean_digits(raw):
+    """رقم فارسی/عربی ← انگلیسی؛ فاصله، خط‌تیره و نویسه‌های جهت‌نما حذف؛ X بزرگ."""
+    text = _BIDI.sub("", (raw or "").translate(_DIGITS))
+    return re.sub(r"[\s\-‐-―_.]", "", text).upper()
+
+
+def isbn10_valid(d):
+    return bool(re.fullmatch(r"\d{9}[\dX]", d)) and sum((10 - i) * (10 if c == "X" else int(c)) for i, c in enumerate(d)) % 11 == 0
+
+
+def isbn13_valid(d):
+    return bool(re.fullmatch(r"\d{13}", d)) and sum(int(c) * (3 if i % 2 else 1) for i, c in enumerate(d)) % 10 == 0
+
+
+def isbn10_to_13(d):
+    body = "978" + d[:9]
+    return body + str((10 - sum(int(c) * (3 if i % 2 else 1) for i, c in enumerate(body)) % 10) % 10)
+
+
+def normalize_isbn(raw):
+    """
+    هر شابک ۱۰ یا ۱۳ رقمی (با رقم فارسی، خط‌تیره و فاصله) ← ISBN-13 خالص؛ اگه رقم کنترل غلط بود None.
+    ISBN-10 و ISBN-13 یه کتاب هر دو به یه مقدار می‌رسن.
+    """
+    d = clean_digits(raw)
+    if isbn13_valid(d):
+        return d
+    if isbn10_valid(d):
+        return isbn10_to_13(d)
     return None
+
+
+normalize = normalize_isbn      # نام قدیمی؛ فرم‌ها و تست‌ها هنوز ازش استفاده می‌کنن
+
+
+def isbn_error(raw):
+    """پیام خطای فارسی برای ورودی نامعتبر یا None اگه معتبره (یا خالیه)."""
+    d = clean_digits(raw)
+    if not d:
+        return None
+    if normalize_isbn(d):
+        return None
+    if re.fullmatch(r"\d{10}|\d{9}X|\d{13}", d):
+        return "رقم کنترل این شابک درست نیست؛ یه بار دیگه چک کن."
+    return "شابک باید ۱۰ یا ۱۳ رقم باشه."
+
+
+_BIDI = re.compile("[‎‏‪-‮⁦-⁩]")
 
 
 def _fetch(url, timeout):
     with urllib.request.urlopen(url, timeout=timeout) as resp:
         return json.load(resp)
-
-
-_BIDI = re.compile("[‎‏‪-‮⁦-⁩]")
 
 
 def _clean(text):
@@ -72,23 +114,67 @@ def _sub(fields, tag, code):
     return ""
 
 
+def _year_info(raw):
+    """«۱۳۹۲» یا «c2001» ← (سال عددی, 'jalali'|'gregorian'). سال‌های کمتر از ۱۷۰۰ شمسی حساب می‌شن."""
+    m = re.search(r"\d{4}", clean_digits(raw))
+    if not m:
+        return None, ""
+    year = int(m.group())
+    return year, ("jalali" if year < 1700 else "gregorian")
+
+
+def _int(raw):
+    m = re.search(r"\d+", clean_digits(raw))
+    return int(m.group()) if m else None
+
+
+def _person(fields, tag):
+    """همه‌ی فیلدهای شخص (700/701/702) ← [(نام کامل, کد نقش)]."""
+    out = []
+    for field in fields.get(tag, []):
+        if not isinstance(field, list):
+            continue
+        family = given = role = ""
+        for code, value in field:
+            if code == "a" and not family:
+                family = _clean(value)
+            elif code == "b" and not given:
+                given = _clean(value)
+            elif code == "4" and not role:
+                role = _clean(value)
+        name = f"{given} {family}".strip()
+        if name:
+            out.append((name, role))
+    return out
+
+
+TRANSLATOR_ROLES = {"730"}
+
+
 def _from_marc(fields, isbn):
-    """رکورد UNIMARC ← {'isbn','title','author'}؛ None اگه شابکش با شابک پرسیده‌شده نخونه."""
-    if normalize(_clean(_sub(fields, "010", "a"))) != isbn:
+    """رکورد UNIMARC ← دیکشنری غنی؛ None اگه شابکش با شابک پرسیده‌شده نخونه (شابک ۱۰ و ۱۳ یکی حساب می‌شن)."""
+    if normalize_isbn(_clean(_sub(fields, "010", "a"))) != isbn:
         return None
     title = _clean(_sub(fields, "200", "a"))
     if not title:
         return None
-    subtitle = _clean(_sub(fields, "200", "e"))
-    if subtitle:
-        title = f"{title}: {subtitle}"
-    author = ""
+    authors, translators = [], []
     for tag in ("700", "701", "702"):
-        family, given = _clean(_sub(fields, tag, "a")), _clean(_sub(fields, tag, "b"))
-        author = f"{given} {family}".strip()
-        if author:
-            break
-    return {"isbn": isbn, "title": title, "author": author}
+        for name, role in _person(fields, tag):
+            target = translators if role in TRANSLATOR_ROLES else authors
+            if name not in target:
+                target.append(name)
+    year, calendar = _year_info(_sub(fields, "210", "d"))
+    record = {
+        "isbn": isbn, "title": title, "subtitle": _clean(_sub(fields, "200", "e")),
+        "authors": authors, "translators": translators,
+        "publisher": _clean(_sub(fields, "210", "c")), "year": year, "year_calendar": calendar,
+        "edition_no": _clean(_sub(fields, "205", "a")), "volume": _clean(_sub(fields, "200", "h")),
+        "pages": _int(_sub(fields, "215", "a")), "language": _clean(_sub(fields, "101", "a")),
+        "subjects": [x for x in dict.fromkeys(_clean(v) for f in fields.get("606", []) if isinstance(f, list) for c, v in f if c == "a") if x][:8],
+        "description": _clean(_sub(fields, "330", "a")),
+    }
+    return {k: v for k, v in record.items() if v not in ("", None, [])}
 
 
 def _get(url, timeout):
@@ -116,17 +202,24 @@ def _nlai(isbn, timeout):
     return None
 
 
-def _local(isbn):
-    from .models import Book
-    book = Book.objects.filter(isbn=isbn).exclude(title="").order_by("-created_at").first()
-    return {"isbn": isbn, "title": book.title, "author": book.author} if book else None
+def _compact(record):
+    return {k: v for k, v in record.items() if v not in ("", None, [])}
 
 
 def _open_library(isbn, timeout):
     info = _fetch(API.format(isbn=isbn), timeout).get(f"ISBN:{isbn}")
-    if info and info.get("title"):
-        authors = ", ".join(a.get("name", "") for a in info.get("authors", []) if a.get("name"))
-        return {"isbn": isbn, "title": info["title"], "author": authors}
+    if not (info and info.get("title")):
+        return None
+    year, calendar = _year_info(info.get("publish_date", ""))
+    cover = info.get("cover") or {}
+    return _compact({
+        "isbn": isbn, "title": info["title"], "subtitle": info.get("subtitle", ""),
+        "authors": [a["name"] for a in info.get("authors", []) if a.get("name")],
+        "publisher": ", ".join(p["name"] for p in info.get("publishers", []) if p.get("name")),
+        "year": year, "year_calendar": calendar, "pages": info.get("number_of_pages"),
+        "subjects": [x["name"] for x in info.get("subjects", []) if x.get("name")][:8],
+        "cover_url": cover.get("large") or cover.get("medium") or "",
+    })
 
 
 def _google(isbn, timeout):
@@ -136,18 +229,68 @@ def _google(isbn, timeout):
         url += f"&key={key}"
     items = _fetch(url, timeout).get("items") or []
     info = items[0].get("volumeInfo", {}) if items else {}
-    if info.get("title"):
-        return {"isbn": isbn, "title": info["title"], "author": ", ".join(info.get("authors") or [])}
+    if not info.get("title"):
+        return None
+    year, calendar = _year_info(info.get("publishedDate", ""))
+    cover = (info.get("imageLinks") or {}).get("thumbnail", "").replace("http://", "https://")
+    return _compact({
+        "isbn": isbn, "title": info["title"], "subtitle": info.get("subtitle", ""), "authors": info.get("authors") or [],
+        "publisher": info.get("publisher", ""), "year": year, "year_calendar": calendar, "pages": info.get("pageCount"),
+        "language": info.get("language", ""), "subjects": (info.get("categories") or [])[:8],
+        "description": info.get("description", ""), "cover_url": cover,
+    })
 
 
-# ترتیب = اولویت منبع‌ها (کتابخانه‌ی ملی برای کتاب فارسی بهتره)
-SOURCE_NAMES = ("nlai", "openlibrary", "google")
+# ---------------------------------------------------------------- ادغام و اطمینان
+SOURCE_NAMES = ("nlai", "openlibrary", "google")     # ترتیب = اولویت پیش‌فرض (کتاب فارسی: کتابخانه‌ی ملی بهتره)
+FIELD_PRIORITY = {"cover_url": ("openlibrary", "google")}     # جلد: Open Library بهتر از گوگل
+MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "year", "year_calendar", "edition_no", "volume",
+                "pages", "language", "subjects", "description", "cover_url")
 _POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="isbn")
 _BREAKER_LOCK = threading.Lock()
 
 
-def _budget():
-    return float(getattr(settings, "ISBN_BUDGET", 3.0))
+def title_key(title):
+    """کلید مقایسه‌ی «همون عنوان»: نرمال‌شده، بدون فاصله و نشانه‌گذاری."""
+    from common.text import normalize as text_normalize
+
+    return re.sub(r"[^\w]", "", text_normalize(title or ""))
+
+
+def merge_records(records):
+    """
+    records: {نام منبع: دیکشنری}. هر فیلد از اولین منبعِ دارای مقدار (به ترتیب اولویت فیلد) برداشته می‌شه.
+    اطمینان: ۴۰ یه منبع + ۳۰ دو منبع هم‌عنوان + ۲۰ ناشر/سال + ۱۰ جلد (حداکثر ۱۰۰). provenance نشون می‌ده هر فیلد از کجاست.
+    """
+    records = {k: v for k, v in records.items() if v}
+    if not records:
+        return None
+    merged, provenance = {}, {}
+    for field in MERGE_FIELDS:
+        for source in FIELD_PRIORITY.get(field, SOURCE_NAMES):
+            value = records.get(source, {}).get(field)
+            if value not in (None, "", []):
+                merged[field], provenance[field] = value, source
+                break
+    merged["isbn"] = next(iter(records.values())).get("isbn", "")
+    keys = {title_key(r.get("title")) for r in records.values() if r.get("title")}
+    confidence = 40
+    if len(records) >= 2 and len(keys) == 1:
+        confidence += 30
+    if merged.get("publisher") or merged.get("year"):
+        confidence += 20
+    if merged.get("cover_url"):
+        confidence += 10
+    merged.update(
+        author="، ".join(merged.get("authors", [])), sources=[n for n in SOURCE_NAMES if n in records],
+        provenance=provenance, confidence=min(confidence, 100),
+    )
+    return merged
+
+
+def _complete(record):
+    """رکوردی که برای ثبت کتاب کافیه؛ وقتی منبع اصلی چنین رکوردی داد منتظر منبع‌های دیگه نمی‌مونیم."""
+    return bool(record and record.get("title") and record.get("authors") and record.get("publisher") and record.get("year"))
 
 
 def breaker_open(name):
@@ -169,30 +312,29 @@ def breaker_record(name, ok):
         cache.set(key, state, 3600)
 
 
-def lookup(raw, timeout=None):
+def _budget():
+    return float(getattr(settings, "ISBN_BUDGET", 3.0))
+
+
+def lookup_full(raw, timeout=None):
     """
-    {'isbn','title','author'} یا None. منبع‌ها هم‌زمان و با بودجه‌ی زمانی کل (پیش‌فرض ۳ ثانیه) پرسیده می‌شن،
-    پس یه منبع کند هیچ‌وقت درخواست رو بیشتر از بودجه نگه نمی‌داره. نتیجه‌ی منفیِ ناشی از خطا/timeout کش نمی‌شه.
-    همه‌ی کار کش/دیتابیس تو همین thread انجام می‌شه؛ thread‌های شبکه فقط urllib صدا می‌زنن.
+    منبع‌های بیرونی هم‌زمان و با بودجه‌ی زمانی کل (پیش‌فرض ۳ ثانیه) پرسیده و ادغام می‌شن؛ دیکشنری غنی با
+    confidence/provenance یا None. وقتی کتابخانه‌ی ملی رکورد کامل داد زودتر برمی‌گرده.
+    نتیجه‌ی منفیِ ناشی از خطا/timeout/منبعِ کنارگذاشته‌شده کش نمی‌شه. همه‌ی کار کش تو همین thread انجام می‌شه.
     """
-    isbn = normalize(raw)
+    isbn = normalize_isbn(raw)
     if not isbn:
         return None
-    result = _local(isbn)
-    if result:
-        return result
-    key = f"isbn:{isbn}"
+    key = f"isbn2:{isbn}"
     cached = cache.get(key)
     if cached is not None:
         return cached or None
     budget = float(timeout) if timeout else _budget()
     deadline = time.monotonic() + budget
-    funcs = {"nlai": _nlai, "openlibrary": _open_library, "google": _google}     # موقع صدا زدن خونده می‌شن (تست‌ها می‌تونن جایگزین کنن)
-    order = list(SOURCE_NAMES)
-    pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in order if not breaker_open(name)}
-    results, failed = {}, len(pending) < len(order)    # منبع کنار گذاشته‌شده = جواب ناقص ⇒ منفی کش نشه
-    found = None
-    while pending and found is None:
+    funcs = {"nlai": _nlai, "openlibrary": _open_library, "google": _google}     # موقع صدا زدن خونده می‌شن (تست‌ها جایگزین می‌کنن)
+    pending = {name: _POOL.submit(funcs[name], isbn, budget) for name in SOURCE_NAMES if not breaker_open(name)}
+    results, failed = {}, len(pending) < len(SOURCE_NAMES)
+    while pending:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
@@ -207,17 +349,17 @@ def lookup(raw, timeout=None):
                     results[name] = None
                     failed = True
                     breaker_record(name, False)
-        for name in order:               # بالاترین منبعِ تمام‌شده‌ای که جواب داره، مگه منبعِ مهم‌تری هنوز تو راه باشه
-            if name in pending:
-                break
-            if results.get(name):
-                found = results[name]
-                break
+        if "nlai" in results and _complete(results["nlai"]):
+            break
     for name in pending:                 # بودجه تموم شد: منابع معطل شکست حساب می‌شن (thread‌شون خودش با timeout تموم می‌شه)
         failed = True
         breaker_record(name, False)
-    if found is None:
-        found = next((results[n] for n in order if results.get(n)), None)
-    if found or not failed:
-        cache.set(key, found or {}, 60 * 60 * 24)
-    return found
+    merged = merge_records(results)
+    if merged or not failed:
+        cache.set(key, merged or {}, 60 * 60 * 24)
+    return merged
+
+
+def lookup(raw, timeout=None):
+    """سازگاری با کد قدیمی: همون lookup_full (شامل کلیدهای isbn/title/author)."""
+    return lookup_full(raw, timeout)

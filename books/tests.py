@@ -34,7 +34,7 @@ class NlaiLookupTests(TestCase):
 
     def test_parse_marc(self):
         result = isbn._from_marc(isbn.parse_marc(self.record)[0], "9786007547717")
-        self.assertEqual(result, {"isbn": "9786007547717", "title": "مدارس دوست‌داشتنی", "author": "کبری صابر"})
+        self.assertEqual((result["isbn"], result["title"], result["authors"]), ("9786007547717", "مدارس دوست‌داشتنی", ["کبری صابر"]))
 
     def test_other_isbn_rejected(self):
         self.assertIsNone(isbn._from_marc(isbn.parse_marc(self.record)[0], "9780000000002"))
