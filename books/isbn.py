@@ -246,6 +246,7 @@ SOURCE_NAMES = ("nlai", "openlibrary", "google")     # ترتیب = اولویت
 FIELD_PRIORITY = {"cover_url": ("openlibrary", "google")}     # جلد: Open Library بهتر از گوگل
 MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "year", "year_calendar", "edition_no", "volume",
                 "pages", "language", "subjects", "description", "cover_url")
+GRACE_AFTER_COMPLETE = 0.6    # ثانیه
 _POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="isbn")
 _BREAKER_LOCK = threading.Lock()
 
@@ -350,7 +351,8 @@ def lookup_full(raw, timeout=None):
                     failed = True
                     breaker_record(name, False)
         if "nlai" in results and _complete(results["nlai"]):
-            break
+            # رکورد کامل ملی دارید؛ برای جلد و تأیید دوم فقط یه مهلت کوتاه به بقیه می‌دیم نه کل بودجه
+            deadline = min(deadline, time.monotonic() + GRACE_AFTER_COMPLETE)
     for name in pending:                 # بودجه تموم شد: منابع معطل شکست حساب می‌شن (thread‌شون خودش با timeout تموم می‌شه)
         failed = True
         breaker_record(name, False)
