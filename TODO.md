@@ -1,5 +1,7 @@
 # باقی‌مانده تا راه‌اندازی
 
+چک‌لیست کارهای کد و طراحی: [`docs/DEV_CHECKLIST.md`](docs/DEV_CHECKLIST.md)
+
 ## دیپلوی
 - [ ] `.env` سرور: `SECRET_KEY` (بعد از انتخاب تغییرش ندهید)، `ALLOWED_HOSTS`، `CSRF_TRUSTED_ORIGINS`، `DB_PASSWORD`، `SITE_URL`، `ADMIN_EMAILS`
 - [ ] nginx و SSL
