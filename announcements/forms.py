@@ -18,13 +18,22 @@ class AnnouncementForm(LocationMixin, PersianFormMixin, forms.ModelForm):
     class Meta:
         model = Announcement
         fields = ["title", "kind", "summary", "body", "starts_at", "ends_at", "is_online", "venue", "address", "link",
-                  "cover", "organizer", "is_free", "price_note"]
+                  "cover", "organizer", "is_free", "price_note", "club"]
         widgets = {"body": forms.Textarea(attrs={"rows": 8}), "summary": forms.Textarea(attrs={"rows": 3, "maxlength": 300})}
         labels = {"is_online": "این رویداد آنلاینه", "is_free": "ورود رایگانه"}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.setup_location(city=self.instance.city if self.instance.pk else None, after="ends_at")
+        from clubs.models import Club
+
+        clubs = Club.objects.filter(owner=user, is_active=True) if user is not None else Club.objects.none()
+        if clubs.exists():
+            self.fields["club"].queryset = clubs
+            self.fields["club"].empty_label = "مربوط به باشگاهی نیست"
+            self.fields["club"].help_text = "جلسه‌ی باشگاه تو؟ انتخابش کن تا تو صفحه‌ی باشگاه هم دیده بشه."
+        else:
+            del self.fields["club"]
         self.fields["link"].widget.attrs.update({"dir": "ltr", "placeholder": "نشانی صفحه‌ی ثبت‌نام یا اطلاعات بیشتر", "autocomplete": "off", "inputmode": "url"})
         self.fields["body"].help_text = "قالب‌ها: **پررنگ**، *مورب*، ## تیتر، - فهرست، [متن](لینک)"
 

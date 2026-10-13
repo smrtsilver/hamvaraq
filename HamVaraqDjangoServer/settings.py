@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "challenges",
     "posts",
     "announcements",
+    "clubs",
     "support",
     "analytics",
     "panel",

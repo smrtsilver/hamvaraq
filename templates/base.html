@@ -67,6 +67,7 @@
                         <a href="{% url 'accounts:profile' user.username %}">{% include "components/icon.html" with name="user" %} پروفایل من</a>
                         <a href="{% url 'books:shelf' %}">{% include "components/icon.html" with name="list" %} قفسه‌ی من</a>
                         <a href="{% url 'accounts:feed' %}">{% include "components/icon.html" with name="news" %} فید کتاب‌خوان‌ها</a>
+                        <a href="{% url 'clubs:list' %}">{% include "components/icon.html" with name="chat" %} باشگاه‌های کتاب</a>
                         <a href="{% url 'books:mine' %}">{% include "components/icon.html" with name="book" %} آگهی‌های معاوضه‌ی من</a>
                         <a href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="swap" %} مبادله‌های من{% if unread_messages %} <span class="pill pill-green">{{ unread_messages|fa }}</span>{% endif %}</a>
                         <a href="{% url 'books:wishlist' %}">{% include "components/icon.html" with name="heart" %} لیست آرزو{% if not wishlist_enabled %} <span class="pill">به‌زودی</span>{% endif %}</a>
@@ -112,7 +113,7 @@
             <div><p class="footer-title">کاوش</p><ul>
                 <li><a href="{% url 'books:list' %}">کتاب‌ها</a></li><li><a href="{% url 'cities' %}">شهرها و استان‌ها</a></li>
                 <li><a href="{% url 'authors' %}">نویسنده‌ها</a></li><li><a href="{% url 'publishers' %}">ناشران</a></li>
-                <li><a href="{% url 'posts:list' %}">معرفی کتاب</a></li><li><a href="{% url 'announcements:list' %}">اطلاعیه‌های فرهنگی</a></li>
+                <li><a href="{% url 'posts:list' %}">معرفی کتاب</a></li><li><a href="{% url 'announcements:list' %}">اطلاعیه‌های فرهنگی</a></li><li><a href="{% url 'clubs:list' %}">باشگاه‌های کتاب</a></li>
                 <li><a href="{% url 'challenges:list' %}">چالش‌ها</a></li></ul></div>
             <div><p class="footer-title">راهنما</p><ul>
                 <li><a href="{% url 'how_it_works' %}">چطور کار می‌کنه؟</a></li><li><a href="{% url 'how_it_works' %}#safety">نکته‌های امن تحویل</a></li>

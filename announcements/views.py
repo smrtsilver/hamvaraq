@@ -151,7 +151,8 @@ def announcement_create(request):
             Announcement.objects.filter(submitted_by=request.user, created_at__gte=since).count() >= settings.ANNOUNCEMENT_DAILY_LIMIT:
         messages.error(request, "امروز به سقف تعداد اطلاعیه رسیدی؛ فردا دوباره امتحان کن.")
         return redirect("announcements:mine")
-    form = AnnouncementForm(request.POST or None, request.FILES or None, initial={"city": request.user.city_id})
+    form = AnnouncementForm(request.POST or None, request.FILES or None, user=request.user,
+                            initial={"city": request.user.city_id, "club": _club_initial(request)})
     if request.method == "POST" and form.is_valid():
         item = services.submit(form.save(commit=False), request.user)
         if item.status == Announcement.Status.PUBLISHED:
@@ -167,7 +168,7 @@ def announcement_edit(request, pk):
     item = get_object_or_404(Announcement, pk=pk)
     if item.submitted_by_id != request.user.pk or item.status == Announcement.Status.PUBLISHED and not request.user.is_staff:
         raise Http404
-    form = AnnouncementForm(request.POST or None, request.FILES or None, instance=item)
+    form = AnnouncementForm(request.POST or None, request.FILES or None, instance=item, user=request.user)
     if request.method == "POST" and form.is_valid():
         item = services.submit(form.save(commit=False), request.user)
         messages.success(request, "تغییرات ذخیره شد و برای تأیید دوباره ارسال شد.")
@@ -178,3 +179,10 @@ def announcement_edit(request, pk):
 @login_required
 def my_announcements(request):
     return render(request, "announcements/mine.html", {"items": request.user.announcements.select_related("city")})
+
+
+def _club_initial(request):
+    from clubs.models import Club
+
+    slug = request.GET.get("club")
+    return Club.objects.filter(slug=slug, owner=request.user).values_list("pk", flat=True).first() if slug else None

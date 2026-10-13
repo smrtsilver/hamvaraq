@@ -29,6 +29,7 @@ urlpatterns = [
     path("offline/", offline, name="offline"),
     path("favicon.ico", RedirectView.as_view(url=settings.STATIC_URL + "favicon.svg", permanent=True)),
     path("healthz/", healthz, name="healthz"),
+    path("clubs/", include("clubs.urls")),
     path("csp-report/", csp_report, name="csp_report"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),

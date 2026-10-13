@@ -2700,3 +2700,36 @@ class FollowFeedTests(Base):
         anonymize_user(self.giver)
         self.assertFalse(ShelfEntry.objects.filter(note="خصوصی").exists())
         self.assertFalse(Follow.objects.exists())
+
+
+class ClubTests(Base):
+    def test_create_join_post_and_event_link(self):
+        from announcements.models import Announcement
+        from clubs.models import Club, ClubPost
+        self.client.force_login(self.giver)
+        r = self.client.post("/clubs/new/", {"name": "همخوانی کلیدر", "description": "هر پنجشنبه", "current_title": "کلیدر", "current_author": "دولت‌آبادی", "is_online": "on"})
+        club = Club.objects.get()
+        self.assertRedirects(r, club.get_absolute_url())
+        self.assertTrue(club.members.filter(user=self.giver).exists())
+        self.client.force_login(self.taker)
+        self.client.post(f"/clubs/{club.slug}/", {"text": "سلام"})            # عضو نیست
+        self.assertFalse(ClubPost.objects.exists())
+        self.client.post(f"/clubs/{club.slug}/join/")
+        self.client.post(f"/clubs/{club.slug}/", {"text": "فصل اول عالی بود"})
+        self.assertEqual(ClubPost.objects.get().text, "فصل اول عالی بود")
+        Announcement.objects.create(title="جلسه‌ی اول", kind="reading_club", summary="س", status="published", is_online=True,
+                                    starts_at=timezone.now() + timedelta(days=2), club=club)
+        r = self.client.get(f"/clubs/{club.slug}/")
+        self.assertEqual(len(r.context["events"]), 1)
+        self.assertContains(self.client.get("/clubs/"), "همخوانی کلیدر")
+
+    def test_announcement_form_offers_only_owned_clubs(self):
+        from clubs.models import Club
+        Club.objects.create(name="باشگاه من", owner=self.giver)
+        Club.objects.create(name="مال دیگری", owner=self.taker)
+        self.client.force_login(self.giver)
+        form = self.client.get("/announcements/new/").context["form"]
+        self.assertEqual([c.name for c in form.fields["club"].queryset], ["باشگاه من"])
+        self.client.force_login(self.taker)
+        self.client.force_login(User.objects.create_user("noclub", password="x12345678"))
+        self.assertNotIn("club", self.client.get("/announcements/new/").context["form"].fields)

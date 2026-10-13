@@ -39,6 +39,7 @@ class Announcement(models.Model):
     organizer = models.CharField(max_length=120, blank=True, verbose_name="برگزارکننده")
     is_free = models.BooleanField(default=True, verbose_name="رایگان")
     price_note = models.CharField(max_length=120, blank=True, verbose_name="هزینه / توضیح")
+    club = models.ForeignKey("clubs.Club", null=True, blank=True, on_delete=models.SET_NULL, related_name="events", verbose_name="باشگاه کتاب")
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="announcements", verbose_name="ثبت‌کننده")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True, verbose_name="وضعیت")
     reject_reason = models.CharField(max_length=300, blank=True, verbose_name="دلیل رد")

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}باشگاه‌های کتاب | هم‌ورق{% endblock %}
+{% block description %}باشگاه‌های کتاب و همخوانی هم‌ورق: با کتاب‌خوان‌های شهرت یا آنلاین یه کتاب رو با هم بخونید.{% endblock %}
+{% block content %}
+<section class="club-hero"><div><h1>باشگاه‌های کتاب</h1><p>یه کتاب، چند نفر، چند هفته. با هم بخونید، حرف بزنید و قرار بذارید.</p>
+    <a class="btn btn-lg" href="{% if user.is_authenticated %}{% url 'clubs:create' %}{% else %}{% url 'accounts:signup' %}{% endif %}">{% include "components/icon.html" with name="plus" %} ساخت باشگاه</a></div>
+    <span class="club-hero-art" aria-hidden="true">{% for i in "12345" %}<i></i>{% endfor %}</span></section>
+<form method="get" class="club-search" role="search"><label class="visually-hidden" for="cq">جستجوی باشگاه</label><input id="cq" name="q" value="{{ q }}" placeholder="نام باشگاه، کتاب یا شهر…"><button class="btn btn-secondary">{% include "components/icon.html" with name="search" %} جستجو</button></form>
+{% if page %}<div class="club-grid">{% for c in page %}
+    <a class="club-card" href="{{ c.get_absolute_url }}">
+        <div class="cc-top"><strong>{{ c.name }}</strong>{% if c.pk in mine %}<span class="pill pill-green">عضوی</span>{% endif %}</div>
+        {% if c.current_title %}<p class="cc-book">{% include "components/icon.html" with name="book" %} <span><b>{{ c.current_title }}</b>{% if c.current_author %} · {{ c.current_author }}{% endif %}</span></p>{% endif %}
+        <p class="cc-desc">{{ c.description|truncatechars:120 }}</p>
+        <div class="cc-meta"><span>{% include "components/icon.html" with name="user" %} {{ c.n|fa }} عضو</span><span>{% include "components/icon.html" with name="pin" %} {% if c.is_online %}آنلاین{% elif c.city %}{{ c.city.name }}{% else %}—{% endif %}</span></div>
+    </a>{% endfor %}</div>{% include "components/pagination.html" %}
+{% else %}{% url 'clubs:create' as cu %}{% include "components/empty.html" with ill="books" title="هنوز باشگاهی نیست" text="اولین باشگاه کتاب رو تو بساز." cta_url=cu cta_label="ساخت باشگاه" %}{% endif %}
+{% endblock %}

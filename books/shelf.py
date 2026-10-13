@@ -60,7 +60,8 @@ def shelf_stats(request):
 @login_required
 @throttle("shelfadd", 60, 3600, by="user")
 def shelf_add(request):
-    form = ShelfAddForm(request.POST or None)
+    initial = {k: request.GET[k][:150] for k in ("title", "author") if request.GET.get(k)}
+    form = ShelfAddForm(request.POST or None, initial=initial or None)
     if request.method == "POST":
         if request.user.shelf.count() >= SHELF_MAX:
             messages.error(request, "قفسه‌ات پره؛ چندتا رو حذف کن.")
