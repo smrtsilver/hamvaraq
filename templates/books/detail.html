@@ -60,6 +60,7 @@
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
             <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" data-confirm="این کتاب حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}
         {% elif book.status == 'available' %}{% include "books/_cta.html" %}
+        {% elif book.status == 'reserved' %}<div class="alert alert-warning"><p>این نسخه الان در حال مبادله با کتاب‌خوان دیگه‌ایه. اگه مبادله سر نگیره، دوباره آزاد می‌شه.</p></div>
         {% else %}<div class="alert alert-warning"><p>این کتاب الان برای مبادله آزاد نیست.</p></div>{% endif %}
         </div>
         {% if book.status == 'available' and not is_owner and user.is_authenticated and not my_request and user.can_request and user.points >= 1 %}<details class="hold-note"><summary>{% include "components/icon.html" with name="info" %} ۱ امتیاز چطور نگه داشته می‌شه؟</summary>
@@ -68,7 +69,6 @@
             <button type="button" class="link btn-link" data-share data-share-title="{{ book.title }}" data-share-url="{{ request.build_absolute_uri }}" hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
             <a class="link" data-share-fallback rel="noopener" target="_blank" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode:'' }}&amp;text={{ book.title|urlencode }}">{% include "components/icon.html" with name="share" %} ارسال در تلگرام</a>
             <a href="{% url 'story' %}?book={{ book.pk }}" class="link">{% include "components/icon.html" with name="download" %} ساخت استوری</a>
-            <a href="{% url 'story' %}?book={{ book.pk }}&amp;mode=quote" class="link">{% include "components/icon.html" with name="pen" %} نقل‌قول از این کتاب</a>
             {% if user.is_authenticated and not is_owner %}<a href="{% url 'trust:report' 'book' book.pk %}" class="muted">{% include "components/icon.html" with name="flag" %} گزارش کتاب</a>{% endif %}
         </div>
     </div>

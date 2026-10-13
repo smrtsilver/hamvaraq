@@ -2627,6 +2627,11 @@ class PersonalShelfTests(Base):
         e.refresh_from_db()
         self.assertTrue(e.for_exchange)
         self.assertEqual(ShelfEntry.objects.filter(user=self.giver).count(), 1)      # ردیف تکراری ساخته نشد
+        prof = reverse("accounts:profile", args=[self.giver.username])
+        self.assertIn("sp-rib", self.client.get(prof).content.decode())
+        Book.objects.filter(pk=e.book_id).update(status="reserved")                   # در حال مبادله ← نقطه‌ی زرد نه
+        self.assertNotIn("sp-rib", self.client.get(prof).content.decode())
+        Book.objects.filter(pk=e.book_id).update(status="available")
         r = self.client.post(f"/books/{e.book_id}/delete/", {"next": "shelf"})
         self.assertRedirects(r, f"/books/shelf/{e.pk}/")
         e.refresh_from_db()

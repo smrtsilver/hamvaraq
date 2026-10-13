@@ -372,6 +372,12 @@ class ShelfEntry(models.Model):
         b = self.listing
         return bool(b and b.status in (Book.Status.AVAILABLE, Book.Status.RESERVED))
 
+    @property
+    def open_for_exchange(self):
+        """فقط آگهی‌هایی که الان می‌شه درخواستشون داد (نقطه‌ی زرد قفسه‌ی عمومی)."""
+        b = self.listing
+        return bool(b and b.status == Book.Status.AVAILABLE)
+
     def save(self, *args, **kwargs):
         from .isbn import normalize_isbn
 
