@@ -7,8 +7,9 @@
   dlg.className = "lightbox";
   dlg.setAttribute("aria-label", "عکس‌های کتاب");
   dlg.innerHTML = '<figure class="lb-fig"><img alt=""><figcaption aria-live="polite"></figcaption></figure>' +
-    '<button type="button" class="lb-btn lb-prev" aria-label="عکس قبلی">›</button><button type="button" class="lb-btn lb-next" aria-label="عکس بعدی">‹</button>' +
-    '<button type="button" class="lb-btn lb-close" aria-label="بستن">×</button>';
+    '<button type="button" class="lb-btn lb-prev" aria-label="عکس قبلی"><svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>' +
+    '<button type="button" class="lb-btn lb-next" aria-label="عکس بعدی"><svg class="i" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>' +
+    '<button type="button" class="lb-btn lb-close" aria-label="بستن"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>';
   document.body.appendChild(dlg);
   var img = dlg.querySelector("img"), cap = dlg.querySelector("figcaption"), idx = 0, zoom = false, last = null, x0 = null;
   function show(i) {

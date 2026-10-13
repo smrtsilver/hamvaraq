@@ -70,7 +70,9 @@
             const box = img.closest(".hv-card-cover, .cover");
             if (box && !box.style.backgroundImage) box.style.backgroundImage = `url("${img.dataset.lqip}")`;
         });
-        HV.$$("[data-book-id]", root).slice(0, 40).forEach((el) => { el.style.viewTransitionName = `book-${el.dataset.bookId}`; });
+        const seen = new Set();          // نام انتقال باید یکتا باشه؛ یه کتاب ممکنه تو دو قفسه‌ی صفحه باشه
+        HV.$$("[data-book-id]", root).filter((el) => !seen.has(el.dataset.bookId) && seen.add(el.dataset.bookId)).slice(0, 40)
+            .forEach((el) => { el.style.viewTransitionName = `book-${el.dataset.bookId}`; });
     };
     HV.enhance();
 })();

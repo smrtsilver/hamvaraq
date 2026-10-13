@@ -1301,7 +1301,7 @@ a.sup-tier:hover{text-decoration:none;color:inherit;transform:translateY(-3px);b
 @media (prefers-reduced-motion:reduce){.dedup-box{animation:none}}
 
 /* ===== انتخاب جلد ===== */
-.cover-picker{border:0;margin:0 0 18px;padding:0;display:grid;gap:10px}
+.cover-picker{border:0;margin:0 0 18px;padding:0;display:grid;gap:10px;min-width:0}
 .field-legend{display:block;font-weight:700;font-size:var(--fs-sm);margin-bottom:6px}
 .cover-mode{margin-bottom:2px}
 .cp-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.cp-cats::-webkit-scrollbar{display:none}
@@ -1347,3 +1347,5 @@ a.sup-tier:hover{text-decoration:none;color:inherit;transform:translateY(-3px);b
 .lb-prev{inset-inline-start:12px;top:50%;transform:translateY(-50%)}.lb-next{inset-inline-end:12px;top:50%;transform:translateY(-50%)}
 .lb-close{top:calc(12px + env(safe-area-inset-top));inset-inline-end:12px}
 @media (prefers-reduced-motion:reduce){.lightbox[open]{animation:none}.lb-fig img{transition:none}}
+.cover-picker{grid-template-columns:minmax(0,1fr)}.cover-picker>*,.cp-design{min-width:0}
+.lb-btn .i{width:24px;height:24px}.lightbox{background:rgba(8,10,9,.97)}

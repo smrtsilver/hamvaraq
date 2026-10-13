@@ -63,10 +63,13 @@
     if (msg) HV.announce(msg, "error");
     var dt = new DataTransfer(); list.forEach(function (f) { dt.items.add(f); });
     input.files = dt.files;
-    input.dispatchEvent(new Event("change", { bubbles: true }));     // فشرده‌سازی compress.js
     render();
+    busy = true;
+    input.dispatchEvent(new Event("change", { bubbles: true }));     // فشرده‌سازی compress.js و نام فایل‌ها
+    busy = false;
   }
-  input.addEventListener("change", function (e) { if (!e.isTrusted) return; accept(input.files); });
+  var busy = false;
+  input.addEventListener("change", function () { if (!busy) accept(input.files); });
   ["dragenter", "dragover"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add("is-over"); }); });
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function () { drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) accept(e.dataTransfer.files); });
