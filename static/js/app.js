@@ -96,3 +96,12 @@ document.addEventListener("click", (e) => {
     box.classList.add("is-closing");
     setTimeout(() => { document.documentElement.classList.add("pf-off"); }, 260);
 });
+
+// دکمه‌ی بازگشت هدر: اگه از همین سایت اومده، برگرد به صفحه‌ی قبلی (با اسکرول قبلی)؛ وگرنه صفحه‌ی والد
+document.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-back]");
+    if (!a || e.metaKey || e.ctrlKey) return;
+    let same = false;
+    try { same = document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href; } catch (_) { /* ارجاع نامعتبر */ }
+    if (same && history.length > 1) { e.preventDefault(); history.back(); }
+});

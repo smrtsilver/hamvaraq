@@ -35,8 +35,9 @@
 {% if site.banner_active and site.banner_text %}
 <div class="banner">{% if site.banner_url %}<a href="{{ site.banner_url }}">{{ site.banner_text }}</a>{% else %}{{ site.banner_text }}{% endif %}</div>
 {% endif %}
-<header class="header">
+<header class="header{% if back_url %} has-back{% endif %}">
     <div class="container header-in">
+        {% if back_url %}<a class="icon-btn back-btn" href="{{ back_url }}" data-back aria-label="بازگشت">{% include "components/icon.html" with name="chevron-right" %}</a>{% endif %}
         <a class="brand" href="{% url 'home' %}" aria-label="هم‌ورق، صفحه‌ی اصلی">{% include "components/_logo.html" %}</a>
         <nav class="nav" aria-label="ناوبری اصلی">
             <a href="{% url 'books:list' %}"{% if ns == 'books' and name == 'list' or ns == 'books' and name == 'detail' %} aria-current="page"{% endif %}>کتاب‌ها</a>
@@ -73,7 +74,8 @@
                         <a href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات و بیشتر</a>
                         {% if user.is_staff %}<hr><a href="{% url 'panel:index' %}">{% include "components/icon.html" with name="sparkle" %} پنل مدیریت{% if staff_todo %} <span class="pill pill-amber">{{ staff_todo|fa }}</span>{% endif %}</a><a href="{% url 'admin:index' %}">{% include "components/icon.html" with name="shield" %} پنل ادمین</a>{% endif %}
                         <hr>
-                        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button>{% include "components/icon.html" with name="logout" %} خروج</button></form>
+                        <button type="button" class="only-mobile" data-theme-toggle>{% include "components/icon.html" with name="moon" %} حالت روشن / تیره</button>
+                        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="menu-logout">{% include "components/icon.html" with name="logout" %} خروج</button></form>
                     </div>
                 </details>
             {% else %}

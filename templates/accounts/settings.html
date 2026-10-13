@@ -30,6 +30,7 @@
 </form>
 <section class="card set-card set-privacy" aria-labelledby="priv-h"><h2 id="priv-h" class="h3">حریم خصوصی</h2>
     <ul class="list-clean small"><li>شماره و آدرست هیچ‌جا ازت خواسته نمی‌شه.</li><li>یادداشت‌های خصوصی قفسه و نقل‌قول‌های خصوصی فقط برای خودت نمایش داده می‌شن.</li><li>کسایی که دنبالت می‌کنن فقط کتاب‌های تموم‌شده، نقدها و معرفی‌هات رو می‌بینن.</li></ul></section>
+<form method="post" action="{% url 'accounts:logout' %}" class="set-logout">{% csrf_token %}<button class="btn btn-secondary btn-block">{% include "components/icon.html" with name="logout" %} خروج از حساب</button></form>
 <section class="card set-card set-danger" aria-labelledby="dz-h"><h2 id="dz-h" class="h3">منطقه‌ی خطر</h2>
     <p class="small muted">با حذف حساب، قفسه، نقل‌قول‌ها و یادداشت‌هات پاک می‌شن و نامت ناشناس می‌شه. برگشت‌پذیر نیست.</p>
     <a href="{% url 'accounts:delete' %}" class="btn btn-ghost btn-sm link-danger">{% include "components/icon.html" with name="trash" %} حذف حساب</a></section>

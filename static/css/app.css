@@ -1529,3 +1529,15 @@ input[type=range]{accent-color:var(--primary)}
   .create-tile strong{font-size:var(--fs-xs)}.create-tile span{display:none}
   .create-tile .i{width:20px;height:20px;margin-inline:auto}
 }
+/* دکمه‌ی بازگشت هدر */
+.back-btn{flex:none;margin-inline-end:2px}
+.back-btn .i{width:22px;height:22px}
+@media (max-width:420px){
+  .header.has-back [data-theme-toggle]{display:none}
+  .header.has-back .brand svg,.header.has-back .brand img{max-width:104px}
+}
+.menu-panel .menu-logout{color:var(--danger)}
+.set-logout{margin:16px 0}
+.menu-panel button[data-theme-toggle]{width:100%}
+@media (min-width:641px){.menu-panel .only-mobile{display:none}}
+@media (max-width:640px){.menu-panel button.only-mobile{display:flex!important}}
