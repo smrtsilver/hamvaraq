@@ -740,3 +740,9 @@ input[aria-invalid=true]{border-color:var(--danger)}
   .cta-fixed .btn{width:100%}.cta-fixed .hold-short{text-align:center}
   .cta-fixed .alert{margin:0}
 }
+
+/* ---------- فرم چندقدمی موبایل و فشرده‌سازی عکس ---------- */
+.step-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.step-label{font-weight:700;font-size:var(--fs-sm);color:var(--ink-3)}.step-nav .btn{min-width:96px}
+.compress-note{color:var(--primary-ink)}
+[hidden]{display:none!important}
