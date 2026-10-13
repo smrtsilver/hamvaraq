@@ -1,12 +1,12 @@
 {% if onboarding and not onboarding.complete %}
 <section class="card onboarding" aria-label="شروع سریع">
-    <div class="cluster" style="justify-content:space-between"><h3 style="margin:0">شروع سریع</h3><span class="pill pill-green">{{ onboarding.done|fa }} از {{ onboarding.total|fa }}</span></div>
-    <div class="progress" style="margin-top:12px"><i style="width:{% widthratio onboarding.done onboarding.total 100 %}%"></i></div>
+    <div class="cluster jc-between"><h3 class="m-0">شروع سریع</h3><span class="pill pill-green">{{ onboarding.done|fa }} از {{ onboarding.total|fa }}</span></div>
+    <div class="progress mt-12"><i data-w="{% widthratio onboarding.done onboarding.total 100 %}"></i></div>
     <ol class="steps">{% for st in onboarding.steps %}
         <li class="{% if st.done %}done{% endif %}"><span class="tick">{% if st.done %}{% include "components/icon.html" with name="check" %}{% else %}{{ forloop.counter|fa }}{% endif %}</span>
             <div><strong>{{ st.title }}</strong><span class="small muted">{{ st.hint }}</span></div>
             {% if not st.done %}<a class="btn btn-sm btn-secondary" href="{{ st.url }}">{{ st.cta }}</a>{% endif %}</li>{% endfor %}
     </ol>
-    <p class="small" style="margin:8px 0 0"><a href="{% url 'how_it_works' %}">راهنمای کامل</a></p>
+    <p class="small m-t8"><a href="{% url 'how_it_works' %}">راهنمای کامل</a></p>
 </section>
 {% endif %}

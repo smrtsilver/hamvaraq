@@ -6,7 +6,7 @@
     <div class="page-head"><div><h1>{{ title }}</h1><p>اتفاق فرهنگی‌ای که می‌دونی رو با بقیه‌ی کتاب‌خوان‌ها به اشتراک بذار. بعد از تأیید مدیریت منتشر می‌شه.</p></div></div>
     <form method="post" enctype="multipart/form-data" class="card" data-location-group novalidate>{% csrf_token %}
         {% for e in form.non_field_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
-        <div class="form-section" style="border:0;margin:0;padding:0"><h3>۱. چی هست؟</h3>
+        <div class="form-section reset-box"><h3>۱. چی هست؟</h3>
             {% include "components/field.html" with field=form.title %}
             <div class="form-grid"><div>{% include "components/field.html" with field=form.kind %}</div><div>{% include "components/field.html" with field=form.organizer %}</div></div>
             {% include "components/field.html" with field=form.summary %}{% include "components/field.html" with field=form.body %}</div>
@@ -15,7 +15,7 @@
             <div class="form-grid"><div>{% include "components/field.html" with field=form.province %}</div><div>{% include "components/field.html" with field=form.city %}</div>
                 <div>{% include "components/field.html" with field=form.venue %}</div><div>{% include "components/field.html" with field=form.address %}</div></div></div>
         <div class="form-section"><h3>۴. بقیه</h3>{% include "components/field.html" with field=form.link %}{% include "components/field.html" with field=form.is_free %}{% include "components/field.html" with field=form.price_note %}{% include "components/field.html" with field=form.cover %}</div>
-        <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ارسال برای بررسی</button><a class="btn btn-ghost" href="javascript:history.back()">انصراف</a></div>
+        <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ارسال برای بررسی</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div>
         <p class="hint">تبلیغ فروشگاهی، محتوای نامرتبط با کتاب و اطلاعات ناقص منتشر نمی‌شه. ثبت‌کننده تو برابر صحت اطلاعات مسئوله.</p>
     </form>
 </div>

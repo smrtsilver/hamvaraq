@@ -6,14 +6,14 @@
 <div class="grid-2">
 {% for i in items %}
 <div class="card">
-    <div class="cluster" style="justify-content:space-between"><h3 style="margin:0">{{ i.c.title }}</h3>
+    <div class="cluster jc-between"><h3 class="m-0">{{ i.c.title }}</h3>
         {% if i.complete %}<span class="pill pill-green">{% include "components/icon.html" with name="check" %} انجام شد</span>{% elif i.upcoming %}<span class="pill">به‌زودی</span>{% else %}<span class="pill pill-amber">فعال</span>{% endif %}</div>
     <p class="muted">{{ i.c.description }}</p>
     <p class="small muted">{{ i.c.get_kind_display }} · تا {{ i.c.ends_at|jlong }}</p>
-    {% if user.is_authenticated %}<div class="progress" role="progressbar" aria-valuenow="{{ i.percent }}" aria-valuemin="0" aria-valuemax="100"><i style="width:{{ i.percent }}%"></i></div>
-    <p class="small muted" style="margin:8px 0 0">{{ i.done|fa }} از {{ i.c.target|fa }}</p>
+    {% if user.is_authenticated %}<div class="progress" role="progressbar" aria-valuenow="{{ i.percent }}" aria-valuemin="0" aria-valuemax="100"><i data-w="{{ i.percent }}"></i></div>
+    <p class="small muted m-t8">{{ i.done|fa }} از {{ i.c.target|fa }}</p>
     {% else %}<p class="small">هدف: {{ i.c.target|fa }} مبادله — <a href="{% url 'accounts:login' %}">وارد شو</a> تا پیشرفتت رو ببینی.</p>{% endif %}
 </div>
-{% empty %}<div style="grid-column:1/-1">{% include "components/empty.html" with ill="books" title="الان چالش فعالی نیست" text="به‌زودی چالش تازه می‌آد؛ همین‌جا سر بزن." %}</div>{% endfor %}
+{% empty %}<div class="col-all">{% include "components/empty.html" with ill="books" title="الان چالش فعالی نیست" text="به‌زودی چالش تازه می‌آد؛ همین‌جا سر بزن." %}</div>{% endfor %}
 </div>
 {% endblock %}

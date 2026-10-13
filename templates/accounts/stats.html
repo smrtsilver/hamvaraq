@@ -11,7 +11,7 @@
     <div class="stat"><strong>{{ s.tiles.event_views|fa }}</strong><span>بازدید اطلاعیه‌هایت</span></div>
 </div>
 
-<h2 style="margin-top:28px">کتاب‌ها</h2>
+<h2 class="mt-28">کتاب‌ها</h2>
 {% if s.books %}<div class="ptable-wrap"><table class="table ptable"><thead><tr><th>کتاب</th><th>وضعیت</th><th>بازدید</th><th>درخواست</th><th>مبادله‌ی کامل</th></tr></thead><tbody>
 {% for b in s.books %}<tr><td data-label="کتاب"><a href="{{ b.get_absolute_url }}"><strong>{{ b.title|truncatechars:40 }}</strong></a></td><td data-label="وضعیت"><span class="pill">{{ b.get_status_display }}</span></td>
     <td data-label="بازدید">{{ b.view_count|fa }}</td><td data-label="درخواست">{{ b.req|fa }}</td><td data-label="مبادله‌ی کامل">{{ b.done|fa }}</td></tr>{% endfor %}</tbody></table></div>

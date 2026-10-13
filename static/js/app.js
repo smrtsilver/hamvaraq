@@ -60,5 +60,19 @@
 })();
 
 
-// نوار کیفیت آگهی: عرض از data-w (بدون style درون‌خطی)
-document.querySelectorAll(".meter i[data-w]").forEach((i) => { i.style.width = i.dataset.w + "%"; });
+// عرض/ارتفاع درصدی از data-w / data-h (بدون style درون‌خطی؛ سازگار با CSP)
+document.querySelectorAll("[data-w]").forEach((el) => { el.style.width = el.dataset.w + "%"; });
+document.querySelectorAll("[data-h]").forEach((el) => { el.style.height = el.dataset.h + "%"; });
+
+// تأیید پیش از اقدام خطرناک (به‌جای onclick/onsubmit)، دکمه‌ی بازگشت و تازه‌سازی (به‌جای javascript:)
+document.addEventListener("submit", (e) => {
+    const msg = e.target.dataset && e.target.dataset.confirm;
+    if (msg && !confirm(msg)) e.preventDefault();
+});
+document.addEventListener("click", (e) => {
+    const guarded = e.target.closest("button[data-confirm], a[data-confirm]");
+    if (guarded && !confirm(guarded.dataset.confirm)) { e.preventDefault(); e.stopPropagation(); return; }
+    const back = e.target.closest("[data-back]");
+    if (back) { e.preventDefault(); if (history.length > 1) history.back(); else location.href = back.getAttribute("href") || "/"; return; }
+    if (e.target.closest("[data-reload]")) location.reload();
+});

@@ -29,5 +29,5 @@
 {% if posts %}<section class="section-sm"><div class="section-head"><h2>معرفی‌های تازه</h2><a href="{% url 'posts:list' %}">همه</a></div><div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div></section>{% endif %}
 
 {% if challenges %}<section class="section-sm"><div class="section-head"><h2>چالش‌های فعال</h2><a href="{% url 'challenges:list' %}">همه</a></div><div class="grid-2">
-    {% for i in challenges %}<div class="card"><h3>{{ i.c.title }}</h3><div class="progress"><i style="width:{% widthratio i.done i.c.target 100 %}%"></i></div><p class="small muted" style="margin:8px 0 0">{{ i.done|fa }} از {{ i.c.target|fa }}</p></div>{% endfor %}</div></section>{% endif %}
+    {% for i in challenges %}<div class="card"><h3>{{ i.c.title }}</h3><div class="progress"><i data-w="{% widthratio i.done i.c.target 100 %}"></i></div><p class="small muted m-t8">{{ i.done|fa }} از {{ i.c.target|fa }}</p></div>{% endfor %}</div></section>{% endif %}
 {% endblock %}

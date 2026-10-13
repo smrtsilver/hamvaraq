@@ -46,7 +46,7 @@
 
 {% if cities %}<section class="lp-section lp-alt"><div class="container">
     <div class="lp-title"><h2>تو کدوم شهری؟</h2><p>شهرهایی که الان کتاب موجود دارن.</p></div>
-    <p class="center">{% for c in cities %}<a class="chip" style="font-size:var(--fs-sm);padding:6px 18px" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.n|fa }}</small></a> {% endfor %}</p>
+    <p class="center">{% for c in cities %}<a class="chip btn-compact" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.n|fa }}</small></a> {% endfor %}</p>
     <p class="center"><a href="{% url 'cities' %}">همه‌ی شهرها و استان‌ها</a></p>
 </div></section>{% endif %}
 
@@ -63,10 +63,10 @@
 <section class="lp-section"><div class="container faq-wrap">
     <div class="lp-title"><h2>سوال‌های پرتکرار</h2></div>
     {% for q, a in faq %}<details class="faq"><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}
-    <p class="center" style="margin-top:20px"><a href="{% url 'how_it_works' %}">راهنمای کامل</a> · <a href="{% url 'rules' %}">قوانین</a></p>
+    <p class="center mt-20"><a href="{% url 'how_it_works' %}">راهنمای کامل</a> · <a href="{% url 'rules' %}">قوانین</a></p>
 </div></section>
 
-<section class="lp-section" style="padding-top:0"><div class="container">
+<section class="lp-section pt-0"><div class="container">
     <div class="cta-band"><h2>{{ site.cta_title }}</h2><p>{{ site.cta_text }}</p>
         <a class="btn btn-lg btn-accent" href="{% url 'accounts:signup' %}">ساخت حساب رایگان</a></div>
 </div></section>

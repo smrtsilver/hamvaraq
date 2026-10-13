@@ -7,7 +7,7 @@
 {% block og_image %}<meta property="og:image" content="{% if book.cover %}{{ request.scheme }}://{{ request.get_host }}{{ book.cover.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% url 'books:card' book.pk %}{% endif %}">{% endblock %}
 {% block head_extra %}<script type="application/ld+json">{{ ld_json|safe }}</script>{% endblock %}
 {% block content %}
-<nav class="small muted" aria-label="مسیر" style="margin-bottom:18px"><a href="{% url 'books:list' %}">کتاب‌ها</a> / <a href="{% url 'city' book.city.pk %}">{{ book.city.name }}</a> / {{ book.title|truncatechars:40 }}</nav>
+<nav class="small muted mb-18" aria-label="مسیر"><a href="{% url 'books:list' %}">کتاب‌ها</a> / <a href="{% url 'city' book.city.pk %}">{{ book.city.name }}</a> / {{ book.title|truncatechars:40 }}</nav>
 <div class="book-hero">
     <div class="gallery" data-gallery>
         <div class="cover">{% if book.cover %}<img src="{{ book.cover.url }}" alt="جلد کتاب «{{ book.title }}»" data-gallery-main width="680" height="900" fetchpriority="high">{% else %}<span class="cover-fallback">{{ book.title }}</span>{% endif %}</div>
@@ -17,13 +17,13 @@
         </div>{% endif %}
     </div>
     <div>
-        <div class="cluster" style="margin-bottom:10px">
+        <div class="cluster mb-10">
             <span class="pill {% if book.status == 'available' %}pill-green{% elif book.status == 'reserved' %}pill-amber{% endif %}">{{ book.get_status_display }}</span>
             {% if book.category %}<span class="chip">{{ book.category }}</span>{% endif %}
             <span class="chip">{{ book.get_condition_display }}</span>
         </div>
-        <h1 style="font-size:var(--fs-3xl);margin-bottom:4px">{{ book.title }}</h1>
-        <p class="muted" style="font-size:var(--fs-lg)">{{ book.author }}</p>
+        <h1 class="fs-3xl mb-4">{{ book.title }}</h1>
+        <p class="muted fs-lg">{{ book.author }}</p>
         {% if demand %}<p class="demand-line">{% include "components/icon.html" with name="heart" %} {{ demand|fa }} نفر دنبال این کتاب بوده‌ن</p>{% endif %}
         {% with ed=book.edition %}{% if ed and ed.is_source_backed %}<dl class="biblio" aria-label="مشخصات چاپ">
             {% if ed.publisher %}<div><dt>ناشر</dt><dd>{{ ed.publisher }}</dd></div>{% endif %}
@@ -36,7 +36,7 @@
         <div class="owner-card">
             <a href="{% url 'accounts:profile' book.owner.username %}" aria-label="پروفایل {{ book.owner.username }}">{% include "components/avatar.html" with u=book.owner size="lg" %}</a>
             <div class="grow">
-                <strong><a href="{% url 'accounts:profile' book.owner.username %}" style="color:inherit">{{ book.owner.username }}</a></strong>
+                <strong><a href="{% url 'accounts:profile' book.owner.username %}" class="c-inherit">{{ book.owner.username }}</a></strong>
                 <div>{% load trust_tags %}{% reputation_badge book.owner %}</div>
                 <span class="small muted">{% include "components/icon.html" with name="pin" %} <a href="{% url 'city' book.city.pk %}">{{ book.city.name }}</a>، <a href="{% url 'province' book.city.province_id %}">{{ book.city.province.name }}</a></span>
             </div>
@@ -46,7 +46,7 @@
             <div class="fact"><span>وضعیت</span><strong>{{ book.get_condition_display }}</strong></div>
             <div class="fact"><span>شهر</span><strong>{{ book.city.name }}</strong></div>
             {% if book.category %}<div class="fact"><span>دسته</span><strong>{{ book.category }}</strong></div>{% endif %}
-            {% if book.isbn %}<div class="fact"><span>شابک</span><strong dir="ltr" style="unicode-bidi:plaintext">{{ book.isbn }}</strong></div>{% endif %}
+            {% if book.isbn %}<div class="fact"><span>شابک</span><strong dir="ltr" class="bidi-plain">{{ book.isbn }}</strong></div>{% endif %}
         </div>
         {% if book.description %}<p>{{ book.description|linebreaksbr }}</p>{% endif %}
 
@@ -54,10 +54,10 @@
         {% if is_owner %}
             {% if quality %}<div class="q-box"><div class="q-line"><span class="meter" role="img" aria-label="کیفیت آگهی {{ quality.score|fa }} درصد"><i data-w="{{ quality.score }}"></i></span><strong>کیفیت آگهی: {{ quality.score|fa }}٪ · {{ quality.label }}</strong></div>
                 {% if quality.tips %}<ul class="q-tips">{% for t in quality.tips|slice:":3" %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
-            <p class="small muted" style="width:100%;margin:0 0 8px">{% include "components/icon.html" with name="eye" %} {{ book.view_count|fa }} بازدید یکتا · <a href="{% url 'accounts:stats' %}">آمار من</a></p>
+            <p class="small muted w-100 mb-8">{% include "components/icon.html" with name="eye" %} {{ book.view_count|fa }} بازدید یکتا · <a href="{% url 'accounts:stats' %}">آمار من</a></p>
             {% if book.status == 'exchanged' %}<a class="btn" href="{% url 'books:relist' book.pk %}">{% include "components/icon.html" with name="swap" %} دوباره برای مبادله بذار</a>{% endif %}
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
-            <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" onsubmit="return confirm('این کتاب حذف بشه؟')">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}
+            <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" data-confirm="این کتاب حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}
         {% elif book.status == 'available' %}
             {% if not user.is_authenticated %}<a class="btn btn-lg" href="{% url 'accounts:login' %}?next={{ request.path }}">برای درخواست وارد شو</a>
             {% elif my_request %}<a class="btn btn-lg" href="{% url 'exchanges:detail' my_request.pk %}">دیدن درخواستت</a>
@@ -84,9 +84,9 @@
 
 <section class="section-sm"><div class="section-head"><h2>نقد و ستاره</h2>{% if rating.n %}<div class="rating-big"><strong>{{ rating.avg|floatformat:1|fa }}</strong><span class="stars">★★★★★</span><span class="muted">{{ rating.n|fa }} نقد</span></div>{% endif %}</div>
     {% for r in reviews %}<div class="review"><div class="cluster"><span class="stars" aria-label="{{ r.stars|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}☆{% endif %}{% endfor %}</span>
-        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a></div>{% if r.text %}<p style="margin:6px 0 0">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
+        <a href="{% url 'accounts:profile' r.user.username %}">{{ r.user.username }}</a></div>{% if r.text %}<p class="m-t6">{{ r.text|linebreaksbr }}</p>{% endif %}</div>
     {% empty %}<p class="muted">هنوز نقدی نیست.</p>{% endfor %}
-    {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card" style="margin-top:16px" novalidate><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{% include "components/form.html" with form=review_form %}<button class="btn btn-sm">ثبت نقد</button></form>{% endif %}
+    {% if review_form %}<form method="post" action="{% url 'books:review' book.pk %}" class="card mt-16" novalidate><h3>{% if my_review %}ویرایش نقدت{% else %}نقد تو{% endif %}</h3>{% csrf_token %}{% include "components/form.html" with form=review_form %}<button class="btn btn-sm">ثبت نقد</button></form>{% endif %}
 </section>
 
 {% if posts or can_write_post %}<section class="section-sm"><div class="section-head"><div><h2>معرفی‌ها</h2><p>کتاب‌خوان‌ها درباره‌ی این کتاب نوشتن</p></div>

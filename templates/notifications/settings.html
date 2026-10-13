@@ -20,7 +20,7 @@
         {% else %}<div class="alert"><p>اعلان بیرون از سایت هنوز روی این سرور فعال نشده؛ فعلاً فقط اعلان‌های داخل سایت کار می‌کنن.</p></div>{% endif %}
     </section>
 
-    <form method="post" class="card" style="margin-top:16px" novalidate>{% csrf_token %}
+    <form method="post" class="card mt-16" novalidate>{% csrf_token %}
         <h3>چه اعلان‌هایی برام بیاد؟</h3>
         {% include "components/form.html" %}
         <button class="btn">ذخیره</button>

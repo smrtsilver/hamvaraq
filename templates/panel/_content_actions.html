@@ -4,5 +4,5 @@
     {% if p.status != 'rejected' %}<details class="pop"><summary class="btn btn-secondary btn-sm">رد</summary>
         <form method="post" action="{{ act }}" class="pop-body">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><input type="hidden" name="do" value="reject"><input name="note" placeholder="دلیل رد (برای کاربر)" required autocomplete="off" aria-label="دلیل رد"><button class="btn btn-danger btn-sm">رد کن</button></form></details>{% endif %}
     {% if p.status == 'published' %}<form method="post" action="{{ act }}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm" name="do" value="feature">{% if p.is_featured %}برداشتن ویژه{% else %}ویژه{% endif %}</button></form>{% endif %}
-    <form method="post" action="{{ act }}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm" name="do" value="delete" onclick="return confirm('حذف بشه؟')">حذف</button></form>
+    <form method="post" action="{{ act }}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-ghost btn-sm" name="do" value="delete" data-confirm="حذف بشه؟">حذف</button></form>
 </div>{% endwith %}

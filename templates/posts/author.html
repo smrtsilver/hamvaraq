@@ -2,7 +2,7 @@
 {% block title %}معرفی‌های {{ author.username }} | هم‌ورق{% endblock %}
 {% block description %}معرفی کتاب‌های نوشته‌شده توسط {{ author.username }} در هم‌ورق.{% endblock %}
 {% block content %}
-<div class="page-head"><div class="party">{% include "components/avatar.html" with u=author size="lg" %}<div><h1 style="margin:0">{{ author.username }}</h1><p><a href="{% url 'accounts:profile' author.username %}">قفسه و پروفایل</a></p></div></div></div>
+<div class="page-head"><div class="party">{% include "components/avatar.html" with u=author size="lg" %}<div><h1 class="m-0">{{ author.username }}</h1><p><a href="{% url 'accounts:profile' author.username %}">قفسه و پروفایل</a></p></div></div></div>
 {% if page %}<div class="post-grid">{% for p in page %}{% include "components/post_card.html" %}{% endfor %}</div>{% include "components/pagination.html" %}
 {% else %}{% include "components/empty.html" with ill="books" title="هنوز معرفی‌ای منتشر نشده" %}{% endif %}
 {% endblock %}

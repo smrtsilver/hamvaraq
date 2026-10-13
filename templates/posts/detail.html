@@ -11,23 +11,23 @@
 <article class="post-hero">
     {% if not post.is_published %}<div class="alert alert-warning"><p>این نوشته هنوز منتشر نشده ({{ post.get_status_display }}){% if post.reject_reason %}: {{ post.reject_reason }}{% endif %}؛ فقط تو و مدیریت می‌بینید.</p></div>{% endif %}
     <p class="small"><a href="{% url 'posts:list' %}">معرفی کتاب</a></p>
-    <h1 style="font-size:var(--fs-3xl)">{{ post.title }}</h1>
-    <div class="byline"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}<strong style="color:var(--ink)">{{ post.author.username }}</strong></a>
+    <h1 class="fs-3xl">{{ post.title }}</h1>
+    <div class="byline"><a class="party" href="{% url 'posts:author' post.author.username %}">{% include "components/avatar.html" with u=post.author size="sm" %}<strong class="c-ink">{{ post.author.username }}</strong></a>
         <span>{{ post.published_at|default:post.created_at|jlong }}</span><span>{{ post.reading_minutes|fa }} دقیقه مطالعه</span><span>{{ post.view_count|fa }} بازدید</span>
         {% if post.rating %}<span class="stars" aria-label="{{ post.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= post.rating %}★{% else %}☆{% endif %}{% endfor %}</span>{% endif %}</div>
     {% if post.cover %}<div class="cover-wide"><img src="{{ post.cover.url }}" alt="{{ post.title }}" fetchpriority="high"></div>{% endif %}
 
     {% if post.book %}<a class="book-strip" href="{% url 'books:detail' post.book.pk %}"><div class="cover">{% if post.book.cover %}<img src="{{ post.book.thumb_url }}" alt="">{% endif %}</div>
-        <div class="grow"><span class="small muted">درباره‌ی کتاب</span><strong style="display:block">{{ post.book.title }}</strong><span class="muted small">{{ post.book.author }}</span></div>
+        <div class="grow"><span class="small muted">درباره‌ی کتاب</span><strong class="d-block">{{ post.book.title }}</strong><span class="muted small">{{ post.book.author }}</span></div>
         {% if post.book.status == 'available' %}<span class="btn btn-sm">{% include "components/icon.html" with name="swap" %} درخواست این کتاب</span>{% endif %}</a>
     {% else %}<p class="muted">درباره‌ی کتاب «{{ post.book_title }}» از {{ post.book_author }}</p>{% endif %}
 
     <div class="rich">{{ post.body|richtext }}</div>
-    {% if tags %}<p class="cluster" style="margin-top:24px">{% for t in tags %}<a class="chip" href="{% url 'posts:list' %}?tag={{ t.pk }}">{{ t.name }}</a>{% endfor %}</p>{% endif %}
+    {% if tags %}<p class="cluster mt-24">{% for t in tags %}<a class="chip" href="{% url 'posts:list' %}?tag={{ t.pk }}">{{ t.name }}</a>{% endfor %}</p>{% endif %}
 
-    <div class="cluster" style="margin-top:20px">
+    <div class="cluster mt-20">
         {% if mine and post.author == user %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:edit' post.slug %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
-            <form method="post" action="{% url 'posts:delete' post.slug %}" class="inline" onsubmit="return confirm('این معرفی حذف بشه؟')">{% csrf_token %}<button class="btn btn-ghost btn-sm link-danger">حذف</button></form>
+            <form method="post" action="{% url 'posts:delete' post.slug %}" class="inline" data-confirm="این معرفی حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost btn-sm link-danger">حذف</button></form>
         {% elif user.is_authenticated %}<a class="muted small" href="{% url 'trust:report' 'post' post.pk %}">{% include "components/icon.html" with name="flag" %} گزارش</a>{% endif %}
     </div>
 </article>

@@ -5,9 +5,9 @@
 {% block content %}
 <div class="page-head">
     <div class="party">
-        <a href="{% url 'books:detail' ex.book.pk %}" class="exchange-row" style="padding:8px 14px 8px 8px;border:0;background:none;box-shadow:none"><span class="thumb">{% if ex.book.cover %}<img src="{{ ex.book.thumb_url }}" alt="">{% endif %}</span></a>
-        <div><h1 style="margin:0">{{ ex.book.title }}</h1>
-            <p class="muted" style="margin:0">{{ ex.book.author }} · <span class="pill {% if ex.status == 'completed' %}pill-green{% elif ex.status == 'cancelled' or ex.status == 'rejected' %}pill-red{% elif ex.status == 'accepted' %}pill-amber{% endif %}">{{ ex.get_status_display }}</span></p></div>
+        <a href="{% url 'books:detail' ex.book.pk %}" class="exchange-row menu-flat"><span class="thumb">{% if ex.book.cover %}<img src="{{ ex.book.thumb_url }}" alt="">{% endif %}</span></a>
+        <div><h1 class="m-0">{{ ex.book.title }}</h1>
+            <p class="muted m-0">{{ ex.book.author }} · <span class="pill {% if ex.status == 'completed' %}pill-green{% elif ex.status == 'cancelled' or ex.status == 'rejected' %}pill-red{% elif ex.status == 'accepted' %}pill-amber{% endif %}">{{ ex.get_status_display }}</span></p></div>
     </div>
     <a class="btn btn-ghost btn-sm" href="{% url 'exchanges:list' %}">{% include "components/icon.html" with name="chevron-left" %} همه‌ی مبادله‌ها</a>
 </div>
@@ -19,10 +19,10 @@
     <li class="{% if ex.status == 'completed' %}done{% endif %}"><span class="dotn">{% if ex.status == 'completed' %}{% include "components/icon.html" with name="check" %}{% else %}۴{% endif %}</span>تکمیل و رأی</li>
 </ol>
 
-<div class="grid-2" style="align-items:start">
+<div class="grid-2 ai-start">
 <div class="stack">
     <section class="card">
-        <div class="party" style="justify-content:space-between;flex-wrap:wrap">
+        <div class="party jc-between flex-wrap">
             <div class="party">{% include "components/avatar.html" with u=other size="lg" %}
                 <div><span class="small muted">{% if is_owner %}درخواست‌دهنده{% else %}صاحب کتاب{% endif %}</span><br>
                     <a href="{% url 'accounts:profile' other.username %}"><strong>{{ other.username }}</strong></a><br>{% reputation_badge other %}</div></div>
@@ -33,7 +33,7 @@
     <section class="card">
     {% if ex.status == 'requested' %}
         {% if is_owner %}<h3>درخواست جدید</h3><p>{{ ex.requester.username }} این کتاب رو می‌خواد. تأیید کنی، کتاب برای بقیه رزرو می‌شه.</p>
-            <div class="cta-bar" style="margin:0"><form method="post" action="{% url 'exchanges:accept' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">{% include "components/icon.html" with name="check" %} تأیید</button></form>
+            <div class="cta-bar m-0"><form method="post" action="{% url 'exchanges:accept' ex.pk %}" class="inline">{% csrf_token %}<button class="btn">{% include "components/icon.html" with name="check" %} تأیید</button></form>
             <form method="post" action="{% url 'exchanges:reject' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-secondary">رد کردن</button></form></div>
         {% else %}<h3>منتظر تأیید صاحب کتاب</h3><p class="muted">۱ امتیازت نگه داشته شده؛ اگه رد بشه یا منقضی بشه برمی‌گرده.</p>
             <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-secondary">لغو درخواست</button></form>{% endif %}
@@ -43,7 +43,7 @@
         <p class="small muted">{% include "components/icon.html" with name="shield" %} تحویل حضوری رو تو مکان عمومی و شلوغ انجام بدید و اطلاعات شخصی تو چت ننویسید. <a href="{% url 'how_it_works' %}#safety" target="_blank">نکته‌های امن</a></p>
         {% if is_owner and ex.owner_confirmed or not is_owner and ex.requester_confirmed %}<div class="alert alert-success"><p>تأییدت ثبت شده؛ منتظر تأیید {{ other.username }} هستیم.</p></div>
         {% else %}<form method="post" action="{% url 'exchanges:confirm' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-lg">{% include "components/icon.html" with name="check" %} تحویل انجام شد</button></form>{% endif %}
-        <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline" onsubmit="return confirm('مبادله لغو بشه؟')">{% csrf_token %}<button class="btn btn-ghost link-danger">لغو مبادله</button></form>
+        <form method="post" action="{% url 'exchanges:cancel' ex.pk %}" class="inline" data-confirm="مبادله لغو بشه؟">{% csrf_token %}<button class="btn btn-ghost link-danger">لغو مبادله</button></form>
     {% elif ex.status == 'completed' %}<h3>{% include "components/icon.html" with name="sparkle" %} مبادله کامل شد</h3><p class="muted">کتاب {% if is_owner %}به {{ other.username }} رسید و ۱ امتیاز گرفتی{% else %}مال توئه؛ بخونش و دوباره بسپارش{% endif %}.</p>
         {% if not is_owner %}<a class="btn" href="{% url 'books:relist' ex.book.pk %}">دوباره برای مبادله بذار</a>{% endif %}
     {% else %}<h3>این مبادله {{ ex.get_status_display }}</h3><p class="muted">امتیاز نگه‌داشته‌شده به گیرنده برگشته.</p>{% endif %}
@@ -52,14 +52,14 @@
     {% if ex.status == 'accepted' %}
     {% if ex.disputed_at %}<div class="alert alert-warning"><p>برای این مبادله اختلاف ثبت شده و مدیریت در حال بررسیه. تا نتیجه، امتیاز نگه داشته می‌شه.</p></div>
     {% elif dispute_form %}<details class="faq"><summary>مشکلی تو تحویل هست؟</summary>
-        <form method="post" action="{% url 'exchanges:dispute' ex.pk %}" style="padding:0 20px 20px" novalidate>{% csrf_token %}{% include "components/form.html" with form=dispute_form %}<button class="btn btn-sm btn-secondary">ثبت اختلاف</button>
+        <form method="post" action="{% url 'exchanges:dispute' ex.pk %}" novalidate class="pad-faq">{% csrf_token %}{% include "components/form.html" with form=dispute_form %}<button class="btn btn-sm btn-secondary">ثبت اختلاف</button>
         <p class="hint">اول تو چت هماهنگ کن. اگه حل نشد، مدیریت بین شما تصمیم می‌گیره.</p></form></details>{% endif %}
     <section class="card"><h3>{% include "components/icon.html" with name="pin" %} نقطه‌ی تحویل</h3>
         {% if ex.meeting_point %}<p><strong>{{ ex.meeting_point.name }}</strong> <span class="muted">({{ ex.meeting_point.get_kind_display }}، {{ ex.meeting_point.city.name }})</span>{% if ex.meeting_point.address %}<br><span class="small muted">{{ ex.meeting_point.address }}</span>{% endif %}</p>
             {% if ex.meeting_agreed %}<p><span class="pill pill-green">هر دو تأیید کردین</span></p>
             {% elif ex.meeting_proposed_by_id == user.pk %}<p class="muted small">منتظر تأیید {{ other.username }}…</p>
             {% else %}<form method="post" action="{% url 'exchanges:meeting_agree' ex.pk %}" class="inline">{% csrf_token %}<button class="btn btn-sm">تأیید این نقطه</button></form>{% endif %}{% endif %}
-        {% if meeting_options %}<form method="post" action="{% url 'exchanges:meeting' ex.pk %}" class="inline-form" style="margin-top:12px">{% csrf_token %}
+        {% if meeting_options %}<form method="post" action="{% url 'exchanges:meeting' ex.pk %}" class="inline-form mt-12">{% csrf_token %}
             <select name="point" required aria-label="نقطه‌ی تحویل">{% for p in meeting_options %}<option value="{{ p.pk }}">{{ p.get_kind_display }} {{ p.name }} — {{ p.city.name }}</option>{% endfor %}</select>
             <button class="btn btn-sm btn-secondary">{% if ex.meeting_point %}پیشنهاد نقطه‌ی دیگه{% else %}پیشنهاد نقطه{% endif %}</button></form>
         {% elif not ex.meeting_point %}<p class="muted small">برای شهر شما نقطه‌ای تعریف نشده؛ تو چت هماهنگ کنید. نقطه‌ی عمومی و شلوغ بهتره.</p>{% endif %}
@@ -77,7 +77,7 @@
 </div>
 
 {% if chat_open %}
-<section class="card" style="position:sticky;top:calc(var(--header-h) + 12px)"><h3>{% include "components/icon.html" with name="chat" %} چت</h3>
+<section class="card sticky-top"><h3>{% include "components/icon.html" with name="chat" %} چت</h3>
     <div id="chat-box" class="chat" data-poll-url="{% url 'exchanges:poll' ex.pk %}" data-send-url="{% url 'exchanges:message' ex.pk %}" data-last-id="{{ last_message_id }}" aria-live="polite">
     {% for m in chat %}<div class="msg {% if m.sender == user %}mine{% endif %}"><b>{{ m.sender.username }}</b><span class="msg-text">{{ m.text|linebreaksbr }}</span>
         <small>{% if m.sender != user %}<a href="{% url 'trust:report' 'message' m.pk %}">گزارش</a>{% endif %}<span>{{ m.created_at|jtime }}</span></small></div>{% endfor %}

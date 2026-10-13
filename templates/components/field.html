@@ -6,7 +6,7 @@
     {% for e in field.errors %}<p class="err" role="alert">{{ e }}</p>{% endfor %}
 </div>
 {% elif field.field.widget.input_type == "radio" %}
-<fieldset class="field{% if field.errors %} has-error{% endif %}" style="border:0;padding:0;margin:0 0 18px">
+<fieldset class="field{% if field.errors %} has-error{% endif %} reset-box mb-18">
     <legend>{{ field.label }}{% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}</legend>
     <div class="choice-row">{% for radio in field %}<label class="choice" for="{{ radio.id_for_label }}">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}</div>
     {% if field.help_text %}<p class="hint">{{ field.help_text }}</p>{% endif %}

@@ -5,8 +5,8 @@
 <div class="medium">
     <div class="page-head"><div><h1>{{ t.subject }}</h1><p>{{ t.get_category_display }} · {{ t.created_at|jdate }}</p></div>
         <span class="pill {% if t.status == 'resolved' %}pill-green{% elif t.is_open %}pill-amber{% endif %}">{{ t.get_status_display }}</span></div>
-    <div class="card"><h2 style="margin-top:0">پیام تو</h2><p style="white-space:pre-line">{{ t.message }}</p>{% if t.page_url %}<p class="small muted">صفحه‌ی مرتبط: <a href="{{ t.page_url }}">{{ t.page_url }}</a></p>{% endif %}</div>
-    {% if t.reply %}<div class="callout good" style="margin-top:16px">{% include "components/icon.html" with name="chat" %}<div><strong>پاسخ مدیریت</strong><p style="white-space:pre-line;margin:6px 0 0">{{ t.reply }}</p></div></div>
+    <div class="card"><h2 class="mt-0">پیام تو</h2><p class="pre-line">{{ t.message }}</p>{% if t.page_url %}<p class="small muted">صفحه‌ی مرتبط: <a href="{{ t.page_url }}">{{ t.page_url }}</a></p>{% endif %}</div>
+    {% if t.reply %}<div class="callout good mt-16">{% include "components/icon.html" with name="chat" %}<div><strong>پاسخ مدیریت</strong><p class="pre-line m-t6">{{ t.reply }}</p></div></div>
     {% elif t.is_open %}<p class="hint">گزارشت تو صف بررسی‌ه؛ وقتی خبری شد اعلان می‌گیری.</p>{% endif %}
     <p><a href="{% url 'support:mine' %}">بازگشت به گزارش‌ها</a></p>
 </div>

@@ -15,8 +15,8 @@
     <td data-label="آخرین تغییر">{{ ex.updated_at|jdate }}</td>
     <td class="acts">{% if ex.disputed_at and ex.status == 'accepted' %}
         <form method="post" action="{% url 'panel:exchange_resolve' ex.pk %}" class="row-act">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button class="btn btn-sm" name="outcome" value="complete" onclick="return confirm('مبادله تکمیل بشه؟')">تکمیل</button>
-            <button class="btn btn-secondary btn-sm" name="outcome" value="cancel" onclick="return confirm('مبادله لغو و امتیاز برگردونده بشه؟')">لغو</button></form>
+            <button class="btn btn-sm" name="outcome" value="complete" data-confirm="مبادله تکمیل بشه؟">تکمیل</button>
+            <button class="btn btn-secondary btn-sm" name="outcome" value="cancel" data-confirm="مبادله لغو و امتیاز برگردونده بشه؟">لغو</button></form>
         {% else %}<a class="btn btn-ghost btn-sm" href="{% url 'admin:exchanges_exchange_change' ex.pk %}">جزئیات</a>{% endif %}</td></tr>
 {% empty %}<tr><td colspan="6" class="muted">مبادله‌ای نیست.</td></tr>{% endfor %}</tbody></table></div>
 {% include "components/pagination.html" %}

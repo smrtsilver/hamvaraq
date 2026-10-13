@@ -10,18 +10,18 @@
     <div class="stat"><strong>{% if rep.newcomer %}تازه‌وارد{% else %}{{ rep.percent|fa }}٪{% endif %}</strong><span>اعتبار ({{ rep.total|fa }} رأی)</span></div>
 </div>
 {% if manageable %}
-<div class="card" style="margin-top:20px"><h2 style="margin-top:0">اقدام</h2>
+<div class="card mt-20"><h2 class="mt-0">اقدام</h2>
     <div class="act-grid">
         {% for do, label, cls in actions %}
         <form method="post" action="{% url 'panel:user_action' u.pk %}" class="act-form">{% csrf_token %}<input type="hidden" name="do" value="{{ do }}">
             <input name="note" placeholder="{% if do == 'lift' %}توضیح (اختیاری){% else %}دلیل (لازم){% endif %}" autocomplete="off"{% if do != 'lift' %} required{% endif %} aria-label="دلیل {{ label }}">
-            <button class="btn {{ cls }} btn-sm" onclick="return confirm('{{ label }}: مطمئنی؟')">{{ label }}</button></form>{% endfor %}
+            <button class="btn {{ cls }} btn-sm" data-confirm="{{ label }}: مطمئنی؟">{{ label }}</button></form>{% endfor %}
         <form method="post" action="{% url 'panel:user_action' u.pk %}" class="act-form pts">{% csrf_token %}<input type="hidden" name="do" value="points">
             <input name="delta" type="number" min="-50" max="50" placeholder="±امتیاز" dir="ltr" required aria-label="تغییر امتیاز"><input name="note" placeholder="دلیل (لازم)" required autocomplete="off" aria-label="دلیل تغییر امتیاز">
             <button class="btn btn-secondary btn-sm">اعمال امتیاز</button></form>
     </div></div>
 {% else %}<div class="callout warn">{% include "components/icon.html" with name="info" %}<div>روی این حساب (خودت یا مدیر دیگر) اقدام مجاز نیست.</div></div>{% endif %}
-<div class="split-2" style="margin-top:20px">
+<div class="split-2 mt-20">
     <div><h3>گزارش‌های علیه‌ی کاربر</h3><ul class="list-clean card">{% for r in against %}<li><a href="{% url 'panel:report' r.pk %}">{{ r.target_label|truncatechars:40 }} · {{ r.get_reason_display }}</a><span class="pill">{{ r.get_status_display }}</span></li>{% empty %}<li class="muted">ندارد.</li>{% endfor %}</ul>
         <h3>گزارش‌هایی که داده</h3><ul class="list-clean card">{% for r in made %}<li><a href="{% url 'panel:report' r.pk %}">{{ r.target_label|truncatechars:40 }}</a><span class="pill">{{ r.get_status_display }}</span></li>{% empty %}<li class="muted">ندارد.</li>{% endfor %}</ul></div>
     <div><h3>مبادله‌های اخیر</h3><ul class="list-clean card">{% for ex in exchanges %}<li><span>{{ ex.book.title|truncatechars:34 }}</span><span class="pill">{{ ex.get_status_display }}</span></li>{% empty %}<li class="muted">ندارد.</li>{% endfor %}</ul>

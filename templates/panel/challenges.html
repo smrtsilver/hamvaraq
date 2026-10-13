@@ -9,6 +9,6 @@
     <td data-label="وضعیت">{% if c.is_running %}<span class="pill pill-green">در جریان</span>{% elif not c.is_active %}<span class="pill">غیرفعال</span>{% elif c.ends_at < now %}<span class="pill">تمام‌شده</span>{% else %}<span class="pill pill-amber">به‌زودی</span>{% endif %}</td>
     <td class="acts"><div class="row-act"><a class="btn btn-secondary btn-sm" href="{% url 'panel:challenge_edit' c.pk %}">ویرایش</a>
         <form method="post" action="{% url 'panel:challenge_action' c.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">{% if c.is_active %}غیرفعال{% else %}فعال{% endif %}</button></form>
-        <form method="post" action="{% url 'panel:challenge_action' c.pk %}">{% csrf_token %}<input type="hidden" name="do" value="delete"><button class="btn btn-ghost btn-sm" onclick="return confirm('چالش حذف بشه؟')">حذف</button></form></div></td></tr>
+        <form method="post" action="{% url 'panel:challenge_action' c.pk %}">{% csrf_token %}<input type="hidden" name="do" value="delete"><button class="btn btn-ghost btn-sm" data-confirm="چالش حذف بشه؟">حذف</button></form></div></td></tr>
 {% empty %}<tr><td colspan="6" class="muted">چالشی نیست.</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

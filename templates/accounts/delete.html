@@ -6,9 +6,9 @@
     <div class="page-head"><div><h1>حذف حساب</h1><p>این کار برگشت‌پذیر نیست.</p></div></div>
     <div class="callout warn">{% include "components/icon.html" with name="info" %}<div>
         <strong>چی می‌شه؟</strong>
-        <ul class="doc-list" style="margin-top:8px"><li>حساب غیرفعال و نام کاربریت ناشناس می‌شه.</li><li>کتاب‌هات از سایت پنهان و معرفی‌هات به پیش‌نویس برمی‌گرده.</li>
+        <ul class="doc-list mt-8"><li>حساب غیرفعال و نام کاربریت ناشناس می‌شه.</li><li>کتاب‌هات از سایت پنهان و معرفی‌هات به پیش‌نویس برمی‌گرده.</li>
             <li>تاریخچه‌ی مبادله‌ها و رأی‌هایی که طرف مقابل دارن، بدون اسم تو می‌مونه تا اعتبار اون‌ها خراب نشه.</li><li>تا مبادله‌ی در جریان داری نمی‌شه حذف کرد.</li></ul></div></div>
-    <form method="post" class="card" style="margin-top:16px" novalidate>{% csrf_token %}
+    <form method="post" class="card mt-16" novalidate>{% csrf_token %}
         <div class="field"><label for="dp">رمز عبور برای تأیید</label><input id="dp" type="password" name="password" autocomplete="current-password" required></div>
         <div class="form-actions"><button class="btn btn-danger">حذف حساب من</button><a class="btn btn-ghost" href="{% url 'accounts:settings' %}">انصراف</a></div></form>
 </div>

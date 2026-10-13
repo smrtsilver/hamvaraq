@@ -16,7 +16,7 @@
                     <button type="button" data-md="bold" title="پررنگ"><b>پررنگ</b></button><button type="button" data-md="italic" title="مورب"><i>مورب</i></button>
                     <button type="button" data-md="heading" title="تیتر">تیتر</button><button type="button" data-md="quote" title="نقل‌قول">نقل‌قول</button>
                     <button type="button" data-md="list" title="فهرست">فهرست</button><button type="button" data-md="link" title="لینک">لینک</button>
-                    <button type="button" data-preview-toggle aria-pressed="false" style="margin-inline-start:auto">پیش‌نمایش</button>
+                    <button type="button" data-preview-toggle aria-pressed="false" class="ms-auto">پیش‌نمایش</button>
                 </div>
                 {{ form.body }}
                 <div class="editor-preview rich" data-preview hidden></div>
@@ -25,7 +25,7 @@
             {% for e in form.body.errors %}<p class="err" role="alert">{{ e }}</p>{% endfor %}</div>
         <div class="form-grid"><div>{% include "components/field.html" with field=form.category %}</div><div>{% include "components/field.html" with field=form.tags_text %}</div></div>
         {% include "components/field.html" with field=form.cover %}
-        <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ثبت معرفی</button><a class="btn btn-ghost" href="javascript:history.back()">انصراف</a></div>
+        <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ثبت معرفی</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div>
         <p class="hint">با ثبت، قوانین هم‌ورق رو می‌پذیری: تبلیغ، فروش و کپی‌کردن متن دیگران ممنوعه. نوشته‌ی اول بعد از تأیید مدیریت منتشر می‌شه.</p>
     </form>
 </div>

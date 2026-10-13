@@ -6,6 +6,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
+from common.csp import report as csp_report
 from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     path("offline/", offline, name="offline"),
     path("favicon.ico", RedirectView.as_view(url=settings.STATIC_URL + "favicon.svg", permanent=True)),
     path("healthz/", healthz, name="healthz"),
+    path("csp-report/", csp_report, name="csp_report"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("books/", include("books.urls")),

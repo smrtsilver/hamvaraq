@@ -12,7 +12,7 @@
     <div class="stat"><strong>{{ s.views.total|fa }}</strong><span>بازدید یکتا از محتوا</span></div>
 </div>
 <h3>بازدیدکننده‌ی یکتا در روز</h3>
-<div class="bars">{% for day, n, pct in s.site.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i style="height:{{ pct }}%"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
+<div class="bars">{% for day, n, pct in s.site.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i data-h="{{ pct }}"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
 
 <h2>بازدید محتوا</h2>
 <div class="stats">
@@ -21,7 +21,7 @@
     <div class="stat"><strong>{{ s.views.by_kind.event|default:0|fa }}</strong><span>بازدید اطلاعیه‌ها</span></div>
 </div>
 <h3>بازدید یکتای محتوا در روز</h3>
-<div class="bars">{% for day, n, pct in s.views.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i style="height:{{ pct }}%"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
+<div class="bars">{% for day, n, pct in s.views.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i data-h="{{ pct }}"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
 <div class="split-2">
     <div><h3>پربازدیدترین کتاب‌ها</h3><ul class="list-clean card">{% for b, n in s.views.top_books %}<li><a href="{{ b.get_absolute_url }}">{{ b.title|truncatechars:34 }}</a><span class="pill">{{ n|fa }}</span></li>{% empty %}<li class="muted">هنوز آماری نیست.</li>{% endfor %}</ul></div>
     <div><h3>پربازدیدترین معرفی‌ها</h3><ul class="list-clean card">{% for p, n in s.views.top_posts %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|truncatechars:34 }}</a><span class="pill">{{ n|fa }}</span></li>{% empty %}<li class="muted">هنوز آماری نیست.</li>{% endfor %}</ul></div>
@@ -38,7 +38,7 @@
     <div class="stat"><strong>{% if s.requests.conversion is None %}—{% else %}{{ s.requests.conversion|fa }}٪{% endif %}</strong><span>درخواست به بازدید کتاب</span></div>
 </div>
 <h3>درخواست در روز</h3>
-<div class="bars">{% for day, n, pct in s.requests.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i style="height:{{ pct }}%"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
+<div class="bars">{% for day, n, pct in s.requests.daily %}<div class="bar-col" title="{{ day|jdate }}: {{ n|fa }}"><i data-h="{{ pct }}"></i><small>{{ n|fa }}</small></div>{% endfor %}</div>
 <div class="split-2">
     <div><h3>وضعیت درخواست‌ها</h3><ul class="list-clean card">{% for v, label in status_labels %}<li><span>{{ label }}</span><span class="pill">{{ s.requests.by_status|get_item:v|default:0|fa }}</span></li>{% endfor %}</ul></div>
     <div><h3>پردرخواست‌ترین کتاب‌ها</h3><ul class="list-clean card">{% for title, pk, n in s.requests.top_books %}<li><a href="{% url 'books:detail' pk %}">{{ title|truncatechars:34 }}</a><span class="pill">{{ n|fa }}</span></li>{% empty %}<li class="muted">هنوز درخواستی نیست.</li>{% endfor %}</ul></div>

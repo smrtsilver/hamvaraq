@@ -4,10 +4,10 @@
 {% block content %}
 <div class="medium">
     <div class="page-head"><div><h1>لیست آرزو</h1><p>کتابی که دنبالشی رو ثبت کن تا وقتی کسی اون رو گذاشت خبرت کنیم.</p></div></div>
-    <div class="card" style="text-align:center;padding:40px 24px">
-        <span class="doc-ico amber" style="margin:0 auto 16px;width:56px;height:56px">{% include "components/icon.html" with name="heart" %}</span>
-        <h2 style="margin:0 0 8px">به‌زودی</h2>
-        <p class="muted" style="max-width:420px;margin:0 auto 20px">داریم لیست آرزو رو دقیق‌تر می‌کنیم تا با عنوان، نویسنده و شابک کتاب بتونی دقیق جستجو کنی و اعلان بگیری. تا اون موقع می‌تونی کتاب‌ها رو مرور کنی.</p>
+    <div class="card ta-center pad-soon">
+        <span class="doc-ico amber soon-ico">{% include "components/icon.html" with name="heart" %}</span>
+        <h2 class="m-b8">به‌زودی</h2>
+        <p class="muted soon-text">داریم لیست آرزو رو دقیق‌تر می‌کنیم تا با عنوان، نویسنده و شابک کتاب بتونی دقیق جستجو کنی و اعلان بگیری. تا اون موقع می‌تونی کتاب‌ها رو مرور کنی.</p>
         <a class="btn" href="{% url 'books:list' %}">دیدن کتاب‌ها</a>
     </div>
 </div>

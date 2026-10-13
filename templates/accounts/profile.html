@@ -7,10 +7,10 @@
     <div class="profile-head">
         {% include "components/avatar.html" with u=owner size="xl" %}
         <div class="grow">
-            <h1 style="margin-bottom:4px">{{ owner.username }}</h1>
+            <h1 class="mb-4">{{ owner.username }}</h1>
             <div class="cluster">{% reputation_badge owner %}{% if owner.city %}<span class="chip">{% include "components/icon.html" with name="pin" %}{{ owner.city.name }}، {{ owner.city.province.name }}</span>{% endif %}<span class="chip">عضو از {{ owner.date_joined|jlong }}</span></div>
-            {% if owner.is_restricted %}<div class="alert alert-warning" style="margin-bottom:0"><p>این کاربر موقتاً فقط می‌تونه کتاب بده.</p></div>{% endif %}
-            {% if badges %}<div class="badges-row" style="margin-top:12px">{% for ub in badges %}<span class="badge-item" title="{{ ub.badge.description }}">{% include "components/icon.html" with name="star" %}{{ ub.badge.name }}</span>{% endfor %}</div>{% endif %}
+            {% if owner.is_restricted %}<div class="alert alert-warning mb-0"><p>این کاربر موقتاً فقط می‌تونه کتاب بده.</p></div>{% endif %}
+            {% if badges %}<div class="badges-row mt-12">{% for ub in badges %}<span class="badge-item" title="{{ ub.badge.description }}">{% include "components/icon.html" with name="star" %}{{ ub.badge.name }}</span>{% endfor %}</div>{% endif %}
         </div>
         <div class="cluster">
             {% if user == owner %}<a class="btn btn-secondary btn-sm" href="{% url 'accounts:settings' %}">{% include "components/icon.html" with name="settings" %} تنظیمات</a>
@@ -18,7 +18,7 @@
         </div>
     </div>
 </section>
-<div class="stats" style="margin-top:16px">
+<div class="stats mt-16">
     <div class="stat"><strong>{{ given|fa }}</strong><span>کتاب داده</span></div>
     <div class="stat"><strong>{{ received|fa }}</strong><span>کتاب گرفته</span></div>
     <div class="stat"><strong>{{ owner.points|fa }}</strong><span>امتیاز</span></div>

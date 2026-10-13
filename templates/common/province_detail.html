@@ -4,6 +4,6 @@
 {% block content %}
 <div class="page-head"><div><h1>استان {{ province.name }}</h1></div><a class="btn btn-secondary" href="{% url 'books:list' %}?province={{ province.pk }}">همه‌ی کتاب‌ها</a></div>
 {% include "common/_place_stats.html" %}
-{% if cities %}<p style="margin-top:20px">شهرها: {% for c in cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a> {% endfor %}</p>{% endif %}
+{% if cities %}<p class="mt-20">شهرها: {% for c in cities %}<a class="chip" href="{% url 'city' c.pk %}">{{ c.name }} <small>{{ c.book_count|fa }}</small></a> {% endfor %}</p>{% endif %}
 <section class="section-sm"><div class="section-head"><h2>تازه‌رسیده‌ها</h2></div>{% include "components/book_grid.html" with books=latest %}</section>
 {% endblock %}

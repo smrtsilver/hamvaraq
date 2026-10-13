@@ -415,3 +415,41 @@ class WishlistMatchingTests(Base):
         self.assertEqual(Wishlist.objects.count(), 0)
         self.client.post("/books/wishlist/", {"text": "بوف کور"})
         self.assertEqual(Wishlist.objects.count(), 1)
+
+
+class CspAndTemplateHygieneTests(Base):
+    def test_templates_have_no_inline_style_handlers_or_javascript_urls(self):
+        import pathlib
+        import re
+        offenders = []
+        for path in pathlib.Path("templates").rglob("*.html"):
+            if "admin" in path.parts:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for pattern in (r'\sstyle\s*=', r'\son[a-z]+\s*=\s*"', r"javascript:", r"<style[\s>]"):
+                if re.search(pattern, text):
+                    offenders.append((str(path), pattern))
+        self.assertEqual(offenders, [])
+
+    def test_csp_header_nonce_and_exemptions(self):
+        import re
+        r = self.client.get("/")
+        header = r["Content-Security-Policy-Report-Only"]
+        nonce = re.search(r"nonce-([\w-]+)", header).group(1)
+        self.assertIn(f'<script nonce="{nonce}">', r.content.decode())
+        for needle in ("default-src 'self'", "object-src 'none'", "frame-ancestors 'none'", "style-src 'self'"):
+            self.assertIn(needle, header)
+        self.assertNotIn("unsafe-inline", header)
+        User.objects.create_superuser("boss", password="x12345678")
+        self.client.login(username="boss", password="x12345678")
+        self.assertNotIn("Content-Security-Policy-Report-Only", self.client.get("/admin/"))      # ادمین جنگو معاف
+        self.assertNotIn("Content-Security-Policy-Report-Only", self.client.get("/healthz/"))    # غیر HTML
+
+    def test_enforce_switch_and_report_endpoint(self):
+        from django.test import override_settings
+        with override_settings(CSP_ENFORCE=True):
+            r = self.client.get("/")
+        self.assertIn("Content-Security-Policy", r)
+        self.assertNotIn("Content-Security-Policy-Report-Only", r)
+        self.assertEqual(self.client.post("/csp-report/", data='{"csp-report":{"violated-directive":"script-src"}}', content_type="application/csp-report").status_code, 204)
+        self.assertEqual(self.client.get("/csp-report/").status_code, 405)

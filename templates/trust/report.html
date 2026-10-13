@@ -5,7 +5,7 @@
 <div class="medium">
     <div class="page-head"><div><h1>گزارش</h1><p>{% if kind == 'user' %}کاربر «{{ target }}»{% elif kind == 'book' %}کتاب «{{ target }}»{% elif kind == 'post' %}معرفی «{{ target }}»{% elif kind == 'announcement' %}اطلاعیه «{{ target }}»{% else %}پیام: {{ target.text|truncatechars:60 }}{% endif %}</p></div></div>
     <form method="post" enctype="multipart/form-data" class="card" novalidate>{% csrf_token %}{% include "components/form.html" %}
-        <div class="form-actions"><button class="btn btn-danger">ارسال گزارش</button><a class="btn btn-ghost" href="javascript:history.back()">انصراف</a></div></form>
+        <div class="form-actions"><button class="btn btn-danger">ارسال گزارش</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div></form>
     <p class="hint">گزارش بی‌اساس و تکراری خودش تخلفه. مدیریت بررسی می‌کنه و از نتیجه باخبرت می‌کنیم.</p>
 </div>
 {% endblock %}

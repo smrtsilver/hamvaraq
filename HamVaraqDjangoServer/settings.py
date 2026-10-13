@@ -77,6 +77,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "common.seo.RobotsHeaderMiddleware",
+    "common.csp.CSPMiddleware",
 ]
 
 ROOT_URLCONF = "HamVaraqDjangoServer.urls"
@@ -95,6 +96,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.site",
                 "analytics.context_processors.beacon",
+                "common.csp.nonce_processor",
                 "notifications.context_processors.notifications",
                 "exchanges.context_processors.unread_chat",
             ],
@@ -234,6 +236,8 @@ WELCOME_WINDOW_DAYS = 30
 WISHLIST_ENABLED = env.bool("WISHLIST_ENABLED", default=False)  # فعلاً «به‌زودی»؛ اطلاعات کتاب (شابک و ...) کامل بشه، روشنش می‌کنیم
 # کارت استوری از nginx سرو بشه: مثلاً /_cards/ (و location internal تو nginx؛ deploy/hamvaraq.nginx.conf.example)
 CARD_X_ACCEL_PREFIX = env("CARD_X_ACCEL_PREFIX", default="")
+# CSP: اول Report-Only (تخلف‌ها تو لاگ csp)؛ بعد از چند روز بدون تخلف CSP_ENFORCE=True
+CSP_ENFORCE = env.bool("CSP_ENFORCE", default=False)
 ISBN_BUDGET = env.float("ISBN_BUDGET", default=3.0)                    # ثانیه؛ کل زمانی که یه استعلام شابک می‌تونه request رو نگه داره
 ISBN_BREAKER_FAILS = env.int("ISBN_BREAKER_FAILS", default=3)
 ISBN_BREAKER_COOLDOWN = env.int("ISBN_BREAKER_COOLDOWN", default=300)  # ثانیه

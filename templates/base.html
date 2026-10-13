@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <script>try{var t=localStorage.getItem("hv-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+    <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("hv-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
     <title>{% block title %}هم‌ورق | مبادله‌ی رایگان کتاب{% endblock %}</title>
     <meta name="description" content="{% block description %}هم‌ورق؛ مبادله‌ی رایگان کتاب بین کتاب‌خوان‌ها. بخوان، بسپار، دوباره بخوان؛ بدون پول، فقط با امتیاز.{% endblock %}">
     {% block robots %}{% endblock %}

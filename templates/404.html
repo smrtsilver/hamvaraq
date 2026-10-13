@@ -2,4 +2,4 @@
 {% block title %}صفحه پیدا نشد | هم‌ورق{% endblock %}
 {% block robots %}<meta name="robots" content="noindex">{% endblock %}
 {% block content %}<div class="page-404">{% include "components/ill_404.html" %}<h1>این صفحه پیدا نشد</h1><p class="muted">شاید آدرس عوض شده یا کتاب دست‌به‌دست شده و رفته.</p>
-<div class="cluster" style="justify-content:center"><a class="btn" href="{% url 'home' %}">خانه</a><a class="btn btn-secondary" href="{% url 'books:list' %}">دیدن کتاب‌ها</a></div></div>{% endblock %}
+<div class="cluster jc-center"><a class="btn" href="{% url 'home' %}">خانه</a><a class="btn btn-secondary" href="{% url 'books:list' %}">دیدن کتاب‌ها</a></div></div>{% endblock %}

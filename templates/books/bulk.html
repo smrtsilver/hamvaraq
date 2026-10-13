@@ -6,20 +6,20 @@
 <div class="medium">
     <div class="page-head"><div><h1>ثبت دسته‌ای</h1><p>چند کتاب رو یک‌جا ثبت کن. ردیف‌های خالی نادیده گرفته می‌شن و با شابک، عنوان و نویسنده خودکار پر می‌شه.</p></div></div>
     <form method="post" novalidate data-location-group>{% csrf_token %}
-        <div class="card scan-card"><div><strong>اسکن پیوسته</strong><p class="muted small" style="margin:2px 0 0">دوربین باز می‌مونه؛ هر بارکدی که نشون بدی یه ردیف پر می‌کنه.</p></div>
+        <div class="card scan-card"><div><strong>اسکن پیوسته</strong><p class="muted small m-t2">دوربین باز می‌مونه؛ هر بارکدی که نشون بدی یه ردیف پر می‌کنه.</p></div>
             <button type="button" class="btn" data-scan-continuous hidden>{% include "components/icon.html" with name="camera" %} شروع اسکن</button></div>
-        <div class="card" style="margin-top:16px"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
+        <div class="card mt-16"><h3>مشترک برای همه‌ی کتاب‌ها</h3>
             <div class="form-grid"><div>{% include "components/field.html" with field=common.province %}</div><div>{% include "components/field.html" with field=common.city %}</div></div>
             {% include "components/field.html" with field=common.condition %}</div>
         {{ rows.management_form }}
         {% for e in rows.non_form_errors %}<div class="alert alert-error"><p>{{ e }}</p></div>{% endfor %}
         {% for f in rows %}
-        <fieldset class="card" data-isbn-scope style="margin-top:16px"><legend class="pill pill-green">کتاب {{ forloop.counter|fa }}</legend>
+        <fieldset class="card mt-16" data-isbn-scope><legend class="pill pill-green">کتاب {{ forloop.counter|fa }}</legend>
             {% for e in f.non_field_errors %}<p class="err">{{ e }}</p>{% endfor %}
             <div class="form-grid"><div>{% include "components/field.html" with field=f.isbn %}</div><div>{% include "components/field.html" with field=f.category %}</div>
             <div>{% include "components/field.html" with field=f.title %}</div><div>{% include "components/field.html" with field=f.author %}</div></div>
         </fieldset>{% endfor %}
-        <div class="form-actions" style="margin-top:20px"><button class="btn btn-lg">ثبت همه</button></div>
+        <div class="form-actions mt-20"><button class="btn btn-lg">ثبت همه</button></div>
     </form>
 </div>
 {% endblock %}

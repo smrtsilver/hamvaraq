@@ -5,11 +5,11 @@
 <div class="medium">
     <div class="page-head"><div><h1>تنظیمات</h1><p>اطلاعات حسابت</p></div></div>
     <form method="post" class="card" data-location-group novalidate>{% csrf_token %}
-        <div class="form-section" style="border:0;padding:0;margin:0"><h3>موقعیت</h3>
-            <p class="hint" style="margin-top:-8px;margin-bottom:14px">اختیاریه؛ برای پیشنهاد نقطه‌ی تحویل و پیش‌فرض ثبت کتاب استفاده می‌شه.</p></div>
+        <div class="form-section reset-box"><h3>موقعیت</h3>
+            <p class="hint pull-up">اختیاریه؛ برای پیشنهاد نقطه‌ی تحویل و پیش‌فرض ثبت کتاب استفاده می‌شه.</p></div>
         {% include "components/form.html" %}
         <div class="form-actions"><button class="btn">ذخیره</button></div>
     </form>
-    <p class="small" style="margin-top:20px"><a href="{% url 'accounts:delete' %}" class="link-danger">حذف حساب</a></p>
+    <p class="small mt-20"><a href="{% url 'accounts:delete' %}" class="link-danger">حذف حساب</a></p>
 </div>
 {% endblock %}
