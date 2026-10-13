@@ -1040,3 +1040,7 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .entry-form .choice,.shelf-add-form .choice{gap:6px;padding:4px 12px;min-height:40px;font-size:var(--fs-sm)}
 .entry-form .choice input,.shelf-add-form .choice input{width:16px;height:16px}
 .entry-form fieldset.field{margin-bottom:14px}
+/* روبان معاوضه: برچسب طلایی پایین عطف، بیرون از ناحیه‌ی متن (دیگه روی اسم کتاب نمی‌افته) */
+.sp-swap .sp-b{padding-top:14px;padding-bottom:42px}
+.sp-rib{top:auto;bottom:15px;inset-inline:5px;width:auto;height:20px;border-radius:3px;clip-path:none;background:linear-gradient(#f6d27a,#c8902a);box-shadow:0 1px 2px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.5);display:grid;place-items:center}
+.sp-rib::before{content:"⇄";font-style:normal;font-weight:800;font-size:12px;line-height:1;color:#3a2600}
