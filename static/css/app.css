@@ -423,9 +423,6 @@ details.faq[open] summary::after{content:"–"}details.faq p{padding:0 20px 16px
 .lp-hero .lead{font-size:var(--fs-lg);color:var(--ink-2);max-width:520px;margin-bottom:26px}
 .lp-hero .note{margin-top:14px;font-size:var(--fs-sm);color:var(--ink-3)}
 .ill-hero{width:100%;height:auto;max-height:480px}
-.float{animation:float 7s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-.f2{animation-delay:-2s}.f3{animation-delay:-4s}.f4{animation-delay:-1s}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .lp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:44px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-1);overflow:hidden}
 .lp-stats>div{padding:22px 16px;text-align:center}.lp-stats>div+div{border-inline-start:1px solid var(--line)}
 .lp-stats strong{display:block;font-size:2rem;line-height:1.3;color:var(--primary);font-weight:800}.lp-stats span{font-size:var(--fs-sm);color:var(--ink-3)}
@@ -769,3 +766,6 @@ input[aria-invalid=true]{border-color:var(--danger)}
 @keyframes hv-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.hv-modal[open]{animation:none}}
 .toast-out{opacity:0;transition:opacity .25s}
+.lp-link{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--primary);padding:10px 4px}
+.lp-link:hover{text-decoration:underline}
+.lp-zero{font-size:var(--fs-md)!important;line-height:2.4!important}
