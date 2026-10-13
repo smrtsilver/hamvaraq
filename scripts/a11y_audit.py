@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 import os
 AX=os.environ.get('AXE_PATH','/tmp/lh/node_modules/axe-core/axe.min.js')
 CHROME=os.environ.get('CHROME_PATH','/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
-PAGES=[('guest','/authors/'),('guest','/publishers/'),('member','/accounts/points/'),('member','/exchanges/'),('guest','/books/'),('guest','/books/12/'),('guest','/'),('guest','/accounts/login/'),('member','/books/new/'),('member','/books/bulk/'),('member','/books/12/'),('member','/books/mine/'),('member','/accounts/stats/'),('staff','/panel/'),('staff','/panel/users/'),('member','/books/shelf/'),('member','/books/shelf/add/'),('guest','/story/?book=12'),('member','/accounts/u/neda/'),('member','/accounts/feed/'),('guest','/clubs/'),('member','/books/shelf/stats/'),('member','/books/highlights/'),('member','/books/shelf/export/?print=1')]
+PAGES=[('guest','/authors/'),('guest','/publishers/'),('member','/accounts/points/'),('member','/exchanges/'),('guest','/books/'),('guest','/books/12/'),('guest','/'),('guest','/accounts/login/'),('member','/books/new/'),('member','/books/bulk/'),('member','/books/12/'),('member','/books/mine/'),('member','/accounts/stats/'),('staff','/panel/'),('staff','/panel/users/'),('member','/books/shelf/'),('member','/books/shelf/add/'),('guest','/story/?book=12'),('member','/accounts/u/neda/'),('member','/accounts/feed/'),('guest','/clubs/'),('member','/books/shelf/stats/'),('member','/books/highlights/'),('member','/books/shelf/export/?print=1'),('guest','/support-us/'),('staff','/panel/clubs/'),('staff','/panel/books/')]
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=CHROME)
