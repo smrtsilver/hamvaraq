@@ -89,3 +89,31 @@ class BookListTests(Base):
         with override_settings(WISHLIST_ENABLED=True):
             self.assertContains(self.client.get(reverse("books:list"), {"q": "بوف"}), "این جستجو رو به لیست آرزو")
             self.assertNotContains(self.client.get(reverse("books:list")), "این جستجو رو به لیست آرزو")
+
+
+class BookDetailTests(Base):
+    def test_request_cta_hold_note_fixed_bar_share_and_owner_books(self):
+        book = self.book(title="کتاب اصلی")
+        self.book(title="کتاب دوم")
+        self.client.login(username="taker", password="x12345678")        # taker یک امتیاز دارد
+        page = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertEqual(page.count("درخواست کتاب (۱ امتیاز)"), 2)        # ستون اصلی + نوار ثابت موبایل
+        for needle in ('class="cta-fixed"', "cta-bar has-fixed", "چطور نگه داشته می‌شه", "data-share", "کتاب‌های دیگر giver", "کتاب دوم"):
+            self.assertTrue(needle in page, needle)
+
+    def test_no_points_blocked_and_owner_and_unavailable_views_render(self):
+        book = self.book()
+        poor = User.objects.create_user("poor", password="x12345678")
+        self.client.login(username="poor", password="x12345678")
+        page = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertTrue("امتیاز نداری" in page and "چطور نگه داشته می‌شه" not in page)
+        self.client.login(username="giver", password="x12345678")
+        owner_page = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertTrue("cta-fixed" not in owner_page and "کیفیت آگهی:" in owner_page)
+        Book.objects.filter(pk=book.pk).update(status="reserved")
+        self.client.login(username="taker", password="x12345678")
+        self.assertTrue("الان برای مبادله آزاد نیست" in self.client.get(book.get_absolute_url()).content.decode())
+        self.client.logout()
+        Book.objects.filter(pk=book.pk).update(status="available")
+        guest = self.client.get(book.get_absolute_url()).content.decode()
+        self.assertTrue("برای درخواست وارد شو" in guest)

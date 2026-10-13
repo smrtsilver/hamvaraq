@@ -1,0 +1,8 @@
+{# درخواست کتاب؛ دو بار include می‌شه: ستون اصلی و نوار ثابت موبایل (compact) #}
+{% if not user.is_authenticated %}<a class="btn btn-lg" href="{% url 'accounts:login' %}?next={{ request.path }}">برای درخواست وارد شو</a>
+{% elif my_request %}<a class="btn btn-lg" href="{% url 'exchanges:detail' my_request.pk %}">دیدن درخواستت</a>
+{% elif not user.can_request %}<div class="alert alert-warning"><p>حسابت الان فقط اجازه‌ی کتاب دادن داره.</p></div>
+{% elif user.points < 1 %}<div class="alert"><p>امتیاز نداری؛ اول <a href="{% url 'books:create' %}">یه کتاب بده</a> تا امتیاز بگیری.</p></div>
+{% else %}<form method="post" action="{% url 'exchanges:request' book.pk %}">{% csrf_token %}<button class="btn btn-lg">{% include "components/icon.html" with name="swap" %} درخواست کتاب (۱ امتیاز)</button></form>
+    {% if compact %}<p class="hold-short">۱ امتیاز فقط نگه داشته می‌شه؛ با رد یا لغو برمی‌گرده.</p>{% endif %}
+{% endif %}

@@ -76,3 +76,16 @@ document.addEventListener("click", (e) => {
     if (back) { e.preventDefault(); if (history.length > 1) history.back(); else location.href = back.getAttribute("href") || "/"; return; }
     if (e.target.closest("[data-reload]")) location.reload();
 });
+
+// اشتراک‌گذاری: Web Share API (موبایل)، وگرنه کپی لینک
+document.querySelectorAll("[data-share]").forEach((btn) => {
+    if (!navigator.share && !(navigator.clipboard && navigator.clipboard.writeText)) return;
+    btn.hidden = false;
+    btn.addEventListener("click", async () => {
+        const data = {title: btn.dataset.shareTitle, url: btn.dataset.shareUrl};
+        try {
+            if (navigator.share) await navigator.share(data);
+            else { await navigator.clipboard.writeText(data.url); const old = btn.textContent; btn.textContent = "لینک کپی شد"; setTimeout(() => { btn.textContent = old; }, 2000); }
+        } catch (_) { /* کاربر انصراف داد */ }
+    });
+});

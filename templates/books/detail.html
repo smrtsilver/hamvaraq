@@ -50,7 +50,7 @@
         </div>
         {% if book.description %}<p>{{ book.description|linebreaksbr }}</p>{% endif %}
 
-        <div class="cta-bar">
+        <div class="cta-bar{% if book.status == 'available' and not is_owner %} has-fixed{% endif %}">
         {% if is_owner %}
             {% if quality %}<div class="q-box"><div class="q-line"><span class="meter" role="img" aria-label="کیفیت آگهی {{ quality.score|fa }} درصد"><i data-w="{{ quality.score }}"></i></span><strong>کیفیت آگهی: {{ quality.score|fa }}٪ · {{ quality.label }}</strong></div>
                 {% if quality.tips %}<ul class="q-tips">{% for t in quality.tips|slice:":3" %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
@@ -58,20 +58,20 @@
             {% if book.status == 'exchanged' %}<a class="btn" href="{% url 'books:relist' book.pk %}">{% include "components/icon.html" with name="swap" %} دوباره برای مبادله بذار</a>{% endif %}
             {% if book.status != 'reserved' %}<a class="btn btn-secondary" href="{% url 'books:edit' book.pk %}">{% include "components/icon.html" with name="edit" %} ویرایش</a>
             <form method="post" action="{% url 'books:delete' book.pk %}" class="inline" data-confirm="این کتاب حذف بشه؟">{% csrf_token %}<button class="btn btn-ghost link-danger">{% include "components/icon.html" with name="trash" %} حذف</button></form>{% endif %}
-        {% elif book.status == 'available' %}
-            {% if not user.is_authenticated %}<a class="btn btn-lg" href="{% url 'accounts:login' %}?next={{ request.path }}">برای درخواست وارد شو</a>
-            {% elif my_request %}<a class="btn btn-lg" href="{% url 'exchanges:detail' my_request.pk %}">دیدن درخواستت</a>
-            {% elif not user.can_request %}<div class="alert alert-warning"><p>حسابت الان فقط اجازه‌ی کتاب دادن داره.</p></div>
-            {% elif user.points < 1 %}<div class="alert"><p>امتیاز نداری؛ اول <a href="{% url 'books:create' %}">یه کتاب بده</a> تا امتیاز بگیری.</p></div>
-            {% else %}<form method="post" action="{% url 'exchanges:request' book.pk %}">{% csrf_token %}<button class="btn btn-lg">{% include "components/icon.html" with name="swap" %} درخواست کتاب · ۱ امتیاز</button></form>{% endif %}
+        {% elif book.status == 'available' %}{% include "books/_cta.html" %}
         {% else %}<div class="alert alert-warning"><p>این کتاب الان برای مبادله آزاد نیست.</p></div>{% endif %}
         </div>
+        {% if book.status == 'available' and not is_owner and user.is_authenticated and not my_request and user.can_request and user.points >= 1 %}<details class="hold-note"><summary>{% include "components/icon.html" with name="info" %} ۱ امتیاز چطور نگه داشته می‌شه؟</summary>
+            <p>با درخواست، ۱ امتیاز از حسابت <strong>نگه داشته</strong> می‌شه (خرج نمی‌شه). اگه صاحب کتاب رد کنه، مبادله لغو بشه یا {{ expire_days|fa }} روز بی‌جواب بمونه، امتیاز برمی‌گرده. بعد از تحویل موفق و تأیید دو طرف، امتیاز به صاحب کتاب می‌رسه.</p></details>{% endif %}
         <div class="cluster small">
+            <button type="button" class="link btn-link" data-share data-share-title="{{ book.title }}" data-share-url="{{ request.build_absolute_uri }}" hidden>{% include "components/icon.html" with name="share" %} اشتراک‌گذاری</button>
             <a href="{% url 'books:card' book.pk %}?download=1" class="link">{% include "components/icon.html" with name="download" %} کارت استوری</a>
             {% if user.is_authenticated and not is_owner %}<a href="{% url 'trust:report' 'book' book.pk %}" class="muted">{% include "components/icon.html" with name="flag" %} گزارش کتاب</a>{% endif %}
         </div>
     </div>
 </div>
+
+{% if book.status == 'available' and not is_owner %}<div class="cta-fixed" role="region" aria-label="درخواست کتاب">{% include "books/_cta.html" with compact=1 %}</div>{% endif %}
 
 {% if pending %}<section class="section-sm"><h2>درخواست‌ها</h2>
     <ul class="list-clean card">{% for e in pending %}<li><span class="party">{% include "components/avatar.html" with u=e.requester size="sm" %}<a href="{% url 'exchanges:detail' e.pk %}">{{ e.requester.username }}</a></span><span>{% reputation_badge e.requester %}</span></li>{% endfor %}</ul></section>{% endif %}
@@ -92,6 +92,9 @@
 {% if posts or can_write_post %}<section class="section-sm"><div class="section-head"><div><h2>معرفی‌ها</h2><p>کتاب‌خوان‌ها درباره‌ی این کتاب نوشتن</p></div>
     {% if can_write_post %}<a class="btn btn-secondary btn-sm" href="{% url 'posts:create' %}?book={{ book.pk }}">{% include "components/icon.html" with name="pen" %} یه معرفی بنویس</a>{% endif %}</div>
     {% if posts %}<div class="post-grid">{% for p in posts %}{% include "components/post_card.html" %}{% endfor %}</div>{% else %}<p class="muted">هنوز معرفی‌ای نیست.</p>{% endif %}</section>{% endif %}
+
+{% if owner_books %}<section class="section-sm"><div class="section-head"><div><h2>کتاب‌های دیگر {{ book.owner.username }}</h2><p>با یه درخواست پشت‌سرهم، یه‌جا بگیرشون</p></div><a class="btn btn-secondary btn-sm" href="{% url 'accounts:profile' book.owner.username %}">قفسه‌ی کامل</a></div>
+    {% include "components/book_grid.html" with books=owner_books %}</section>{% endif %}
 
 {% if similar %}<section class="section-sm"><div class="section-head"><div><h2>هم‌سلیقه‌ها</h2><p>کسایی که این کتاب رو داشتن، اینا رو هم دارن</p></div></div>
     {% include "components/book_grid.html" with books=similar %}</section>{% endif %}

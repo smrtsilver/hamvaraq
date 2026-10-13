@@ -103,6 +103,8 @@ def book_detail(request, pk):
         "journey": book.journey.select_related("from_city", "to_city"),
         "is_owner": user.is_authenticated and book.owner_id == user.pk,
         "my_request": my_request,
+        "expire_days": settings.REQUEST_EXPIRE_DAYS,
+        "owner_books": decorate_cards(Book.objects.filter(owner=book.owner, status=Book.Status.AVAILABLE).exclude(pk=book.pk).select_related("city__province", "owner")[:4], user),
         "demand": demand_for(book.isbn, book.title, book.author, exclude_user=book.owner),
         "quality": listing_quality(book) if user.is_authenticated and book.owner_id == user.pk else None,
         "pending": book.exchanges.filter(status=Exchange.Status.REQUESTED).select_related("requester")

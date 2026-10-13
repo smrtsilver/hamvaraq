@@ -726,3 +726,17 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.result-bar .result-count{margin:0}
 .status-hot{background:var(--accent);color:#2b1c00}.status-hot .i{width:14px;height:14px}
 .chip-near{background:var(--info-soft);color:var(--info);border-color:transparent}.chip-trust{background:var(--primary-soft);color:var(--primary-ink);border-color:transparent}.chip-trust .i{width:13px;height:13px}
+
+/* ---------- جزئیات کتاب: نوار ثابت موبایل، توضیح امتیاز، اشتراک ---------- */
+.hold-note{width:100%;margin-top:10px;font-size:var(--fs-sm);color:var(--ink-2)}.hold-note summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:700;color:var(--primary-ink)}
+.hold-note summary .i{width:16px;height:16px}.hold-note p{margin:8px 0 0;line-height:1.9}
+.hold-short{margin:6px 0 0;font-size:var(--fs-xs);color:var(--ink-3)}
+.btn-link{background:none;border:0;padding:0;cursor:pointer;font:inherit;color:var(--primary);display:inline-flex;gap:6px;align-items:center}.btn-link:hover{text-decoration:underline}
+.cta-fixed{display:none}
+@media (max-width:980px){
+  .cta-bar.has-fixed{display:none}
+  body:has(.cta-fixed){padding-bottom:calc(var(--nav-h) + 90px)}
+  .cta-fixed{display:flex;flex-direction:column;align-items:stretch;position:fixed;inset-inline:0;bottom:var(--nav-h);z-index:45;padding:10px 16px;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(22,34,29,.10)}
+  .cta-fixed .btn{width:100%}.cta-fixed .hold-short{text-align:center}
+  .cta-fixed .alert{margin:0}
+}
