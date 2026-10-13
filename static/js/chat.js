@@ -34,33 +34,66 @@
     const toBottom = () => { box.scrollTop = box.scrollHeight; };
     toBottom();
 
+    // فاصله‌ی پرسش: ۵ ثانیه؛ بعد از ۳ پاسخ خالی ۱۵ و بعد از ۶ تا ۳۰ ثانیه؛ با پیام تازه یا ارسال برمی‌گرده
+    let empties = 0, timer = null;
+    const delay = () => (empties >= 6 ? 30000 : empties >= 3 ? 15000 : 5000);
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(poll, delay()); };
+
     async function poll() {
-        if (busy || document.hidden) return;
+        if (busy || document.hidden) { schedule(); return; }
         busy = true;
         try {
             const r = await fetch(`${box.dataset.pollUrl}?after=${lastId}`, {credentials: "same-origin"});
             if (r.ok) {
                 const d = await r.json();
                 d.messages.forEach(addMessage);
-                if (d.messages.length) toBottom();
+                if (d.messages.length) { empties = 0; toBottom(); } else empties += 1;
             }
-        } catch (_) { /* بعدی دوباره امتحان می‌کنه */ }
+        } catch (_) { empties += 1; }
         busy = false;
+        schedule();
+    }
+
+    function pending(text) {
+        const div = document.createElement("div");
+        div.className = "msg mine msg-sending";
+        const t = document.createElement("span");
+        t.className = "msg-text";
+        t.textContent = text;
+        const st = document.createElement("small");
+        st.textContent = "در حال ارسال…";
+        div.append(t, st);
+        box.append(div);
+        toBottom();
+        return {div, st};
     }
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const input = form.elements.text;
-        if (!input.value.trim()) return;
+        const text = input.value.trim();
+        if (!text) return;
         const data = new FormData(form);
-        const r = await fetch(box.dataset.sendUrl, {
-            method: "POST", body: data, credentials: "same-origin",
-            headers: {"X-Requested-With": "XMLHttpRequest"},
-        });
-        if (r.status === 429) { window.HV.announce("پیام‌هات زیاد بود؛ چند دقیقه صبر کن.", "error"); return; }
-        if (r.ok) { input.value = ""; poll(); }
+        const p = pending(text);
+        input.value = "";
+        try {
+            const r = await fetch(box.dataset.sendUrl, {
+                method: "POST", body: data, credentials: "same-origin",
+                headers: {"X-Requested-With": "XMLHttpRequest"},
+            });
+            if (r.status === 429) throw new Error("rate");
+            if (!r.ok) throw new Error("fail");
+            empties = 0;
+            await poll();
+            p.div.remove();
+        } catch (err) {
+            p.div.classList.add("msg-failed");
+            p.st.textContent = err.message === "rate" ? "زیاد بود؛ چند دقیقه صبر کن" : "نرفت؛ دوباره بفرست";
+            input.value = text;
+            if (err.message === "rate") window.HV.announce("پیام‌هات زیاد بود؛ چند دقیقه صبر کن.", "error");
+        }
     });
 
-    setInterval(poll, 5000);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+    schedule();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) { empties = 0; poll(); } });
 })();

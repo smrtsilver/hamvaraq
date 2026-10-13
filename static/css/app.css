@@ -781,3 +781,4 @@ input[aria-invalid=true]{border-color:var(--danger)}
 .hv-card--skeleton i{display:block;height:14px;border-radius:6px;margin-top:10px}
 @keyframes hv-shimmer{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.hv-card--skeleton .cover,.hv-card--skeleton i{animation:none}}
+.msg-sending{opacity:.6}.msg-failed{opacity:1;outline:2px solid var(--danger,#B3261E);outline-offset:2px}
