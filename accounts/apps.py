@@ -17,4 +17,4 @@ class AccountsConfig(AppConfig):
                 type(user).objects.filter(pk=user.pk).update(last_ip_hash=key)
                 user.last_ip_hash = key
 
-        user_logged_in.connect(remember_ip, dispatch_uid="hv_remember_ip")
+        user_logged_in.connect(remember_ip, dispatch_uid="hv_remember_ip", weak=False)  # تابع محلیه؛ با weak=True جمع‌آوری زباله اتصالش رو قطع می‌کرد

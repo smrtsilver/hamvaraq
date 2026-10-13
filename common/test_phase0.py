@@ -151,3 +151,11 @@ class InfraTests(Base):
         import pathlib
         src = pathlib.Path("HamVaraqDjangoServer/settings.py").read_text(encoding="utf-8")
         self.assertIn('DEBUG = env.bool("DEBUG", default=False)', src)
+
+
+class SignalWiringTests(Base):
+    def test_login_signal_receiver_survives_garbage_collection(self):
+        import gc
+        from django.contrib.auth.signals import user_logged_in
+        gc.collect()
+        self.assertTrue(any(key[0] == "hv_remember_ip" for key, *_ in user_logged_in.receivers))
