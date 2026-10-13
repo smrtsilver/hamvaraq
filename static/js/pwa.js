@@ -31,24 +31,26 @@
                 reloaded = true;
                 location.reload();
             };
+            let updateBar = null;
             navigator.serviceWorker.addEventListener("controllerchange", () => {
                 if (!hadController) return;                                    // اولین نصب: چیزی برای تازه کردن نیست
                 pending = true;
                 reloadIfSafe();
+                if (reloaded || updateBar) return;
+                // صفحه بازه: خود کاربر تصمیم می‌گیره کی تازه کنه (پیش‌نویس فرم‌ها ذخیره می‌شه)
+                updateBar = bar('<span>نسخه‌ی تازه‌ی هم‌ورق آماده‌ست.</span><span><button type="button" class="btn btn-sm" data-update>به‌روزرسانی</button></span>', "update");
+                updateBar.querySelector("[data-update]").addEventListener("click", (e) => {
+                    e.currentTarget.disabled = true;
+                    e.currentTarget.classList.add("is-loading");
+                    reloaded = true;
+                    location.reload();
+                });
             });
             document.addEventListener("visibilitychange", reloadIfSafe);
             setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);   // تب‌هایی که مدت‌ها بازن هم نسخه‌ی تازه رو بگیرن
         });
     }
 
-    // ---- «به نسخه‌ی تازه به‌روز شد» (یک بار، بعد از عوض شدن نسخه) ----
-    const ver = document.body.dataset.version;
-    const seen = store.get("hv-version");
-    if (ver && seen && seen !== ver) {
-        const el = bar(`<span>هم‌ورق به نسخه‌ی <b dir="ltr">${ver}</b> به‌روز شد.</span><span><a class="btn btn-sm" href="/changelog/">چه چیزهایی عوض شد؟</a> <button type="button" class="btn btn-sm btn-ghost" data-ok>بستن</button></span>`, "update");
-        el.querySelector("[data-ok]").addEventListener("click", () => el.remove());
-    }
-    if (ver) store.set("hv-version", ver);
 
     // ---- پیشنهاد نصب ----
     if (standalone()) return;
