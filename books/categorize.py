@@ -38,6 +38,10 @@ def _dewey_number(raw):
 
 
 def from_dewey(raw):
+    # کتابخانه‌ی ملی برای ادبیات فارسی رده‌ی «۸فا» می‌ذاره: ۸فا۱ شعر، ۸فا۳ داستان (مثلاً «۸فا۳/۶۲»)
+    fa = re.search(r"8\s*فا\s*(\d)", normalize(raw or ""))
+    if fa:
+        return {"1": "شعر", "3": "رمان"}.get(fa.group(1))
     n = _dewey_number(raw)
     if n is None:
         return None

@@ -30,6 +30,8 @@ class GuessTests(TestCase):
         self.assertEqual(from_dewey("005.1"), "کامپیوتر")
         self.assertEqual(from_dewey("955.084"), "تاریخ")
         self.assertIsNone(from_dewey(""))
+        self.assertEqual(from_dewey("۸فا۳/۶۲"), "رمان")          # رده‌ی ادبیات فارسی کتابخانه‌ی ملی
+        self.assertEqual(from_dewey("۸فا۱/۳۲"), "شعر")
 
     def test_unknown_gives_none(self):
         self.assertIsNone(guess_category_name(["چیزی بی‌ربط"], ""))
