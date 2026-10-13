@@ -12,25 +12,29 @@ from . import reading
 from .models import ReadingGoal, ShelfEntry
 
 SHELF_MAX = 2000
+SHELF_VIEW_MAX = 600
 
 
 @login_required
 def my_shelf(request):
+    # همه‌ی کتاب‌ها یه‌جا میان و فیلتر سمت مرورگر با انیمیشن انجام می‌شه؛ ?s= برای بدون JS و لینک مستقیم
     qs = request.user.shelf.select_related("book")
     tab = request.GET.get("s", "")
+    if tab not in (*ShelfEntry.Reading.values, "swap"):
+        tab = ""
     counts = dict(request.user.shelf.values_list("reading_status").annotate(n=Count("id")))
-    if tab in ShelfEntry.Reading.values:
-        qs = qs.filter(reading_status=tab)
-    elif tab == "swap":
-        qs = qs.filter(book__isnull=False, book__deleted_at__isnull=True, book__owner=request.user, book__status__in=["available", "reserved"])
-    tabs = [("", "همه", sum(counts.values()))] + [(v, label, counts.get(v, 0)) for v, label in ShelfEntry.Reading.choices]
-    entries = list(qs[:300])
+    entries = list(qs[:SHELF_VIEW_MAX])
+    for e in entries:
+        e.swap = e.for_exchange
+        e.out = bool(tab) and not (e.swap if tab == "swap" else e.reading_status == tab)
+    tabs = ([("", "همه", sum(counts.values()))] + [(v, label, counts.get(v, 0)) for v, label in ShelfEntry.Reading.choices]
+            + [("swap", "برای معاوضه", sum(1 for e in entries if e.swap))])
     matches = reading.wanted_matches(request.user, entries)
     for e in entries:
         e.matches = matches.get(e.pk, [])
     return render(request, "books/shelf.html", {"entries": entries, "tabs": tabs, "tab": tab, "add_form": ShelfAddForm(),
                                                 "goal": reading.goal_progress(request.user), "jyear": reading.current_jyear(),
-                                                "recs": reading.recommendations(request.user, 8) if not tab else [],
+                                                "recs": reading.recommendations(request.user, 8),
                                                 "streak": reading.streak(request.user, 14),
                                                 "reading_now": [e for e in entries if e.reading_status == ShelfEntry.Reading.READING][:5]})
 

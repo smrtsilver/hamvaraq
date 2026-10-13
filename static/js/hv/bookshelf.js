@@ -28,6 +28,7 @@
   });
   setup();
   addEventListener("resize", HV.debounce(setup, 200));
+  shelf.addEventListener("hv:wshelf-update", function () { if (more.getAttribute("aria-expanded") === "true") books.style.maxHeight = "none"; setup(); });
 
   // کارت اطلاعات کتاب
   var dlg = document.createElement("dialog");

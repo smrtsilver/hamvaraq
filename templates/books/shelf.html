@@ -12,14 +12,24 @@
     <div class="grow"><h2 id="streak-h" class="visually-hidden">سری خواندن</h2><div class="streak-dots" aria-label="۱۴ روز اخیر">{% for d, on in streak.grid %}<i class="{% if on %}on{% endif %}" title="{{ d|jdate }}"></i>{% endfor %}</div>
         <span class="small muted">بهترین سری: {{ streak.best|fa }} روز</span></div>
     {% if streak.today %}<span class="pill pill-green">امروز خوندی ✓</span>{% else %}<form method="post" action="{% url 'books:mark_today' %}">{% csrf_token %}{% if reading_now %}<input type="hidden" name="entry" value="{{ reading_now.0.pk }}">{% endif %}<button class="btn btn-sm">امروز خوندم</button></form>{% endif %}</section>
-<nav class="shelf-tabs" aria-label="فیلتر قفسه">{% for v, label, n in tabs %}<a href="?{% if v %}s={{ v }}{% endif %}"{% if tab == v %} aria-current="page"{% endif %}>{{ label }} <b>{{ n|fa }}</b></a>{% endfor %}<a href="?s=swap"{% if tab == 'swap' %} aria-current="page"{% endif %}>برای معاوضه</a></nav>
-{% if entries %}<ul class="shelf-list">{% for e in entries %}
-    <li><a class="shelf-row" href="{% url 'books:shelf_edit' e.pk %}">
-        {% if e.cover %}<img class="sr-cover" src="{{ e.cover.url }}" alt="" loading="lazy" width="40" height="58">{% else %}<span class="sr-spine{% if e.for_exchange %} has-ribbon{% endif %}" aria-hidden="true"></span>{% endif %}
+<div class="shelf-bar">
+<nav class="shelf-tabs" aria-label="فیلتر قفسه" data-shelf-tabs>{% for v, label, n in tabs %}<a href="?{% if v %}s={{ v }}{% endif %}" data-filter="{{ v }}"{% if tab == v %} aria-current="page"{% endif %}>{{ label }} <b>{{ n|fa }}</b></a>{% endfor %}</nav>
+{% if entries %}<div class="seg view-seg" role="group" aria-label="نوع نمایش" data-view-seg{% if entries|length > 60 %} data-default="list"{% endif %} hidden>
+    <button type="button" data-view="shelf" aria-pressed="true">{% include "components/icon.html" with name="book" %}<span>قفسه</span></button>
+    <button type="button" data-view="list" aria-pressed="false">{% include "components/icon.html" with name="list" %}<span>فهرست</span></button></div>{% endif %}
+</div>
+{% if entries %}<div class="shelf-views" data-shelf-views data-view="shelf">
+<div class="wshelf my-wshelf" data-wshelf data-rows="3" aria-label="قفسه‌ی چوبی من"><div class="wshelf-in"><div class="wshelf-books">{% for e in entries %}<a class="sp sp-c{{ forloop.counter0|mod:7 }}{% if e.title|length > 30 %} sp-l{% elif e.title|length < 12 %} sp-s{% endif %}{% if e.swap %} sp-swap{% endif %}{% if e.out %} is-out{% endif %}" href="{% url 'books:shelf_edit' e.pk %}" data-item data-rs="{{ e.reading_status }}"{% if e.swap %} data-swap="1"{% endif %} data-sp data-title="{{ e.title }}" data-author="{{ e.author }}" data-status="{{ e.get_reading_status_display }}" data-go="ویرایش و نقد" data-added="{{ e.created_at|jdate }}"{% if e.rating %} data-stars="{{ e.rating }}"{% endif %} data-desc="{{ e.review|truncatechars:280 }}"{% if e.cover_url %} data-cover="{{ e.cover_url }}"{% endif %}><span class="sp-b"><span class="sp-t">{{ e.title }}</span><span class="sp-a">{{ e.author }}</span>{% if e.swap %}<i class="sp-rib" aria-hidden="true"></i><span class="visually-hidden">(برای معاوضه)</span>{% endif %}</span></a>{% endfor %}</div></div>
+    <button type="button" class="btn btn-secondary btn-sm wshelf-more" data-wshelf-more hidden aria-expanded="false">مشاهده‌ی بیشتر</button></div>
+<ul class="shelf-list">{% for e in entries %}
+    <li data-item data-rs="{{ e.reading_status }}"{% if e.swap %} data-swap="1"{% endif %}{% if e.out %} class="is-out"{% endif %}><a class="shelf-row" href="{% url 'books:shelf_edit' e.pk %}">
+        {% if e.cover %}<img class="sr-cover" src="{{ e.cover.url }}" alt="" loading="lazy" width="40" height="58">{% else %}<span class="sr-spine sp-c{{ forloop.counter0|mod:7 }}" aria-hidden="true"></span>{% endif %}
         <span class="sr-main"><strong>{{ e.title }}</strong><span class="muted small">{{ e.author }}</span>
-            <span class="sr-meta"><span class="pill pill-{% if e.reading_status == 'read' %}green{% elif e.reading_status == 'reading' %}amber{% else %}blue{% endif %}">{{ e.get_reading_status_display }}</span>{% if e.rating %}<span class="stars" aria-label="{{ e.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= e.rating %}★{% endif %}{% endfor %}</span>{% endif %}{% if e.for_exchange %}<span class="ribbon-chip">برای معاوضه</span>{% endif %}{% if e.review %}<span class="small muted">{% include "components/icon.html" with name="pen" %} نقد</span>{% endif %}</span>
+            <span class="sr-meta"><span class="pill pill-{% if e.reading_status == 'read' %}green{% elif e.reading_status == 'reading' %}amber{% else %}blue{% endif %}">{{ e.get_reading_status_display }}</span>{% if e.rating %}<span class="stars" aria-label="{{ e.rating|fa }} ستاره">{% for i in "12345" %}{% if forloop.counter <= e.rating %}★{% endif %}{% endfor %}</span>{% endif %}{% if e.swap %}<span class="ribbon-chip">برای معاوضه</span>{% endif %}</span>
             {% if e.matches %}<span class="match-line">{% include "components/icon.html" with name="swap" %} {{ e.matches|length|fa }} آگهی موجود — {{ e.matches.0.city.name }}</span>{% endif %}</span>
         {% include "components/icon.html" with name="chevron-left" %}</a></li>{% endfor %}</ul>
+<p class="shelf-empty-f muted center" data-filter-empty hidden>تو این دسته کتابی نیست.</p>
+</div>
 {% else %}{% url 'books:shelf_add' as add_url %}{% include "components/empty.html" with ill="books" title="هنوز کتابی اینجا نیست" text="کتاب‌هایی که داری یا خوندی رو اضافه کن تا قفسه‌ات جون بگیره." cta_url=add_url cta_label="افزودن اولین کتاب" %}{% endif %}
 <p class="shelf-export small muted">خروجی قفسه: <a href="{% url 'books:shelf_export' %}">فایل CSV (اکسل)</a> · <a href="{% url 'books:shelf_export' %}?print=1">نسخه‌ی چاپی / PDF</a></p>
 {% if recs %}<section class="section-sm" aria-labelledby="recs-h"><div class="section-head"><div><h2 id="recs-h">پیشنهاد برای تو</h2><p>از روی قفسه‌ات؛ همه برای معاوضه موجودن</p></div></div>
@@ -27,4 +37,4 @@
 <dialog class="hv-modal sheet" id="shelf-add-dlg" aria-labelledby="shelf-add-h"><div class="sheet-in"><div class="sheet-head"><h2 id="shelf-add-h">افزودن به قفسه</h2><button type="button" class="icon-btn" data-close-dialog aria-label="بستن">{% include "components/icon.html" with name="x" %}</button></div>
     {% include "books/_shelf_add_form.html" %}</div></dialog>
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/hv/shelf-view.js' %}" defer></script><script src="{% static 'js/scan.js' %}" data-zxing="{% static 'vendor/zxing/zxing-library.min.js' %}" defer></script>{% endblock %}
