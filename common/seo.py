@@ -131,7 +131,9 @@ def _asset_version():
     files = [*Path(settings.BASE_DIR, "static", "css").glob("*.css"), *Path(settings.BASE_DIR, "static", "js").glob("*.js"),
              Path(settings.BASE_DIR, "static", "sw.js")]
     newest = max((f.stat().st_mtime for f in files if f.exists()), default=0)
-    return format(int(newest), "x")
+    from .releases import APP_VERSION
+
+    return f"{APP_VERSION}-{int(newest):x}"
 
 
 def service_worker(request):

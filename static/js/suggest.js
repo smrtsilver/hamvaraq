@@ -28,7 +28,8 @@
             } else input.value = item.author;
             close();
         };
-        input.addEventListener("input", () => {
+        input.addEventListener("input", (e) => {
+            if (!e.isTrusted) return;          // پر شدن خودکار (شابک/پیش‌نویس) منوی پیشنهاد رو باز نکنه
             clearTimeout(timer);
             const q = input.value.trim();
             if (q.length < 2) return close();

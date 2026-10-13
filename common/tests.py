@@ -1781,7 +1781,7 @@ class PwaAssetTests(TestCase):
         r = self.client.get("/sw.js")
         body = r.content.decode()
         self.assertNotIn("__VERSION__", body)
-        self.assertRegex(body, r'const VERSION = "[0-9a-f]+"')
+        self.assertRegex(body, r'const VERSION = "\d+\.\d+\.\d+-[0-9a-f]+"')      # نسخه‌ی برنامه + هش استاتیک‌ها
         for needle in ("addEventListener(\"push\"", "notificationclick", "SKIP_WAITING", "/offline/"):
             self.assertIn(needle, body)
         self.assertEqual(r["Service-Worker-Allowed"], "/")

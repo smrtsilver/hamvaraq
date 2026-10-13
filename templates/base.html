@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     {% block head_extra %}{% endblock %}
 </head>
-<body{% if user.is_authenticated %} data-uid="{{ user.pk }}"{% endif %}>
+<body data-version="{{ app_version }}"{% if user.is_authenticated %} data-uid="{{ user.pk }}"{% endif %}>
 {% include "components/_sprite.html" %}
 <a class="skip" href="#main">رفتن به محتوای اصلی</a>
 {% with ns=request.resolver_match.namespace name=request.resolver_match.url_name %}
@@ -119,7 +119,7 @@
                 {% else %}<li><a href="{% url 'accounts:signup' %}">هم‌ورق شو</a></li><li><a href="{% url 'accounts:login' %}">ورود</a></li>{% endif %}</ul></div>
         </div>
         <div class="footer-friend"><span class="pf-dot" aria-hidden="true"></span><span>دوست و همراه ما:</span><a href="{{ porfam_url }}" target="_blank" rel="noopener">پروفام</a><span class="muted-on-dark">— ویترین آدم‌های خلاق</span></div>
-        <div class="footer-bottom"><span>{{ site.tagline }}</span><span>ساخته‌شده با ❤ برای کتاب‌خوان‌ها</span></div>
+        <div class="footer-bottom"><span>{{ site.tagline }}</span><a class="footer-version" href="{% url 'changelog' %}">نسخه‌ی <span dir="ltr">{{ app_version|fa }}</span> · تاریخچه‌ی تغییرات</a><span>ساخته‌شده با ❤ برای کتاب‌خوان‌ها</span></div>
     </div>
 </footer>
 

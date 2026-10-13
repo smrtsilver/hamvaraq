@@ -9,7 +9,8 @@ const PRECACHE = [
 const MAX_IMAGES = 80;
 
 self.addEventListener("install", (e) => {
-    e.waitUntil(caches.open(STATIC).then((c) => c.addAll(PRECACHE)));   // skipWaiting فقط با تأیید کاربر (پیام SKIP_WAITING)
+    // نسخه‌ی تازه بلافاصله فعال می‌شه (کش‌های قبلی تو activate پاک می‌شن)؛ صفحه‌ها خودشون تصمیم می‌گیرن کی ریلود کنن
+    e.waitUntil(caches.open(STATIC).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {

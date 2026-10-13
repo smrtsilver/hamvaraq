@@ -1,5 +1,8 @@
 // شابک: اعتبارسنجی رقم کنترل سمت کلاینت، استعلام از سرور (عنوان/نویسنده/ناشر…)، و نمایش وضعیت زیر فیلد
 // (منتظرها، کتاب تکراری، نسخه‌ی دیگر). رویداد hv:isbn برای پیش‌نمایش زنده منتشر می‌شه.
+// - شابکِ کامل و معتبر خودکار جستجو می‌شه (نیازی به زدن «جستجو» نیست؛ دکمه برای تلاش دوباره می‌مونه).
+// - تا وقتی شابکی نوشته شده و جستجو نشده، عنوان و نویسنده قفل‌ان (اول اطلاعات منبع، بعد ویرایش دستی).
+// - شابک نداره/پیدا نشد ← جستجوی عنوان در کتابخانه‌ی ملی.
 (() => {
     const FA = "۰۱۲۳۴۵۶۷۸۹";
     const toEn = (s) => (s || "").replace(/[۰-۹]/g, (d) => FA.indexOf(d)).replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 1632);
@@ -14,10 +17,14 @@
         }
         return null;
     }
-    window.HVIsbn = {normalize: isbn13};
+    window.HVIsbn = {normalize: isbn13, lookup: (input) => lookup(input, true)};
+
+    const fieldOf = (input) => input.closest(".field") || input.parentElement;
+    const scopeOf = (input) => input.closest("[data-isbn-scope]") || input.form;
+    const targets = (input) => { const s = scopeOf(input); return {scope: s, title: s.querySelector("[data-isbn-title]"), author: s.querySelector("[data-isbn-author]")}; };
 
     function statusBox(input) {
-        const field = input.closest(".field") || input.parentElement;
+        const field = fieldOf(input);
         let box = field.querySelector(".isbn-status");
         if (!box) {
             box = document.createElement("div");
@@ -33,31 +40,94 @@
     const line = (cls, text) => { const p = document.createElement("p"); p.className = cls; p.textContent = text; return p; };
     function show(box, items) { box.replaceChildren(...items); box.hidden = !items.length; }
 
-    // دکمه‌ی جستجو کنار هر فیلد شابک
+    // ---- لودینگ روی دکمه‌ی «جستجو» (جلوی کلیک دوباره) ----
+    function busy(input, on) {
+        const b = input.closest(".isbn-row") && input.closest(".isbn-row").querySelector(".isbn-go");
+        if (!b) return;
+        b.disabled = on;
+        b.classList.toggle("is-loading", on);
+        b.setAttribute("aria-busy", String(on));
+    }
+
+    // ---- قفل عنوان/نویسنده تا جستجوی شابک ----
+    function lock(input, on, why) {
+        const {title, author} = targets(input);
+        [title, author].forEach((el) => {
+            if (!el) return;
+            el.readOnly = on;
+            el.classList.toggle("is-locked", on);
+            const field = el.closest(".field");
+            let note = field && field.querySelector(".lock-note");
+            if (on && field) {
+                if (!note) { note = document.createElement("p"); note.className = "hint lock-note"; field.append(note); }
+                note.textContent = why || "اول شابک جستجو می‌شه؛ بعدش می‌تونی ویرایش کنی.";
+            } else if (note) note.remove();
+        });
+    }
+    function syncLock(input) {
+        const v = input.value.trim();
+        if (!v) return lock(input, false);
+        if (input.dataset.looked === input.value) return;                  // جستجو شده (پیدا یا پیدا نشد)
+        lock(input, true, isbn13(v) ? "در حال جستجوی شابک…" : "شابک کامل نیست؛ درستش کن یا پاکش کن تا بتونی دستی بنویسی.");
+    }
+
+    // ---- پر کردن فیلدها با رویداد تا اعتبارسنجی/پیش‌نمایش/پیش‌نویس هم بفهمن ----
+    function fill(el, value) {
+        if (!el || !value) return;
+        if (el.value && !el.dataset.fromIsbn) return;                     // چیزی که کاربر خودش نوشته دست نمی‌خوره
+        el.value = value;
+        el.dataset.fromIsbn = "1";
+        el.dispatchEvent(new Event("input", {bubbles: true}));
+        el.dispatchEvent(new Event("change", {bubbles: true}));
+    }
+    document.addEventListener("input", (e) => { if (e.isTrusted && e.target.dataset && e.target.dataset.fromIsbn) delete e.target.dataset.fromIsbn; });
+
+    // ---- آماده‌سازی هر فیلد شابک ----
     document.querySelectorAll("[data-isbn-url]").forEach((input) => {
         if (input.closest(".isbn-row")) return;
         const row = document.createElement("div"); row.className = "isbn-row";
         input.before(row); row.append(input);
+        input.setAttribute("inputmode", "numeric");
         const b = document.createElement("button");
-        b.type = "button"; b.className = "btn btn-secondary isbn-go"; b.textContent = "جستجو";
-        b.addEventListener("click", () => lookup(input));
+        b.type = "button"; b.className = "btn btn-secondary isbn-go";
+        b.innerHTML = '<span class="btn-label">جستجو</span>';
+        b.addEventListener("click", () => lookup(input, true));
         row.append(b);
         const scan = input.id && document.querySelector(`[data-scan][data-scan-target="${input.id}"]`);
         if (scan) { scan.classList.add("isbn-scan"); scan.setAttribute("aria-label", "اسکن بارکد"); row.append(scan); }
-        input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); lookup(input); } });
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); lookup(input, true); } });
+        // شابک کامل و معتبر ← جستجوی خودکار (با تأخیر کوتاه تا تایپ تموم شه)
+        const auto = HV.debounce(() => { if (isbn13(input.value)) lookup(input); }, 600);
+        input.addEventListener("input", () => { syncLock(input); auto(); });
+        // جستجو با عنوان: همیشه در دسترس (کتاب بدون شابک یا شابکی که پیدا نشد)
+        if (input.dataset.catalogUrl) {
+            const t = document.createElement("button");
+            t.type = "button"; t.className = "link isbn-title-link";
+            t.textContent = "شابک نداره یا پیدا نشد؟ با عنوان تو کتابخانه‌ی ملی بگرد";
+            t.addEventListener("click", () => {
+                const {scope, title, author} = targets(input);
+                const box = statusBox(input);
+                const fb = fallback(input, scope, title, author, isbn13(input.value));
+                show(box, [fb]);
+                fb.querySelector("input").focus();
+            });
+            fieldOf(input).querySelector(".isbn-row").after(t);
+        }
+        syncLock(input);
     });
+
     // ثبت فرم با شابکِ جستجونشده: اول جستجو، بعد ارسال
     document.addEventListener("submit", async (e) => {
         const input = e.target.querySelector && e.target.querySelector("[data-isbn-url]");
         if (!input || !input.value.trim() || input.dataset.looked === input.value || e.target.dataset.isbnWait) return;
         e.preventDefault();
         e.target.dataset.isbnWait = "1";
-        await lookup(input);
+        await lookup(input, true);
         delete e.target.dataset.isbnWait;
         if (input.getAttribute("aria-invalid") !== "true") e.target.requestSubmit(e.submitter || undefined);
     }, true);
 
-    // شابک پیدا نشد: جستجوی عنوان/نویسنده تو کتابخانه‌ی ملی؛ انتخاب یه چاپ، عنوان و نویسنده رو پر می‌کنه
+    // ---- جستجوی عنوان/نویسنده تو کتابخانه‌ی ملی؛ انتخاب یه چاپ، عنوان و نویسنده رو پر می‌کنه ----
     let fbSeq = 0;
     function fallback(input, scope, title, author, isbn) {
         const url = input.dataset.catalogUrl;
@@ -66,7 +136,7 @@
         wrap.className = "isbn-fb";
         const id = (input.id || "isbn") + "-fb";
         wrap.innerHTML = '<label class="isbn-fb-label"></label><div class="isbn-row"><input type="search" enterkeyhint="search" autocomplete="off">' +
-            '<button type="button" class="btn btn-secondary">بگرد</button></div><p class="isbn-fb-msg" role="status" aria-live="polite"></p><ul class="isbn-fb-list"></ul>';
+            '<button type="button" class="btn btn-secondary"><span class="btn-label">بگرد</span></button></div><p class="isbn-fb-msg" role="status" aria-live="polite"></p><ul class="isbn-fb-list"></ul>';
         const label = wrap.querySelector("label"), q = wrap.querySelector("input"), go = wrap.querySelector("button");
         const msg = wrap.querySelector(".isbn-fb-msg"), list = wrap.querySelector("ul");
         label.textContent = "با عنوان یا نویسنده تو کتابخانه‌ی ملی بگرد و چاپ درست رو انتخاب کن:";
@@ -81,7 +151,7 @@
             const mine = ++fbSeq;
             list.replaceChildren();
             say("در حال جستجو تو کتابخانه‌ی ملی…");
-            go.disabled = true;
+            go.disabled = true; go.classList.add("is-loading");
             try {
                 const r = await fetch(url + "?q=" + encodeURIComponent(text), {credentials: "same-origin"});
                 if (mine !== fbSeq) return;
@@ -105,13 +175,13 @@
                     list.append(li);
                 });
             } catch (_) { if (mine === fbSeq) say("ارتباط برقرار نشد؛ دوباره بزن یا دستی پر کن."); }
-            finally { if (mine === fbSeq) go.disabled = false; }
+            finally { if (mine === fbSeq) { go.disabled = false; go.classList.remove("is-loading"); } }
         }
         function pick(it, b) {
-            if (title) { title.value = it.title; title.dispatchEvent(new Event("input", {bubbles: true})); }
-            if (author && it.author) { author.value = it.author; author.dispatchEvent(new Event("input", {bubbles: true})); }
+            lock(input, false);
+            [[title, it.title], [author, it.author]].forEach(([el, v]) => { if (el && v) { delete el.dataset.fromIsbn; el.value = ""; fill(el, v); } });
             list.querySelectorAll(".isbn-fb-item").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-            say(it.isbn && it.isbn !== isbn
+            say(it.isbn && isbn && it.isbn !== isbn
                 ? "پر شد ✓ (این رکورد مال چاپ دیگه‌ایه؛ شابک خودت حفظ می‌شه و برای بقیه هم ذخیره می‌شه)."
                 : "پر شد ✓");
             document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: Object.assign({}, it, {source: "nlai"})}}));
@@ -122,25 +192,36 @@
         return wrap;
     }
 
+    // ---- استعلام ----
     let seq = 0;
-    document.addEventListener("change", (e) => { if (e.target.matches("[data-isbn-url]")) lookup(e.target); });
-    async function lookup(input) {
-        if (input.dataset.looked === input.value && input.value) return;
-        input.dataset.looked = input.value;
-        const box = statusBox(input), scope = input.closest("[data-isbn-scope]") || input.form;
-        const title = scope.querySelector("[data-isbn-title]"), author = scope.querySelector("[data-isbn-author]");
+    document.addEventListener("change", (e) => { if (e.target.matches && e.target.matches("[data-isbn-url]")) lookup(e.target); });
+    async function lookup(input, force) {
+        if (!force && input.dataset.looked === input.value && input.value) return;
+        const {scope, title, author} = targets(input);
+        const box = statusBox(input);
         const value = input.value.trim();
         input.removeAttribute("aria-invalid");
-        if (!value) { show(box, []); document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: null}})); return; }
+        if (!value) {
+            input.dataset.looked = "";
+            lock(input, false);
+            show(box, []);
+            document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: null}}));
+            return;
+        }
         const clean = isbn13(value);
         if (!clean) {
             input.setAttribute("aria-invalid", "true");
             const digits = toEn(value).replace(/[\s\-]/g, "");
-            show(box, [line("isbn-err", /^\d{10}$|^\d{9}X$|^\d{13}$/i.test(digits) ? "رقم کنترل این شابک درست نیست؛ یه بار دیگه چک کن." : "شابک باید ۱۰ یا ۱۳ رقم باشه.")]);
+            show(box, [line("isbn-err", /^\d{10}$|^\d{9}X$|^\d{13}$/i.test(digits) ? "رقم کنترل این شابک درست نیست؛ یه بار دیگه با پشت کتاب چک کن." : "شابک باید ۱۰ یا ۱۳ رقم باشه.")]);
+            syncLock(input);
             return;
         }
         const mine = ++seq;
-        show(box, [line("isbn-wait", "در حال جستجو…")]);
+        input.dataset.looked = input.value;
+        busy(input, true);
+        lock(input, true, "در حال جستجوی شابک…");
+        show(box, [line("isbn-wait", "در حال جستجو تو کتابخانه‌ی ملی و خانه‌ی کتاب…")]);
+        const done = () => { if (mine === seq) { busy(input, false); lock(input, false); } };
         try {
             const r = await fetch(input.dataset.isbnUrl + "?isbn=" + encodeURIComponent(value), {credentials: "same-origin"});
             if (mine !== seq) return;
@@ -148,25 +229,37 @@
             const showStd = (d) => { if (d && d.isbn_display && isbn13(input.value) === d.isbn) { input.value = d.isbn_display; input.dataset.looked = input.value; } };
             if (r.status === 404) {
                 showStd(await r.clone().json().catch(() => null));
-                const items = [line("isbn-warn", "این شابک هنوز تو منبع‌های آنلاین (کتابخانه‌ی ملی و…) ثبت نشده؛ معمولاً یعنی چاپ تازه‌ست.")];
+                const items = [line("isbn-warn", "این شابک هنوز تو منبع‌های آنلاین (کتابخانه‌ی ملی، خانه‌ی کتاب…) ثبت نشده؛ عنوان رو پایین جستجو کن یا خودت بنویس.")];
                 const fb = fallback(input, scope, title, author, clean);
                 items.push(fb || line("isbn-note", "عنوان و نویسنده رو خودت بنویس؛ برای نفر بعدی ذخیره می‌شه."));
                 show(box, items);
                 return;
             }
-            if (!r.ok) { show(box, [line("isbn-err", (await r.json().catch(() => ({}))).message || "استعلام ناموفق بود؛ دستی پر کن.")]); return; }
+            if (!r.ok) {
+                const d = await r.json().catch(() => ({}));
+                show(box, [line("isbn-err", r.status === 429 ? "جستجوهات زیاد بود؛ یه دقیقه صبر کن." : d.message || "استعلام ناموفق بود؛ دوباره «جستجو» رو بزن یا دستی پر کن.")]);
+                input.dataset.looked = "";
+                return;
+            }
             const d = await r.json();
             showStd(d);
-            if (title && !title.value) title.value = d.title;
-            if (author && !author.value) author.value = d.author;
+            lock(input, false);
+            fill(title, d.title);
+            fill(author, d.author);
             const items = [];
-            const meta = [d.publisher, d.year ? faNum(d.year) + (d.year_calendar === "jalali" ? " شمسی" : "") : "", d.pages ? faNum(d.pages) + " صفحه" : ""].filter(Boolean).join(" · ");
-            items.push(line("isbn-ok", (d.confidence >= 40 && d.source !== "user" ? "مشخصات پیدا شد" : "مشخصات ثبت‌شده توسط کاربران") + (meta ? ": " + meta : "")));
+            const meta = [d.translators && d.translators.length ? "ترجمه‌ی " + d.translators.join("، ") : "", d.publisher,
+                d.year ? faNum(d.year) + (d.year_calendar === "jalali" ? " شمسی" : "") : "", d.pages ? faNum(d.pages) + " صفحه" : ""].filter(Boolean).join(" · ");
+            items.push(line("isbn-ok", (d.confidence >= 40 && d.source !== "user" ? "✓ مشخصات پیدا شد" : "مشخصات ثبت‌شده توسط کاربران") + (meta ? ": " + meta : "")));
             if (d.mine) items.push(line("isbn-warn", "این کتاب (همین شابک) رو قبلاً ثبت کردی؛ مطمئنی دوباره می‌خوای؟"));
             if (d.demand) items.push(line("isbn-demand", faNum(d.demand) + " نفر دنبال این کتاب بوده‌ن؛ ثبتش شانس مبادله‌ات رو بالا می‌بره."));
             if (d.available_elsewhere) items.push(line("isbn-note", faNum(d.available_elsewhere) + " نسخه‌ی دیگه‌ی همین کتاب الان تو هم‌ورق موجوده."));
             show(box, items);
             document.dispatchEvent(new CustomEvent("hv:isbn", {detail: {scope, data: d}}));
-        } catch (_) { show(box, []); /* پر کردن دستی هنوز ممکنه */ }
+        } catch (_) {
+            if (mine === seq) {
+                show(box, [line("isbn-err", "ارتباط برقرار نشد؛ دوباره «جستجو» رو بزن یا عنوان و نویسنده رو دستی بنویس.")]);
+                input.dataset.looked = "";
+            }
+        } finally { done(); }
     }
 })();

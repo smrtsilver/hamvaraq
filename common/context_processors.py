@@ -7,6 +7,9 @@ def site(request):
     """تنظیمات سایت (متن فوتر، شبکه‌های اجتماعی، بنر) برای همه‌ی قالب‌ها."""
     ctx = {"site": SiteSetting.load(), "wishlist_enabled": settings.WISHLIST_ENABLED, "highlights_enabled": settings.HIGHLIGHTS_ENABLED,
            "porfam_url": settings.PORFAM_URL, "support_url": settings.SUPPORT_URL}
+    from .releases import APP_VERSION
+
+    ctx["app_version"] = APP_VERSION
     ctx["back_url"] = back_url(request)
     user = getattr(request, "user", None)
     if user is not None and user.is_staff:

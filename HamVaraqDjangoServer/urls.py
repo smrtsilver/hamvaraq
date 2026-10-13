@@ -8,12 +8,13 @@ from django.views.generic import RedirectView
 from common.seo import SITEMAPS, offline, robots_txt, service_worker
 from books import facets
 from common.csp import report as csp_report
-from common.views import city_detail, city_list, healthz, home, how_it_works, province_detail, rules, story, support_us
+from common.views import changelog, city_detail, city_list, healthz, home, how_it_works, province_detail, rules, story, support_us
 
 urlpatterns = [
     path("", home, name="home"),
     path("how-it-works/", how_it_works, name="how_it_works"),
     path("rules/", rules, name="rules"),
+    path("changelog/", changelog, name="changelog"),
     path("story/", story, name="story"),
     path("support-us/", support_us, name="support_us"),
     path("authors/", facets.author_list, name="authors"),

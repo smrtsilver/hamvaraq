@@ -21,23 +21,34 @@
         window.addEventListener("load", async () => {
             let reg;
             try { reg = await navigator.serviceWorker.register("/sw.js"); } catch (_) { return; }
-            // ریلود فقط وقتی کاربر خودش «به‌روزرسانی» رو زده؛ فعال‌شدن اولین سرویس‌ورکر نباید صفحه (و فرمِ نیمه‌پرشده) رو بپرونه
-            let userRequestedUpdate = false;
-            const announce = (worker) => {
-                const el = bar('<span>نسخه‌ی تازه‌ی هم‌ورق آماده‌ست.</span><span><button type="button" class="btn btn-sm" data-update>به‌روزرسانی</button></span>', "update");
-                el.querySelector("[data-update]").addEventListener("click", () => { userRequestedUpdate = true; worker.postMessage("SKIP_WAITING"); });
+            // نسخه‌ی تازه خودش فعال می‌شه (sw.js: skipWaiting) و کش‌های قبلی همون لحظه پاک می‌شن؛ صفحه‌ی بعدی خودش نسخه‌ی تازه‌ست.
+            // صفحه‌ی باز فقط وقتی ریلود می‌شه که کاربر از تب بیرون رفته (وسط اسکن/تایپ نمی‌پره) و فرم نیمه‌پری نداره.
+            const hadController = !!navigator.serviceWorker.controller;
+            if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");          // سرویس‌ورکرهای قدیمی که منتظر تأیید می‌موندن
+            let pending = false, reloaded = false;
+            const reloadIfSafe = () => {
+                if (!pending || reloaded || !document.hidden || document.querySelector("form[data-dirty], dialog[open]")) return;
+                reloaded = true;
+                location.reload();
             };
-            if (reg.waiting && navigator.serviceWorker.controller) announce(reg.waiting);
-            reg.addEventListener("updatefound", () => {
-                const w = reg.installing;
-                w && w.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) announce(w); });
-            });
-            let reloaded = false;
             navigator.serviceWorker.addEventListener("controllerchange", () => {
-                if (userRequestedUpdate && !reloaded) { reloaded = true; location.reload(); }
+                if (!hadController) return;                                    // اولین نصب: چیزی برای تازه کردن نیست
+                pending = true;
+                reloadIfSafe();
             });
+            document.addEventListener("visibilitychange", reloadIfSafe);
+            setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);   // تب‌هایی که مدت‌ها بازن هم نسخه‌ی تازه رو بگیرن
         });
     }
+
+    // ---- «به نسخه‌ی تازه به‌روز شد» (یک بار، بعد از عوض شدن نسخه) ----
+    const ver = document.body.dataset.version;
+    const seen = store.get("hv-version");
+    if (ver && seen && seen !== ver) {
+        const el = bar(`<span>هم‌ورق به نسخه‌ی <b dir="ltr">${ver}</b> به‌روز شد.</span><span><a class="btn btn-sm" href="/changelog/">چه چیزهایی عوض شد؟</a> <button type="button" class="btn btn-sm btn-ghost" data-ok>بستن</button></span>`, "update");
+        el.querySelector("[data-ok]").addEventListener("click", () => el.remove());
+    }
+    if (ver) store.set("hv-version", ver);
 
     // ---- پیشنهاد نصب ----
     if (standalone()) return;

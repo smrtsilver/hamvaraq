@@ -117,3 +117,24 @@ document.addEventListener("click", (e) => {
     b.setAttribute("aria-expanded", String(open));
     if (open) { const s = panel.querySelector("select"); if (s) s.focus(); }
 });
+
+// لودینگ ارسال فرم: دکمه‌ی ارسال قفل می‌شه و چرخنده می‌گیره تا کاربر دوباره نزنه (فرم‌های GET مثل جستجو مستثنی‌ان).
+// اگه اسکریپت دیگه‌ای ارسال رو متوقف کرده باشه (اعتبارسنجی، استعلام شابک) کاری نمی‌کنیم؛ با برگشت به صفحه (bfcache) آزاد می‌شه.
+document.addEventListener("submit", (e) => {
+    const form = e.target;
+    if ((form.method || "get").toLowerCase() !== "post" || form.hasAttribute("data-no-busy")) return;
+    setTimeout(() => {
+        if (e.defaultPrevented) return;
+        const btns = [...form.querySelectorAll("button:not([type=button]), input[type=submit]")];
+        const main = e.submitter && btns.includes(e.submitter) ? e.submitter : btns[btns.length - 1];
+        form.setAttribute("aria-busy", "true");
+        btns.forEach((b) => { b.disabled = true; });
+        if (main) main.classList.add("is-loading");
+    }, 0);
+});
+addEventListener("pageshow", () => {
+    document.querySelectorAll("form[aria-busy=true]").forEach((form) => {
+        form.removeAttribute("aria-busy");
+        form.querySelectorAll("button, input[type=submit]").forEach((b) => { b.disabled = false; b.classList.remove("is-loading"); });
+    });
+});

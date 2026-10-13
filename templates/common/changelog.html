@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}تاریخچه‌ی تغییرات | هم‌ورق{% endblock %}
+{% block description %}چه چیزهایی تو هر نسخه‌ی هم‌ورق اضافه یا بهتر شده.{% endblock %}
+{% block content %}
+<div class="medium">
+    <div class="page-head"><div><h1>تاریخچه‌ی تغییرات</h1><p>نسخه‌ی فعلی: <strong dir="ltr">{{ releases.0.version|fa }}</strong></p></div></div>
+    <ol class="changelog">{% for r in releases %}
+        <li class="card cl-item{% if forloop.first %} is-current{% endif %}" id="v{{ r.version }}">
+            <div class="cl-head"><span class="pill{% if forloop.first %} pill-green{% endif %}" dir="ltr">{{ r.version|fa }}</span><time>{{ r.date|fa }}</time>{% if forloop.first %}<span class="chip">نسخه‌ی فعلی</span>{% endif %}</div>
+            <h2 class="h3">{{ r.title }}</h2>
+            <ul>{% for it in r.items %}<li>{{ it }}</li>{% endfor %}</ul>
+        </li>{% endfor %}
+    </ol>
+</div>
+{% endblock %}

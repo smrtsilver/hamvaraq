@@ -26,14 +26,16 @@
                     <div class="cp-grid" role="radiogroup" aria-label="طرح جلد">{% for k, name, cat in cover_designs %}{% for r in form.cover_design %}{% if r.data.value == k %}
                         <label class="cp-item" data-cp-item="{{ cat }}">{{ r.tag }}<img src="{% url 'books:cover_preview' k %}?t={{ form.title.value|default:''|urlencode }}&amp;a={{ form.author.value|default:''|urlencode }}" alt="" width="120" height="180" loading="lazy" decoding="async" data-cp-img="{{ k }}"><span>{{ name }}</span></label>{% endif %}{% endfor %}{% endfor %}</div>
                 </div>
-                <div class="cp-photo" data-cover-panel="photo">{% include "components/field.html" with field=form.cover %}</div>
+                <div class="cp-photo" data-cover-panel="photo">{% include "components/field.html" with field=form.cover %}
+                    <button type="button" class="btn btn-secondary btn-sm cam-btn" data-camera-photo="{{ form.cover.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} عکس با دوربین</button></div>
             </fieldset>
             {% if form.instance.pk and form.instance.photos.all %}<div class="field"><span class="field-legend">آلبوم فعلی ({{ form.instance.photos.count|fa }} از ۴)</span><div class="album-edit">
                 {% for p in form.instance.photos.all %}<div class="ae-item"><img src="{{ p.image.url }}" alt="عکس {{ forloop.counter|fa }}" width="96" height="128" loading="lazy">
                     <div class="ae-acts">{% if not forloop.first %}<button class="icon-btn" form="ph-move-{{ p.pk }}-up" aria-label="جابه‌جایی به جلو">{% include "components/icon.html" with name="chevron-right" %}</button>{% endif %}
                     {% if not forloop.last %}<button class="icon-btn" form="ph-move-{{ p.pk }}-down" aria-label="جابه‌جایی به عقب">{% include "components/icon.html" with name="chevron-left" %}</button>{% endif %}
                     <button class="icon-btn link-danger" form="ph-del-{{ p.pk }}" aria-label="حذف عکس">{% include "components/icon.html" with name="trash" %}</button></div></div>{% endfor %}</div></div>{% endif %}
-            <div class="album-drop" data-album-drop>{% include "components/field.html" with field=form.extra_photos %}<p class="album-hint" aria-hidden="true">{% include "components/icon.html" with name="camera" %} عکس‌ها رو اینجا بکش یا بزن تا از گالری/دوربین انتخاب کنی</p><div class="album-previews" data-album-previews aria-live="polite"></div></div>
+            <div class="album-drop" data-album-drop>{% include "components/field.html" with field=form.extra_photos %}<p class="album-hint" aria-hidden="true">{% include "components/icon.html" with name="camera" %} عکس‌ها رو اینجا بکش یا بزن تا از گالری/دوربین انتخاب کنی</p><div class="album-previews" data-album-previews aria-live="polite"></div>
+                <button type="button" class="btn btn-secondary btn-sm cam-btn" data-camera-photo="{{ form.extra_photos.id_for_label }}" hidden>{% include "components/icon.html" with name="camera" %} عکس با دوربین</button></div>
             {% include "components/field.html" with field=form.description %}
         </div>
         <div class="form-actions"><button class="btn btn-lg">{% include "components/icon.html" with name="check" %} ذخیره</button><a class="btn btn-ghost" href="/" data-back>انصراف</a></div>

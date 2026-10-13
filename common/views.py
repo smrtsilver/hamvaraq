@@ -109,6 +109,12 @@ def page_not_found(request, exception=None):
     return render(request, "404.html", status=404)
 
 
+def changelog(request):
+    from .releases import RELEASES
+
+    return render(request, "common/changelog.html", {"releases": RELEASES})
+
+
 def healthz(request):
     """سلامت واقعی: اتصال دیتابیس رو هم امتحان می‌کنه (قطع باشه ۵۰۳ می‌ده تا مانیتور و داکر بفهمن)."""
     from django.db import connection

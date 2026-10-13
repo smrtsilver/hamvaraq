@@ -1651,3 +1651,41 @@ input[type=range]{accent-color:var(--primary)}
 .isbn-fb-item strong{font-size:var(--fs-sm)}
 .isbn-fb-item span{font-size:var(--fs-xs);color:var(--ink-2)}
 .isbn-fb-item:hover,.isbn-fb-item[aria-pressed=true]{border-color:var(--primary);background:var(--primary-soft)}
+
+/* ---- لودینگ دکمه‌ها (ارسال فرم، جستجوی شابک، اسکن) ---- */
+.btn.is-loading{position:relative;color:transparent !important;pointer-events:none}
+.btn.is-loading > *{visibility:hidden}
+.btn.is-loading::after{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;border-radius:50%;
+  border:2.5px solid currentColor;border-color:var(--primary) transparent var(--primary) transparent;animation:hv-spin .8s linear infinite}
+.btn:not(.btn-secondary):not(.btn-ghost).is-loading::after{border-color:#fff transparent #fff transparent}
+@keyframes hv-spin{to{transform:rotate(360deg)}}
+form[aria-busy=true]{cursor:progress}
+
+/* ---- قفل عنوان/نویسنده تا جستجوی شابک ---- */
+input.is-locked,textarea.is-locked{background:var(--bg-soft);color:var(--ink-2);cursor:not-allowed}
+.lock-note{margin:6px 0 0;font-size:var(--fs-xs);color:var(--ink-3,var(--ink-2))}
+.isbn-title-link{display:inline-block;margin-top:8px;padding:0;border:0;background:none;color:var(--primary-ink);font:inherit;font-size:var(--fs-sm);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+/* ---- اسکنر ---- */
+.scan-status[data-tone=ok]{color:var(--primary-ink);font-weight:800}
+.scan-status[data-tone=warn]{color:var(--danger)}
+.scan-dialog.hit .scan-frame{border-color:#3ddc97;box-shadow:0 0 0 999px rgba(0,40,20,.45),0 0 0 4px rgba(61,220,151,.5) inset}
+.scan-line{position:absolute;inset-inline:6%;top:50%;height:2px;background:linear-gradient(90deg,transparent,#ff5a5a,transparent);box-shadow:0 0 8px #ff5a5a;animation:hv-scanline 1.8s ease-in-out infinite}
+.scan-dialog.hit .scan-line{display:none}
+@keyframes hv-scanline{0%,100%{transform:translateY(-38px)}50%{transform:translateY(38px)}}
+@media (prefers-reduced-motion:reduce){.scan-line{animation:none}}
+.scan-gallery{cursor:pointer;margin-inline-start:auto}
+.scan-dialog.photo-mode .scan-frame{display:none}
+.scan-dialog.photo-mode .scan-view{aspect-ratio:3/4}
+.cam-btn{margin-top:8px}
+
+/* ---- تاریخچه‌ی تغییرات ---- */
+.changelog{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.cl-item{padding:18px 20px}
+.cl-item.is-current{border-color:var(--primary)}
+.cl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.cl-head time{font-size:var(--fs-sm);color:var(--ink-2)}
+.cl-item h2{margin:4px 0 8px}
+.cl-item ul{margin:0;padding-inline-start:20px;display:grid;gap:4px;color:var(--ink-2)}
+.footer-version{color:inherit;opacity:.8;text-decoration:underline;text-underline-offset:3px}
+.footer-version:hover{opacity:1}

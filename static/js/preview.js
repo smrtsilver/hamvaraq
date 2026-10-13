@@ -9,7 +9,21 @@
         img: $(".lp-cover img"), ph: $(".lp-ph"), bar: $(".lp-quality .meter i"), score: $('[data-lp="score"]'), tips: $('[data-lp="tips"]'),
     };
     const f = (n) => form.elements[n];
-    let isbnData = null, coverUrl = "";
+    let isbnData = null, coverUrl = "", designSrc = "";
+    const picker = form.querySelector("[data-cover-picker]");
+    const coverMode = () => { const r = form.querySelector("input[name=cover_mode]:checked"); return r ? r.value : (picker ? "design" : "photo"); };
+    // جلد طراحی‌شده: همون تصویر کارت انتخاب‌شده با عنوان/نویسنده‌ی فعلی (debounce تا با هر حرف درخواست نره)
+    const designUrl = () => {
+        const r = form.querySelector("input[name=cover_design]:checked");
+        if (!picker || !r) return "";
+        return picker.dataset.previewUrl.replace("KEY", r.value) + "?t=" + encodeURIComponent(f("title").value.trim()) + "&a=" + encodeURIComponent(f("author").value.trim());
+    };
+    const refreshDesign = (window.HV && HV.debounce ? HV.debounce : (fn) => fn)(() => { designSrc = designUrl(); paintCover(); }, 500);
+    function paintCover() {
+        const src = coverMode() === "photo" ? coverUrl : designSrc;
+        if (src) { if (el.img.getAttribute("src") !== src) el.img.src = src; el.img.hidden = false; el.ph.hidden = true; }
+        else { el.img.hidden = true; el.ph.hidden = false; }
+    }
     const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
     const selText = (s) => (s && s.selectedIndex >= 0 && s.value ? s.options[s.selectedIndex].text : "");
 
@@ -18,8 +32,8 @@
         el.author.textContent = f("author").value.trim() || "نویسنده";
         el.cond.textContent = selText(f("condition")) || "";
         el.city.textContent = selText(f("city")) || "";
-        const hasCover = !!coverUrl || form.dataset.existingCover === "1";
-        if (coverUrl) { el.img.src = coverUrl; el.img.hidden = false; el.ph.hidden = true; }
+        const hasCover = !!coverUrl || form.dataset.existingCover === "1" || (coverMode() === "design" && !!designUrl());
+        paintCover();
         const hasPhotos = f("extra_photos") && f("extra_photos").files && f("extra_photos").files.length > 0;
         const validIsbn = window.HVIsbn && f("isbn") && window.HVIsbn.normalize(f("isbn").value);
         let score = W.base;
@@ -36,14 +50,16 @@
         el.tips.replaceChildren(...tips.slice(0, 3).map((t) => { const li = document.createElement("li"); li.textContent = t; return li; }));
     }
 
-    form.addEventListener("input", update);
+    form.addEventListener("input", (e) => { if (e.target.name === "title" || e.target.name === "author") refreshDesign(); update(); });
     form.addEventListener("change", (e) => {
         if (e.target.name === "cover" && e.target.files && e.target.files[0]) {
             if (coverUrl) URL.revokeObjectURL(coverUrl);
             coverUrl = URL.createObjectURL(e.target.files[0]);
         }
+        if (["cover_mode", "cover_design", "title", "author"].includes(e.target.name)) designSrc = designUrl();
         update();
     });
     document.addEventListener("hv:isbn", (e) => { if (e.detail.scope === form) { isbnData = e.detail.data; update(); } });
+    designSrc = designUrl();
     update();
 })();
