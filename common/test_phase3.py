@@ -56,7 +56,7 @@ class BookListTests(Base):
 
     def test_card_badges_distance_hot_and_trusted_without_n_plus_one(self):
         local = Book.objects.create(owner=self.giver, title="محلی", author="ن", city=self.tehran)
-        other = self.book(title="دور")
+        self.book(title="دور")
         taker2 = User.objects.create_user("t2", password="x12345678", points=3, city=self.tehran)
         t3 = User.objects.create_user("t3", password="x12345678", points=3)
         services.request_book(local.pk, taker2)
