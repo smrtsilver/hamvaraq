@@ -81,3 +81,27 @@ class ReputationCountsTests(TestCase):
 
         rep = reputation(User.objects.create_user("fresh", password="x-strong-pass-1"))
         self.assertEqual((rep["likes"], rep["dislikes"]), (0, 0))
+
+
+class MarcRolesTests(TestCase):
+    """کتابخانه‌ی ملی نقش رو متنی می‌نویسه («، مترجم») و نام لاتین رو هم کنار نام فارسی ثبت می‌کنه."""
+
+    FIELDS = {
+        "010": [[("a", "978-600-436-575-8")]],
+        "200": [[("a", "ملت عشق")]],
+        "700": [[("a", "شفق"), ("b", "، الیف")], [("a", "Shafak"), ("b", ", Elif"), ("7", "ba")]],
+        "702": [[("a", "فصیحی"), ("b", "، ارسلان"), ("4", "، مترجم")], [("a", "احمدی"), ("b", "، سارا"), ("4", "، ویراستار")]],
+    }
+
+    def test_translator_by_text_role_and_latin_twin_dropped(self):
+        rec = isbn_lib._marc_record(self.FIELDS, "9786004365758")
+        self.assertEqual(rec["authors"], ["الیف شفق"])
+        self.assertEqual(rec["translators"], ["ارسلان فصیحی"])
+
+    def test_numeric_translator_code_still_works(self):
+        self.assertEqual(isbn_lib._role_kind("730"), "translator")
+        self.assertIsNone(isbn_lib._role_kind("ویراستار"))
+        self.assertEqual(isbn_lib._role_kind(""), "author")
+
+    def test_latin_kept_when_no_persian_name(self):
+        self.assertEqual(isbn_lib._drop_latin_twins(["Elif Shafak"]), ["Elif Shafak"])

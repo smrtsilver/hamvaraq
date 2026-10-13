@@ -131,12 +131,12 @@ def _int(raw):
 
 
 def _person(fields, tag):
-    """همه‌ی فیلدهای شخص (700/701/702) ← [(نام کامل, کد نقش)]."""
+    """همه‌ی فیلدهای شخص (700/701/702) ← [(نام کامل, نقش $4, کد خط $7)]."""
     out = []
     for field in fields.get(tag, []):
         if not isinstance(field, list):
             continue
-        family = given = role = ""
+        family = given = role = script = ""
         for code, value in field:
             if code == "a" and not family:
                 family = _clean(value)
@@ -144,13 +144,35 @@ def _person(fields, tag):
                 given = _clean(value)
             elif code == "4" and not role:
                 role = _clean(value)
+            elif code == "7" and not script:
+                script = value.strip()
         name = f"{given} {family}".strip()
         if name:
-            out.append((name, role))
+            out.append((name, role, script))
     return out
 
 
 TRANSLATOR_ROLES = {"730"}
+# نقش‌های غیرِ نویسنده (ویراستار، تصویرگر، مقدمه‌نویس…) نه نویسنده‌ان نه مترجم؛ کنار گذاشته می‌شن
+OTHER_ROLE_WORDS = ("ویراست", "تصویرگر", "مصور", "مقدمه", "زیر نظر", "طراح", "عکاس", "خوانش", "گوینده", "صفحه", "ناظر")
+_PERSIAN = re.compile("[؀-ۿ]")
+
+
+def _role_kind(role):
+    """«author» | «translator» | None (نقش دیگه). نقش خالی یعنی پدیدآور اصلی."""
+    r = (role or "").replace("‌", "")
+    if r in TRANSLATOR_ROLES or "ترجم" in r:
+        return "translator"
+    if any(w.replace("‌", "") in r for w in OTHER_ROLE_WORDS):
+        return None
+    return "author"
+
+
+def _drop_latin_twins(names):
+    """کتابخانه‌ی ملی کنار نام فارسی، همون نام رو با حروف لاتین هم ثبت می‌کنه؛ وقتی نسخه‌ی فارسی هست لاتین حذف می‌شه."""
+    if any(_PERSIAN.search(n) for n in names):
+        return [n for n in names if _PERSIAN.search(n)]
+    return names
 
 
 def _from_marc(fields, isbn):
@@ -167,10 +189,12 @@ def _marc_record(fields, isbn):
         return None
     authors, translators = [], []
     for tag in ("700", "701", "702"):
-        for name, role in _person(fields, tag):
-            target = translators if role in TRANSLATOR_ROLES else authors
-            if name not in target:
+        for name, role, _script in _person(fields, tag):
+            kind = _role_kind(role)
+            target = translators if kind == "translator" else authors if kind == "author" else None
+            if target is not None and name not in target:
                 target.append(name)
+    authors, translators = _drop_latin_twins(authors), _drop_latin_twins(translators)
     year, calendar = _year_info(_sub(fields, "210", "d"))
     record = {
         "isbn": isbn, "title": title, "subtitle": _clean(_sub(fields, "200", "e")),
@@ -210,6 +234,7 @@ def _nlai(isbn, timeout):
 
 
 NLAI_TITLE_LIMIT = 6
+NLAI_TITLE_CANDIDATES = 12
 NLAI_TITLE_CACHE = 6 * 3600
 
 
@@ -235,16 +260,28 @@ def nlai_title_search(query, timeout=None, limit=NLAI_TITLE_LIMIT):
         return max(0.3, deadline - time.monotonic())
 
     page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": q})), left()).decode("utf-8", "replace")
-    uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[: limit + 2]
-    out = []
+    uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[:NLAI_TITLE_CANDIDATES]
+    records = []
     if uids:
         for fields in parse_marc(_get(NLAI_MARC.format(qs=urllib.parse.urlencode([("uid", u) for u in uids])), left())):
             raw = _clean(_sub(fields, "010", "a"))
             record = _marc_record(fields, (normalize_isbn(raw) if raw else None) or "")
             if record:
-                out.append(record)
-            if len(out) >= limit:
-                break
+                records.append(record)
+    # ترتیب خود کتابخانه‌ی ملی به شباهت عنوان اهمیت نمی‌ده؛ نزدیک‌ترین عنوان/نویسنده به عبارت جستجو بالا میاد
+    want = text_normalize(q)
+    want_words = set(want.split())
+
+    def score(rec):
+        title = text_normalize(f"{rec.get('title', '')} {rec.get('subtitle', '')}")
+        people = text_normalize(" ".join(rec.get("authors", []) + rec.get("translators", [])))
+        words_hit = len(want_words & set(f"{title} {people}".split())) / max(1, len(want_words))
+        return (want == text_normalize(rec.get("title", "")),      # عنوان دقیقاً همین
+                title.startswith(want),                          # با همین شروع می‌شه
+                want in title or want in people,                 # جایی تو عنوان یا نام پدیدآور
+                round(words_hit, 2), bool(rec.get("isbn")))      # هم‌پوشانی کلمه‌ها؛ رکورد شابک‌دار جلوتر
+
+    out = sorted(records, key=score, reverse=True)[:limit]
     cache.set(key, out, NLAI_TITLE_CACHE)
     return out
 
