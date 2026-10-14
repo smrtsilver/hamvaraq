@@ -2,8 +2,9 @@
 # سه مقدار رو عوض کن: دامنه، مسیر پروژه، مسیر گواهی SSL
 
 # فایل استاتیکِ هش‌دار (app.3f2a….css) هیچ‌وقت عوض نمی‌شه: یه سال immutable. بی‌هش (app.css که سرویس‌ورکر می‌گیره، فونت صفحه‌ی خطا): یه روز
+# regex باید تو کوتیشن باشه چون {12} داره
 map $uri $hamvaraq_static_cache {
-    ~\.[0-9a-f]{12}\.[a-z0-9]+$ "public, max-age=31536000, immutable";
+    "~\.[0-9a-f]{12}\.[a-z0-9]+$" "public, max-age=31536000, immutable";
     default                     "public, max-age=86400";
 }
 
