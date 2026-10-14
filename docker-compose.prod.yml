@@ -20,7 +20,7 @@ services:
     restart: always
     command: sh docker/entrypoint.prod.sh
     ports:
-      - "127.0.0.1:8000:8000"  # فقط لوکال؛ nginx پروکسی می‌کنه
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"  # فقط لوکال؛ nginx پروکسی می‌کنه
     volumes:
       - ./media:/app/media     # nginx مستقیم از این پوشه عکس کتاب‌ها رو سرو می‌کنه
       - ./staticfiles:/app/staticfiles
@@ -32,7 +32,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen(u.Request('http://127.0.0.1:8000/healthz/', headers={'X-Forwarded-Proto': 'https'}), timeout=5)"]
       interval: 30s
       timeout: 7s
       retries: 5
