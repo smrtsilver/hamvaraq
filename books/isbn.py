@@ -259,11 +259,13 @@ def nlai_title_search(query, timeout=None, limit=NLAI_TITLE_LIMIT):
     def left():
         return max(0.3, deadline - time.monotonic())
 
-    page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": q})), left()).decode("utf-8", "replace")
-    uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[:NLAI_TITLE_CANDIDATES]
+    with outbound_slot():
+        page = _get(NLAI_SEARCH.format(qs=urllib.parse.urlencode({"query": q})), left()).decode("utf-8", "replace")
+        uids = list(dict.fromkeys(re.findall(r"/bibliography/([\w-]+)/", page)))[:NLAI_TITLE_CANDIDATES]
+        marc = _get(NLAI_MARC.format(qs=urllib.parse.urlencode([("uid", u) for u in uids])), left()) if uids else b""
     records = []
     if uids:
-        for fields in parse_marc(_get(NLAI_MARC.format(qs=urllib.parse.urlencode([("uid", u) for u in uids])), left())):
+        for fields in parse_marc(marc):
             raw = _clean(_sub(fields, "010", "a"))
             record = _marc_record(fields, (normalize_isbn(raw) if raw else None) or "")
             if record:
@@ -348,6 +350,28 @@ MERGE_FIELDS = ("title", "subtitle", "authors", "translators", "publisher", "yea
                 "pages", "language", "subjects", "description", "cover_url", "dewey")
 GRACE_AFTER_COMPLETE = 0.6    # ثانیه
 _POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="isbn")
+
+
+class OutboundBusy(Exception):
+    """همه‌ی جاهای تماس بیرونی این پروسه پرن؛ view باید ۵۰۳ «دوباره امتحان کن» بده، نه «پیدا نشد»."""
+
+    message = "الان استعلام‌ها زیادن؛ چند ثانیه‌ی دیگه دوباره «جستجو» رو بزن یا دستی پر کن."
+
+
+# هر پروسه‌ی gunicorn فقط ۴ thread داره؛ اگه همه منتظر منبع کند (تا ۱۲ ثانیه) بمونن کل سایت هنگ می‌کنه.
+# پس حداکثر OUTBOUND_SLOTS درخواست هم‌زمان می‌تونن منتظر سایت‌های بیرونی باشن و بقیه زود جواب «شلوغه» می‌گیرن.
+_SLOTS = threading.BoundedSemaphore(int(getattr(settings, "OUTBOUND_SLOTS", 2)))
+SLOT_WAIT = 1.0  # ثانیه صبر برای خالی شدن یه جا، بعد OutboundBusy
+
+
+class outbound_slot:
+    def __enter__(self):
+        if not _SLOTS.acquire(timeout=SLOT_WAIT):
+            raise OutboundBusy
+        return self
+
+    def __exit__(self, *exc):
+        _SLOTS.release()
 _BREAKER_LOCK = threading.Lock()
 
 
@@ -436,6 +460,11 @@ def lookup_full(raw, timeout=None):
     cached = cache.get(key)
     if cached is not None:
         return cached or None
+    with outbound_slot():
+        return _lookup_sources(isbn, key, timeout)
+
+
+def _lookup_sources(isbn, key, timeout):
     budget = float(timeout) if timeout else _budget()
     deadline = time.monotonic() + budget
     funcs = {"opac": _opac, "ketab": _ketab, "nlai": _nlai, "openlibrary": _open_library, "google": _google}   # موقع صدا زدن خونده می‌شن (تست‌ها جایگزین می‌کنن)

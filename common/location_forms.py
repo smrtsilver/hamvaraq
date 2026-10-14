@@ -1,13 +1,59 @@
 """فیلدهای «استان ← شهر»: بدون JS هم کار می‌کنه (شهرها با نام استان)، با JS آبشاری و جستجویی می‌شه."""
 
+import time
+
 from django import forms
+from django.conf import settings
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
+from django.forms.utils import flatatt
+from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from .forms import EMPTY_LABEL
 from .models import City, Province
 
+# HTML گزینه‌های شهر (~۱۴۵۰ تا) به ازای هر queryset؛ رندرشون با تمپلیت ویجت جنگو ~۲۰۰ms CPU برای هر صفحه بود
+_OPTIONS_CACHE = {}
+_OPTIONS_TTL = 600  # تغییر از پنل فقط کش همون پروسه رو پاک می‌کنه؛ بقیه‌ی worker ها حداکثر ۱۰ دقیقه بعد
+
+
+@receiver([post_save, post_delete], sender=City)
+@receiver([post_save, post_delete], sender=Province)
+def _drop_city_options(**kwargs):
+    _OPTIONS_CACHE.clear()
+
 
 class CitySelect(forms.Select):
     """هر گزینه‌ی شهر شناسه‌ی استانش رو داره تا جاوااسکریپت بتونه فیلتر کنه."""
+
+    def render(self, name, value, attrs=None, renderer=None):
+        choices = self.choices
+        queryset = getattr(choices, "queryset", None)
+        if queryset is None:  # فهرست دستی، نه ModelChoiceField
+            return super().render(name, value, attrs, renderer)
+        selected = set(self.format_value(value))
+        final = {**self.build_attrs(self.attrs, attrs), "name": name}
+        empty = choices.field.empty_label
+        head = format_html('<option value=""{}>{}</option>', " selected" if "" in selected else "", empty) if empty is not None else ""
+        body = self._options_html(queryset, choices.field)
+        for v in selected - {""}:
+            needle = f'<option value="{escape(v)}" '
+            body = body.replace(needle, needle + "selected ", 1)
+        return format_html("<select{}>{}{}</select>", flatatt(final), head, mark_safe(body))
+
+    @staticmethod
+    def _options_html(queryset, field):
+        key = (str(queryset.query), type(field))
+        hit = _OPTIONS_CACHE.get(key)
+        if hit and not settings.IS_TEST and time.monotonic() - hit[0] < _OPTIONS_TTL:
+            return hit[1]
+        html = str(format_html_join(
+            "", '<option value="{}" data-province="{}" data-name="{}">{}</option>',
+            ((c.pk, c.province_id, c.name, field.label_from_instance(c)) for c in queryset),
+        ))
+        _OPTIONS_CACHE[key] = (time.monotonic(), html)
+        return html
 
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)

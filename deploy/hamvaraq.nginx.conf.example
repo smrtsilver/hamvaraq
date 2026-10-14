@@ -1,6 +1,12 @@
 # نمونه‌ی nginx برای هم‌ورق. مسیر واقعی: /etc/nginx/sites-available/hamvaraq
 # سه مقدار رو عوض کن: دامنه، مسیر پروژه، مسیر گواهی SSL
 
+# فایل استاتیکِ هش‌دار (app.3f2a….css) هیچ‌وقت عوض نمی‌شه: یه سال immutable. بی‌هش (app.css که سرویس‌ورکر می‌گیره، فونت صفحه‌ی خطا): یه روز
+map $uri $hamvaraq_static_cache {
+    ~\.[0-9a-f]{12}\.[a-z0-9]+$ "public, max-age=31536000, immutable";
+    default                     "public, max-age=86400";
+}
+
 server {
     listen 80;
     server_name hamvaraq.ir www.hamvaraq.ir;
@@ -26,7 +32,9 @@ server {
 
     # وقتی برنامه داره دوباره بالا میاد (آپدیت/ری‌استارت)، به‌جای 502 خام nginx صفحه‌ی «در حال به‌روزرسانی» نشون داده می‌شه.
     # این فایل‌ها مستقیم از پوشه‌ی static ریپو خونده می‌شن (نه staticfiles) تا حتی وقتی collectstatic اجرا نشده هم باشن.
-    error_page 502 503 504 /errors/maintenance.html;
+    error_page 502 503 /errors/maintenance.html;
+    # 504 یعنی برنامه بالاست ولی از شلوغی تو مهلت جواب نداد؛ پیام «در حال به‌روزرسانی» اونجا گمراه‌کننده‌ست
+    error_page 504 /errors/busy.html;
     location ^~ /errors/ {
         root /home/ubuntu/hamvaraq/static;
         internal;
@@ -35,6 +43,9 @@ server {
     location /static/ {
         alias /home/ubuntu/hamvaraq/staticfiles/;
         error_page 404 /errors/404.html;
+        # collectstatic (WhiteNoise) کنار هر فایل نسخه‌ی .gz رو هم می‌سازه؛ nginx همونو بدون مصرف CPU می‌فرسته
+        gzip_static on;
+        add_header Cache-Control $hamvaraq_static_cache;
     }
 
     location /media/ {

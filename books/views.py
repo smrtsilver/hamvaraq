@@ -268,7 +268,10 @@ def isbn_view(request):
     isbn13 = isbn_lookup.normalize_isbn(raw)
     if not isbn13:
         return JsonResponse({"error": "not_found"}, status=404)
-    edition = catalog.resolve(isbn13)
+    try:
+        edition = catalog.resolve(isbn13)
+    except isbn_lookup.OutboundBusy as e:
+        return JsonResponse({"error": "busy", "message": e.message, "isbn": isbn13, "isbn_display": hyphenate(isbn13)}, status=503)
     if not edition:
         return JsonResponse({"error": "not_found", "isbn": isbn13, "isbn_display": hyphenate(isbn13)}, status=404)
     user = request.user
@@ -293,6 +296,8 @@ def catalog_search(request):
 
     try:
         records = isbn_lookup.nlai_title_search(request.GET.get("q", ""))
+    except isbn_lookup.OutboundBusy as e:
+        return JsonResponse({"error": "busy", "message": e.message}, status=503)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return JsonResponse({"error": "unavailable", "message": "کتابخانه‌ی ملی دیر جواب داد؛ یه بار دیگه «بگرد» رو بزن یا دستی پر کن."}, status=503)
     items = [{
@@ -335,7 +340,7 @@ def cover_image(request, isbn):
     if data is None:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": isbn_lookup.NLAI_HEADERS["User-Agent"]})
-            with urllib.request.urlopen(req, timeout=8) as resp:
+            with isbn_lookup.outbound_slot(), urllib.request.urlopen(req, timeout=8) as resp:
                 data = resp.read(COVER_MAX_BYTES + 1)
             if len(data) > COVER_MAX_BYTES:
                 raise ValueError("too big")
@@ -344,6 +349,8 @@ def cover_image(request, isbn):
                 fmt = (im.format or "").lower()
             if fmt not in ("jpeg", "png", "webp"):
                 raise ValueError("format")
+        except isbn_lookup.OutboundBusy:
+            return HttpResponse(status=503)  # شلوغه، نه خراب: کش منفی نمی‌شه
         except Exception:
             cache.set(key, b"", 3600)       # تصویر خراب/نبود: یه ساعت دوباره نمی‌پرسیم
             raise Http404

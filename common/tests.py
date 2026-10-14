@@ -1343,6 +1343,16 @@ class LocationFormTests(Base):
         page = self.client.get(reverse("books:create"))
         self.assertEqual(page.context["form"].initial["city"], self.isfahan.pk)            # پروفایل مقدم
 
+    @override_settings(IS_TEST=False)  # کش گزینه‌های شهر روشن، مثل پروداکشن
+    def test_city_options_cache_follows_city_changes(self):
+        from books.forms import BookFilterForm
+        html = str(BookFilterForm()["city"])
+        self.assertIn(f'value="{self.tehran.pk}" data-province="{self.tehran.province_id}"', html)
+        new = make_city("کیش", "هرمزگان")
+        html = str(BookFilterForm({"city": new.pk})["city"])
+        self.assertIn(f'<option value="{new.pk}" selected data-province="{new.province_id}" data-name="کیش">کیش، هرمزگان</option>', html)
+        self.assertEqual(html.count(" selected"), 1)
+
     def test_options_carry_province_for_cascade(self):
         self.client.login(username="giver", password="x12345678")
         html = self.client.get(reverse("books:create")).content.decode()
